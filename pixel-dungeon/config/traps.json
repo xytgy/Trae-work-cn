@@ -1,0 +1,71 @@
+{
+  "spike": {
+    "type": "spike",
+    "name": "地刺",
+    "damage": 1,
+    "cooldown": 2000,
+    "activeDuration": 500,
+    "size": 32,
+    "color": "#808080",
+    "spikeColor": "#c0c0c0",
+    "visible": true
+  },
+  "fire": {
+    "type": "fire",
+    "name": "火焰",
+    "damage": 1,
+    "cooldown": 3000,
+    "activeDuration": 1000,
+    "size": 32,
+    "color": "#8b4513",
+    "fireColor": "#ff4500",
+    "visible": true
+  },
+  "poison": {
+    "type": "poison",
+    "name": "毒雾",
+    "damage": 0.5,
+    "cooldown": 500,
+    "activeDuration": 4000,
+    "size": 48,
+    "color": "#228b22",
+    "poisonColor": "rgba(50, 205, 50, 0.4)",
+    "visible": true
+  },
+  "ice": {
+    "type": "ice",
+    "name": "冰冻",
+    "damage": 0,
+    "cooldown": 5000,
+    "activeDuration": 2000,
+    "slowFactor": 0.5,
+    "slowDuration": 3000,
+    "size": 40,
+    "color": "#4169e1",
+    "iceColor": "#87ceeb",
+    "visible": true
+  },
+  "rock": {
+    "type": "rock",
+    "name": "落石",
+    "damage": 2,
+    "cooldown": 4000,
+    "warningDuration": 1000,
+    "activeDuration": 300,
+    "size": 36,
+    "color": "#696969",
+    "warningColor": "rgba(255, 0, 0, 0.3)",
+    "visible": false
+  },
+  "teleport": {
+    "type": "teleport",
+    "name": "传送",
+    "damage": 0,
+    "cooldown": 8000,
+    "activeDuration": 500,
+    "size": 36,
+    "color": "#9932cc",
+    "teleportColor": "#da70d6",
+    "visible": true
+  }
+}

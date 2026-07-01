@@ -1,0 +1,13 @@
+{
+  "moveUp": ["KeyW", "ArrowUp"],
+  "moveDown": ["KeyS", "ArrowDown"],
+  "moveLeft": ["KeyA", "ArrowLeft"],
+  "moveRight": ["KeyD", "ArrowRight"],
+  "shoot": ["MouseLeft"],
+  "skill1": ["KeyE"],
+  "skill2": ["KeyR"],
+  "weaponSwitch": ["KeyQ"],
+  "pause": ["KeyP", "Escape"],
+  "inventory": ["KeyI", "Tab"],
+  "interact": ["KeyF"]
+}

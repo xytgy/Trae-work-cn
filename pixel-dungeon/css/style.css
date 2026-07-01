@@ -1,0 +1,354 @@
+/**
+ * 像素地牢：枪战冒险 - 样式文件
+ */
+
+/* ==================== 全局样式 ==================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background-color: #0a0a0f;
+    color: #ffffff;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* ==================== 游戏容器 ==================== */
+#game-container {
+    position: relative;
+    width: 800px;
+    height: 600px;
+    border: 4px solid #0f3460;
+    box-shadow: 0 0 20px rgba(233, 69, 96, 0.3);
+}
+
+/* ==================== 游戏画布 ==================== */
+#game-canvas {
+    display: block;
+    width: 800px;
+    height: 600px;
+    background-color: #1a1a2e;
+    cursor: crosshair;
+}
+
+/* ==================== UI层 ==================== */
+/* 
+ * UI层现在使用Canvas绘制，但保留DOM元素用于兼容
+ * 游戏进行中隐藏这些元素
+ */
+#ui-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    /* 默认隐藏DOM UI，使用Canvas绘制 */
+}
+
+/* 游戏状态屏幕默认隐藏，由JavaScript控制显示 */
+#ui-layer .screen {
+    pointer-events: auto;
+}
+
+/* 顶部状态栏和底部信息栏默认隐藏 */
+/* 它们现在由Canvas绘制 */
+#ui-layer #top-bar,
+#ui-layer #bottom-bar {
+    display: none;
+}
+
+/* ==================== 顶部状态栏 ==================== */
+#top-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
+}
+
+/* ==================== 底部信息栏 ==================== */
+#bottom-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+    font-size: 14px;
+}
+
+/* ==================== 健康显示 ==================== */
+#health-display {
+    display: flex;
+    gap: 4px;
+}
+
+.heart {
+    width: 24px;
+    height: 24px;
+    background-color: #e91e63;
+    clip-path: polygon(
+        50% 0%, 65% 25%, 100% 25%, 75% 50%, 
+        100% 100%, 50% 75%, 0% 100%, 25% 50%, 
+        0% 25%, 35% 25%
+    );
+}
+
+.heart.empty {
+    background-color: #424242;
+}
+
+/* ==================== 关卡显示 ==================== */
+#level-display {
+    font-size: 24px;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px #000000;
+    color: #ffffff;
+}
+
+/* ==================== 武器显示 ==================== */
+#weapon-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+}
+
+.weapon-icon {
+    font-size: 24px;
+}
+
+/* ==================== 武器信息 ==================== */
+#weapon-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.weapon-name {
+    color: #ffd54f;
+}
+
+.weapon-ammo {
+    color: #aaaaaa;
+}
+
+.switch-hint {
+    color: #888888;
+    font-size: 12px;
+}
+
+/* ==================== 击杀计数 ==================== */
+#kill-count {
+    color: #ff5722;
+    font-weight: bold;
+}
+
+/* ==================== 屏幕通用样式 ==================== */
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.85);
+    z-index: 100;
+    /* 默认隐藏，由JavaScript控制显示 */
+}
+
+.screen.hidden {
+    display: none !important;
+}
+
+/* ==================== 主菜单 ==================== */
+#game-title {
+    font-size: 48px;
+    color: #e94560;
+    text-shadow: 4px 4px 8px #000000, 0 0 20px #e94560;
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+#menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 40px;
+}
+
+#menu-instructions {
+    text-align: center;
+    color: #aaaaaa;
+    font-size: 14px;
+}
+
+#menu-instructions p {
+    font-size: 18px;
+    color: #ffffff;
+    margin-bottom: 16px;
+}
+
+#menu-instructions ul {
+    list-style: none;
+}
+
+#menu-instructions li {
+    margin: 8px 0;
+}
+
+/* ==================== 菜单按钮 ==================== */
+.menu-button {
+    padding: 16px 48px;
+    font-size: 20px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    color: #ffffff;
+    background-color: #0f3460;
+    border: 3px solid #e94560;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    pointer-events: auto;
+}
+
+.menu-button:hover {
+    background-color: #e94560;
+    color: #ffffff;
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+}
+
+.menu-button:active {
+    transform: scale(0.95);
+}
+
+/* ==================== 暂停界面 ==================== */
+#pause-screen h2 {
+    font-size: 48px;
+    color: #ffd54f;
+    text-shadow: 4px 4px 8px #000000;
+    margin-bottom: 40px;
+}
+
+#pause-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ==================== 游戏结束界面 ==================== */
+#gameover-screen h2 {
+    font-size: 48px;
+    color: #f44336;
+    text-shadow: 4px 4px 8px #000000;
+    margin-bottom: 30px;
+}
+
+#gameover-stats,
+#victory-stats {
+    text-align: center;
+    font-size: 18px;
+    margin-bottom: 30px;
+    line-height: 2;
+}
+
+#gameover-stats p,
+#victory-stats p {
+    color: #cccccc;
+}
+
+#gameover-stats span,
+#victory-stats span {
+    color: #ffffff;
+    font-weight: bold;
+}
+
+#gameover-buttons,
+#victory-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ==================== 通关界面 ==================== */
+#victory-screen h2 {
+    font-size: 48px;
+    color: #4caf50;
+    text-shadow: 4px 4px 8px #000000, 0 0 20px #4caf50;
+    margin-bottom: 30px;
+}
+
+/* ==================== 响应式调整 ==================== */
+@media (max-width: 850px) {
+    #game-container {
+        width: 100vw;
+        height: 75vw;
+        max-height: 100vh;
+        border: none;
+    }
+    
+    #game-canvas {
+        width: 100%;
+        height: 100%;
+    }
+    
+    #game-title {
+        font-size: 32px;
+    }
+    
+    .menu-button {
+        padding: 12px 32px;
+        font-size: 16px;
+    }
+}
+
+/* ==================== 动画效果 ==================== */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-5px);
+    }
+    75% {
+        transform: translateX(5px);
+    }
+}
+
+.pulse {
+    animation: pulse 1s ease-in-out infinite;
+}
+
+.shake {
+    animation: shake 0.3s ease-in-out;
+}

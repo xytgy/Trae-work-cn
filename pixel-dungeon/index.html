@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>像素地牢：枪战冒险</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- 游戏容器 -->
+    <div id="game-container">
+        <!-- 游戏画布 -->
+        <canvas id="game-canvas"></canvas>
+        
+        <!-- 游戏UI层 -->
+        <div id="ui-layer">
+            <!-- 顶部状态栏 -->
+            <div id="top-bar">
+                <div id="health-display"></div>
+                <div id="level-display"></div>
+                <div id="weapon-display"></div>
+            </div>
+            
+            <!-- 底部信息栏 -->
+            <div id="bottom-bar">
+                <div id="weapon-info"></div>
+                <div id="kill-count"></div>
+            </div>
+        </div>
+        
+        <!-- 主菜单界面 - 默认隐藏，由Canvas绘制 -->
+        <div id="menu-screen" class="screen hidden">
+            <h1 id="game-title">像素地牢：枪战冒险</h1>
+            <div id="menu-buttons">
+                <button id="btn-start" class="menu-button">开始游戏</button>
+            </div>
+            <div id="menu-instructions">
+                <p>操作说明</p>
+                <ul>
+                    <li>移动：WASD / 方向键</li>
+                    <li>射击：鼠标左键</li>
+                    <li>切换武器：Q</li>
+                    <li>暂停：P / ESC</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 暂停界面 -->
+        <div id="pause-screen" class="screen hidden">
+            <h2>游戏暂停</h2>
+            <div id="pause-buttons">
+                <button id="btn-resume" class="menu-button">继续</button>
+                <button id="btn-restart" class="menu-button">重新开始</button>
+            </div>
+        </div>
+        
+        <!-- 死亡界面 -->
+        <div id="gameover-screen" class="screen hidden">
+            <h2>游戏结束</h2>
+            <div id="gameover-stats">
+                <p>存活时间：<span id="survival-time">0</span>秒</p>
+                <p>击杀数：<span id="final-kills">0</span></p>
+                <p>得分：<span id="final-score">0</span></p>
+            </div>
+            <div id="gameover-buttons">
+                <button id="btn-retry" class="menu-button">重新开始</button>
+                <button id="btn-menu" class="menu-button">返回主菜单</button>
+            </div>
+        </div>
+        
+        <!-- 通关界面 -->
+        <div id="victory-screen" class="screen hidden">
+            <h2>恭喜通关！</h2>
+            <div id="victory-stats">
+                <p>存活时间：<span id="victory-time">0</span>秒</p>
+                <p>击杀数：<span id="victory-kills">0</span></p>
+                <p>获得武器：<span id="victory-weapons">0</span></p>
+                <p>最终得分：<span id="victory-score">0</span></p>
+            </div>
+            <div id="victory-buttons">
+                <button id="btn-play-again" class="menu-button">再来一局</button>
+                <button id="btn-victory-menu" class="menu-button">返回主菜单</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 游戏脚本加载顺序很重要 -->
+    <script src="js/constants.js"></script>
+    <script src="js/config/ConfigLoader.js"></script>
+    <script src="js/item.js"></script>
+    <script src="js/items.js"></script>
+    <script src="js/potion.js"></script>
+    <script src="js/relic.js"></script>
+    <script src="js/inventory.js"></script>
+    <script src="js/shop.js"></script>
+    <script src="js/achievement.js"></script>
+    <script src="js/camera.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/input.js"></script>
+    <script src="js/renderer.js"></script>
+    <script src="js/save.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/leaderboard.js"></script>
+    <script src="js/soundManager.js"></script>
+    <script src="js/tutorial.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/particle.js"></script>
+    <script src="js/bullet.js"></script>
+    <script src="js/weapon.js"></script>
+    <script src="js/weaponPistol.js"></script>
+    <script src="js/weaponLightning.js"></script>
+    <script src="js/weaponGrenade.js"></script>
+    <script src="js/weaponFlame.js"></script>
+    <script src="js/weaponBoomerang.js"></script>
+    <script src="js/weaponFreeze.js"></script>
+    <script src="js/weaponShotgun.js"></script>
+    <script src="js/weaponHoming.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/passive.js"></script>
+    <script src="js/passives.js"></script>
+    <script src="js/skill.js"></script>
+    <script src="js/skills.js"></script>
+    <script src="js/character.js"></script>
+    <script src="js/characters.js"></script>
+    <script src="js/enemy.js"></script>
+    <script src="js/enemySlime.js"></script>
+    <script src="js/enemyBat.js"></script>
+    <script src="js/enemyGhost.js"></script>
+    <script src="js/enemyNew.js"></script>
+    <script src="js/boss.js"></script>
+    <script src="js/bossNew.js"></script>
+    <script src="js/trap.js"></script>
+    <script src="js/chest.js"></script>
+    <script src="js/room.js"></script>
+    <script src="js/modules/EventBus.js"></script>
+    <script src="js/modules/SaveSystem.js"></script>
+    <script src="js/ui/saveMenu.js"></script>
+    <script src="js/modules/InputSystem.js"></script>
+    <script src="js/modules/CollisionSystem.js"></script>
+    <script src="js/modules/DamageSystem.js"></script>
+    <script src="js/modules/DropSystem.js"></script>
+    <script src="js/modules/AchievementSystem.js"></script>
+    <script src="js/modules/RoomManager.js"></script>
+    <script src="js/modules/BulletManager.js"></script>
+    <script src="js/modules/ParticleManager.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/characterSelect.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

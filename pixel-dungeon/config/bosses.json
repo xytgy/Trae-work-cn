@@ -1,0 +1,103 @@
+{
+  "boss": {
+    "size": 32,
+    "health": 20,
+    "speed": 1,
+    "damage": 2,
+    "phase1": {
+      "name": "正常状态",
+      "healthThreshold": 0.5,
+      "attack": "spreadshot",
+      "attackCooldown": 3000,
+      "bulletCount": 5,
+      "bulletSpeed": 5
+    },
+    "phase2": {
+      "name": "狂暴状态",
+      "healthThreshold": 0.25,
+      "speedMultiplier": 1.5,
+      "summonInterval": 5000,
+      "summonCount": 2,
+      "color": "#ff1744",
+      "chargeCooldown": 8000,
+      "chargeWarning": 800,
+      "chargeDuration": 500,
+      "chargeSpeedMultiplier": 3,
+      "chargeDamageMultiplier": 2,
+      "chargeStunDuration": 1000
+    },
+    "phase3": {
+      "name": "最终状态",
+      "laserWidth": 40,
+      "laserDuration": 2000,
+      "laserInterval": 8000,
+      "laserWarning": 500,
+      "damagePerTick": 1,
+      "color": "#ffff00",
+      "healThreshold": 3,
+      "healAmount": 2,
+      "healChargeTime": 3000,
+      "healCooldown": 15000,
+      "healDamageThreshold": 3,
+      "spreadshotCooldown": 4000,
+      "summonInterval": 7000
+    },
+    "dodge": {
+      "probability": 0.4,
+      "speedMultiplier": 2,
+      "duration": 300,
+      "cooldown": 2000,
+      "tiltAngle": 0.3
+    },
+    "summonPosition": {
+      "behindPlayer": 0.5,
+      "sidePlayer": 0.3,
+      "nearBoss": 0.2,
+      "effectDuration": 500,
+      "fadeInDuration": 300
+    }
+  },
+  "skeletonKing": {
+    "name": "骷髅王",
+    "size": 48,
+    "health": 30,
+    "speed": 1.2,
+    "damage": 2,
+    "color": "#f5f5dc",
+    "armorColor": "#8b0000",
+    "crownColor": "#ffd700",
+    "eyeColor": "#00ff00",
+    "phase1": {
+      "name": "第一阶段",
+      "healthThreshold": 0.66,
+      "attackCooldown": 2000,
+      "summonInterval": 8000,
+      "summonCount": 2,
+      "attackRange": 60,
+      "swingDamage": 2
+    },
+    "phase2": {
+      "name": "第二阶段",
+      "healthThreshold": 0.33,
+      "attackCooldown": 1500,
+      "boneSpearSpeed": 6,
+      "boneSpearDamage": 2,
+      "summonInterval": 6000,
+      "summonCount": 3,
+      "speedMultiplier": 1.2
+    },
+    "phase3": {
+      "name": "第三阶段",
+      "healthThreshold": 0,
+      "attackCooldown": 1000,
+      "deathRainInterval": 5000,
+      "deathRainCount": 8,
+      "deathRainDamage": 1,
+      "deathRainWarning": 800,
+      "speedMultiplier": 1.5,
+      "damageMultiplier": 1.5,
+      "summonInterval": 5000,
+      "summonCount": 4
+    }
+  }
+}

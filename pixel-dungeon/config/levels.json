@@ -1,0 +1,14 @@
+{
+  "count": 5,
+  "roomWidth": 800,
+  "roomHeight": 600,
+  "wallThickness": 40,
+  "doorSize": 60,
+  "enemies": [
+    { "slime": 2, "bat": 0, "ghost": 0 },
+    { "slime": 2, "bat": 1, "ghost": 0 },
+    { "slime": 1, "bat": 2, "ghost": 1 },
+    { "slime": 2, "bat": 2, "ghost": 2 },
+    { "boss": true }
+  ]
+}
