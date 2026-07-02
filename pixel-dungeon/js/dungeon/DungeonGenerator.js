@@ -198,10 +198,11 @@ class DungeonGenerator {
             }
         }
 
-        const portalCount = Math.min(level.portalRooms.length, 2);
+        const portalCount = Math.min(battleRooms.length, 2);
         for (let i = 0; i < portalCount; i++) {
-            if (battleRooms[i]) {
-                level.addPortalRoom(battleRooms[i]);
+            const portalIndex = battleRooms.length - 1 - i;
+            if (battleRooms[portalIndex]) {
+                level.addPortalRoom(battleRooms[portalIndex]);
             }
         }
     }

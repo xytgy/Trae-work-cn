@@ -16,7 +16,7 @@ class ParticleManager {
         const gl = this.gameLogic;
         gl.frameBulletTrails = 0;
 
-        const MAX_PARTICLES = 500;
+        const MAX_PARTICLES = PARTICLES.MAX_COUNT;
 
         for (let i = gl.particles.length - 1; i >= 0; i--) {
             const particle = gl.particles[i];

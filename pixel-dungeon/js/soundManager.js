@@ -1,7 +1,7 @@
 /**
  * 增强版音效管理器
- * 使用 Web Audio API 合成各种音效，无需外部音频文件
- * 包含20+种音效和背景音乐
+ * 支持预加载真实音效文件 + 振荡器fallback
+ * 多层合成BGM无限循环
  */
 
 class SoundManager {
@@ -37,6 +37,38 @@ class SoundManager {
         
         // 音效缓存
         this.soundCache = {};
+        
+        // 音效文件映射
+        this.soundFiles = {
+            'pistol': 'assets/audio/sfx/pistol.wav',
+            'shotgun': 'assets/audio/sfx/shotgun.wav',
+            'lightning': 'assets/audio/sfx/lightning.wav',
+            'grenade': 'assets/audio/sfx/grenade.wav',
+            'flame': 'assets/audio/sfx/flame.wav',
+            'freeze': 'assets/audio/sfx/freeze.wav',
+            'homing': 'assets/audio/sfx/homing.wav',
+            'hit': 'assets/audio/sfx/hit.wav',
+            'hurt': 'assets/audio/sfx/hurt.wav',
+            'kill': 'assets/audio/sfx/kill.wav',
+            'pickup': 'assets/audio/sfx/pickup.wav',
+            'portal': 'assets/audio/sfx/portal.wav',
+            'chest': 'assets/audio/sfx/chest.wav',
+            'boss_appear': 'assets/audio/sfx/boss_appear.wav',
+            'boss_attack': 'assets/audio/sfx/boss_attack.wav',
+            'victory': 'assets/audio/sfx/victory.wav',
+            'defeat': 'assets/audio/sfx/defeat.wav',
+            'click': 'assets/audio/sfx/click.wav',
+            'switch': 'assets/audio/sfx/switch.wav',
+            'levelup': 'assets/audio/sfx/levelup.wav',
+            'heal': 'assets/audio/sfx/heal.wav',
+            'shield': 'assets/audio/sfx/shield.wav'
+        };
+        
+        // 已加载的Audio元素缓存
+        this.audioCache = {};
+        
+        // 预加载完成标记
+        this.preloaded = false;
     }
     
     /**
@@ -68,6 +100,12 @@ class SoundManager {
             
             this.initialized = true;
             console.log('音效系统初始化完成');
+            
+            // 预加载音效文件（异步，不阻塞初始化）
+            this.preloadSounds().catch(err => {
+                console.warn('音效预加载失败:', err);
+            });
+            
             return true;
         } catch (e) {
             console.warn('音效系统初始化失败:', e);
@@ -85,6 +123,52 @@ class SoundManager {
     }
     
     /**
+     * 预加载所有音效文件
+     * @returns {Promise} 预加载完成的Promise
+     */
+    preloadSounds() {
+        return new Promise((resolve) => {
+            const entries = Object.entries(this.soundFiles);
+            let loaded = 0;
+            const total = entries.length;
+            
+            if (total === 0) {
+                this.preloaded = true;
+                resolve();
+                return;
+            }
+            
+            const checkComplete = () => {
+                loaded++;
+                if (loaded >= total) {
+                    this.preloaded = true;
+                    console.log(`音效预加载完成: ${total}个文件`);
+                    resolve();
+                }
+            };
+            
+            entries.forEach(([name, path]) => {
+                const audio = new Audio();
+                audio.preload = 'auto';
+                audio.volume = 1.0;
+                
+                audio.oncanplaythrough = () => {
+                    this.audioCache[name] = audio;
+                    checkComplete();
+                };
+                
+                audio.onerror = () => {
+                    console.warn(`音效加载失败: ${name} (${path})，将使用合成音效`);
+                    this.audioCache[name] = null;
+                    checkComplete();
+                };
+                
+                audio.src = path;
+            });
+        });
+    }
+    
+    /**
      * 播放音效
      * @param {string} soundName - 音效名称
      */
@@ -92,615 +176,692 @@ class SoundManager {
         if (!this.initialized) return;
         this.ensureRunning();
         
-        switch (soundName) {
-            case SOUND_EFFECTS.PISTOL:
-                this.playPistol();
-                break;
-            case SOUND_EFFECTS.SHOTGUN:
-                this.playShotgun();
-                break;
-            case SOUND_EFFECTS.LASER:
-                this.playLaser();
-                break;
-            case SOUND_EFFECTS.EXPLOSION:
-                this.playExplosion();
-                break;
-            case SOUND_EFFECTS.HIT:
-                this.playHit();
-                break;
-            case SOUND_EFFECTS.COIN:
-                this.playCoin();
-                break;
-            case SOUND_EFFECTS.PICKUP:
-                this.playPickup();
-                break;
-            case SOUND_EFFECTS.HURT:
-                this.playHurt();
-                break;
-            case SOUND_EFFECTS.DEATH:
-                this.playDeath();
-                break;
-            case SOUND_EFFECTS.DASH:
-                this.playDash();
-                break;
-            case SOUND_EFFECTS.SHIELD:
-                this.playShield();
-                break;
-            case SOUND_EFFECTS.HEAL:
-                this.playHeal();
-                break;
-            case SOUND_EFFECTS.LEVELUP:
-                this.playLevelUp();
-                break;
-            case SOUND_EFFECTS.CLICK:
-                if (this.uiSoundEnabled) this.playClick();
-                break;
-            case SOUND_EFFECTS.SWITCH:
-                if (this.uiSoundEnabled) this.playSwitch();
-                break;
-            case SOUND_EFFECTS.CHEST:
-                this.playChest();
-                break;
-            case SOUND_EFFECTS.PORTAL:
-                this.playPortal();
-                break;
-            case SOUND_EFFECTS.BOSS:
-                this.playBoss();
-                break;
-            case SOUND_EFFECTS.VICTORY:
-                this.playVictory();
-                break;
-            case SOUND_EFFECTS.DEFEAT:
-                this.playDefeat();
-                break;
-            default:
-                console.warn('未知音效:', soundName);
+        // 尝试播放预加载的音频文件
+        if (this.preloaded && this.audioCache[soundName]) {
+            this.playFromCache(soundName);
+            return;
+        }
+        
+        // Fallback: 使用振荡器合成
+        this.playSynthesized(soundName);
+    }
+    
+    /**
+     * 从缓存播放音频
+     * @param {string} soundName - 音效名称
+     */
+    playFromCache(soundName) {
+        const audio = this.audioCache[soundName];
+        if (!audio) return;
+        
+        const clone = audio.cloneNode(true);
+        clone.volume = this.sfxVolume;
+        
+        clone.onended = () => {
+            clone.src = '';
+        };
+        
+        clone.play().catch(e => {
+            console.warn('音效播放失败:', e);
+        });
+    }
+    
+    /**
+     * 使用振荡器合成音效（fallback）
+     * @param {string} soundName - 音效名称
+     */
+    playSynthesized(soundName) {
+        // 映射SOUND_EFFECTS常量到合成方法
+        const synthMap = {
+            [SOUND_EFFECTS.PISTOL]: 'synthPistol',
+            [SOUND_EFFECTS.SHOTGUN]: 'synthShotgun',
+            [SOUND_EFFECTS.LASER]: 'synthLaser',
+            [SOUND_EFFECTS.EXPLOSION]: 'synthExplosion',
+            [SOUND_EFFECTS.FLAME]: 'synthFlame',
+            [SOUND_EFFECTS.HOMING]: 'synthHoming',
+            [SOUND_EFFECTS.FREEZE]: 'synthFreeze',
+            [SOUND_EFFECTS.HIT]: 'synthHit',
+            [SOUND_EFFECTS.COIN]: 'synthCoin',
+            [SOUND_EFFECTS.KILL]: 'synthKill',
+            [SOUND_EFFECTS.PICKUP]: 'synthPickup',
+            [SOUND_EFFECTS.HURT]: 'synthHurt',
+            [SOUND_EFFECTS.DEATH]: 'synthDeath',
+            [SOUND_EFFECTS.DASH]: 'synthDash',
+            [SOUND_EFFECTS.SHIELD]: 'synthShield',
+            [SOUND_EFFECTS.HEAL]: 'synthHeal',
+            [SOUND_EFFECTS.LEVELUP]: 'synthLevelUp',
+            [SOUND_EFFECTS.CLICK]: 'synthClick',
+            [SOUND_EFFECTS.SWITCH]: 'synthSwitch',
+            [SOUND_EFFECTS.CHEST]: 'synthChest',
+            [SOUND_EFFECTS.PORTAL]: 'synthPortal',
+            [SOUND_EFFECTS.BOSS]: 'synthBoss',
+            [SOUND_EFFECTS.BOSS_ATTACK]: 'synthBossAttack',
+            [SOUND_EFFECTS.VICTORY]: 'synthVictory',
+            [SOUND_EFFECTS.DEFEAT]: 'synthDefeat'
+        };
+        
+        const method = synthMap[soundName];
+        if (method && typeof this[method] === 'function') {
+            if (soundName === SOUND_EFFECTS.CLICK || soundName === SOUND_EFFECTS.SWITCH) {
+                if (!this.uiSoundEnabled) return;
+            }
+            this[method]();
         }
     }
     
-    // ==================== 具体音效实现 ====================
+    // ==================== 振荡器合成音效（fallback） ====================
     
-    /**
-     * 手枪射击 - "biu"
-     */
-    playPistol() {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        
-        osc.connect(gain);
-        gain.connect(this.sfxGain);
-        
+    synthPistol() {
         const now = this.ctx.currentTime;
-        osc.type = 'square';
+        const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.type = 'triangle';
         osc.frequency.setValueAtTime(800, now);
         osc.frequency.exponentialRampToValueAtTime(200, now + 0.1);
-        gain.gain.setValueAtTime(0.3, now);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(2000, now);
+        filter.frequency.exponentialRampToValueAtTime(500, now + 0.1);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.2, now + 0.01);
+        gain.gain.linearRampToValueAtTime(0.15, now + 0.03);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-        
         osc.start(now);
         osc.stop(now + 0.1);
+        this.playNoise(0.08, 0.08);
     }
     
-    /**
-     * 散弹枪射击 - "bang"
-     */
-    playShotgun() {
+    synthShotgun() {
         const now = this.ctx.currentTime;
-        
-        // 主枪声
         const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
         const gain = this.ctx.createGain();
-        osc.connect(gain);
+        osc.connect(filter);
+        filter.connect(gain);
         gain.connect(this.sfxGain);
-        
-        osc.type = 'sawtooth';
+        osc.type = 'triangle';
         osc.frequency.setValueAtTime(200, now);
         osc.frequency.exponentialRampToValueAtTime(50, now + 0.2);
-        gain.gain.setValueAtTime(0.4, now);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1000, now);
+        filter.frequency.exponentialRampToValueAtTime(200, now + 0.2);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.25, now + 0.02);
+        gain.gain.linearRampToValueAtTime(0.2, now + 0.05);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
         osc.start(now);
         osc.stop(now + 0.2);
-        
-        // 添加白噪声音效
-        this.playNoise(0.15, 0.2);
+        this.playNoise(0.12, 0.18);
     }
     
-    /**
-     * 激光射击 - "zap"
-     */
-    playLaser() {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        
-        osc.connect(gain);
-        gain.connect(this.sfxGain);
-        
+    synthLaser() {
         const now = this.ctx.currentTime;
-        osc.type = 'sawtooth';
+        const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.type = 'sine';
         osc.frequency.setValueAtTime(1500, now);
         osc.frequency.exponentialRampToValueAtTime(500, now + 0.15);
-        gain.gain.setValueAtTime(0.2, now);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(4000, now);
+        filter.frequency.exponentialRampToValueAtTime(1500, now + 0.15);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.18, now + 0.01);
+        gain.gain.linearRampToValueAtTime(0.15, now + 0.03);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-        
         osc.start(now);
         osc.stop(now + 0.15);
+        this.playNoise(0.05, 0.12);
     }
     
-    /**
-     * 爆炸 - "boom"
-     */
-    playExplosion() {
+    synthExplosion() {
         const now = this.ctx.currentTime;
-        
-        // 低频爆炸
         const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
         const gain = this.ctx.createGain();
-        osc.connect(gain);
+        osc.connect(filter);
+        filter.connect(gain);
         gain.connect(this.sfxGain);
-        
-        osc.type = 'sawtooth';
+        osc.type = 'triangle';
         osc.frequency.setValueAtTime(100, now);
         osc.frequency.exponentialRampToValueAtTime(30, now + 0.4);
-        gain.gain.setValueAtTime(0.5, now);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(800, now);
+        filter.frequency.exponentialRampToValueAtTime(100, now + 0.4);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.25, now + 0.03);
+        gain.gain.linearRampToValueAtTime(0.2, now + 0.1);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
         osc.start(now);
         osc.stop(now + 0.4);
-        
-        // 白噪声
-        this.playNoise(0.3, 0.4);
+        this.playNoise(0.2, 0.35);
     }
     
-    /**
-     * 击中 - "hit"
-     */
-    playHit() {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        
-        osc.connect(gain);
-        gain.connect(this.sfxGain);
-        
+    synthHit() {
         const now = this.ctx.currentTime;
-        osc.type = 'square';
+        const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.type = 'triangle';
         osc.frequency.setValueAtTime(300, now);
         osc.frequency.exponentialRampToValueAtTime(100, now + 0.08);
-        gain.gain.setValueAtTime(0.25, now);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1500, now);
+        filter.frequency.exponentialRampToValueAtTime(300, now + 0.08);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.2, now + 0.01);
+        gain.gain.linearRampToValueAtTime(0.15, now + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-        
         osc.start(now);
         osc.stop(now + 0.08);
+        this.playNoise(0.06, 0.06);
     }
     
-    /**
-     * 拾取金币 - "ding"
-     */
-    playCoin() {
+    synthCoin() {
         const now = this.ctx.currentTime;
-        
-        // 高音
         const osc1 = this.ctx.createOscillator();
+        const filter1 = this.ctx.createBiquadFilter();
         const gain1 = this.ctx.createGain();
-        osc1.connect(gain1);
+        osc1.connect(filter1);
+        filter1.connect(gain1);
         gain1.connect(this.sfxGain);
-        
         osc1.type = 'sine';
         osc1.frequency.setValueAtTime(1200, now);
         osc1.frequency.setValueAtTime(1800, now + 0.05);
-        gain1.gain.setValueAtTime(0.2, now);
+        filter1.type = 'lowpass';
+        filter1.frequency.setValueAtTime(5000, now);
+        gain1.gain.setValueAtTime(0, now);
+        gain1.gain.linearRampToValueAtTime(0.18, now + 0.01);
+        gain1.gain.linearRampToValueAtTime(0.15, now + 0.03);
         gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
         osc1.start(now);
         osc1.stop(now + 0.15);
-        
-        // 泛音
         const osc2 = this.ctx.createOscillator();
+        const filter2 = this.ctx.createBiquadFilter();
         const gain2 = this.ctx.createGain();
-        osc2.connect(gain2);
+        osc2.connect(filter2);
+        filter2.connect(gain2);
         gain2.connect(this.sfxGain);
-        
         osc2.type = 'sine';
         osc2.frequency.setValueAtTime(2400, now + 0.02);
-        gain2.gain.setValueAtTime(0.1, now + 0.02);
+        filter2.type = 'lowpass';
+        filter2.frequency.setValueAtTime(6000, now);
+        gain2.gain.setValueAtTime(0, now + 0.02);
+        gain2.gain.linearRampToValueAtTime(0.1, now + 0.03);
         gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
         osc2.start(now + 0.02);
         osc2.stop(now + 0.2);
     }
     
-    /**
-     * 拾取道具 - "chime"
-     */
-    playPickup() {
+    synthPickup() {
         const now = this.ctx.currentTime;
-        const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
-        
+        const notes = [523.25, 659.25, 783.99];
         notes.forEach((freq, i) => {
             const osc = this.ctx.createOscillator();
+            const filter = this.ctx.createBiquadFilter();
             const gain = this.ctx.createGain();
-            
-            osc.connect(gain);
+            osc.connect(filter);
+            filter.connect(gain);
             gain.connect(this.sfxGain);
-            
             osc.type = 'sine';
             osc.frequency.value = freq;
-            
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(6000, now);
             const startTime = now + i * 0.08;
             gain.gain.setValueAtTime(0, startTime);
-            gain.gain.linearRampToValueAtTime(0.25, startTime + 0.02);
+            gain.gain.linearRampToValueAtTime(0.18, startTime + 0.02);
+            gain.gain.linearRampToValueAtTime(0.15, startTime + 0.05);
             gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
-            
             osc.start(startTime);
             osc.stop(startTime + 0.3);
         });
     }
     
-    /**
-     * 受伤 - "ouch"
-     */
-    playHurt() {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        
-        osc.connect(gain);
-        gain.connect(this.sfxGain);
-        
+    synthHurt() {
         const now = this.ctx.currentTime;
-        osc.type = 'sawtooth';
+        const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.type = 'triangle';
         osc.frequency.setValueAtTime(400, now);
         osc.frequency.exponentialRampToValueAtTime(100, now + 0.25);
-        gain.gain.setValueAtTime(0.3, now);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(2000, now);
+        filter.frequency.exponentialRampToValueAtTime(500, now + 0.25);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.2, now + 0.03);
+        gain.gain.linearRampToValueAtTime(0.15, now + 0.08);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-        
         osc.start(now);
         osc.stop(now + 0.25);
     }
     
-    /**
-     * 死亡 - "die"
-     */
-    playDeath() {
+    synthDeath() {
         const now = this.ctx.currentTime;
-        
-        // 下降的音调
         const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
         const gain = this.ctx.createGain();
-        osc.connect(gain);
+        osc.connect(filter);
+        filter.connect(gain);
         gain.connect(this.sfxGain);
-        
-        osc.type = 'sawtooth';
+        osc.type = 'triangle';
         osc.frequency.setValueAtTime(300, now);
         osc.frequency.exponentialRampToValueAtTime(50, now + 0.8);
-        gain.gain.setValueAtTime(0.35, now);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1500, now);
+        filter.frequency.exponentialRampToValueAtTime(200, now + 0.8);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.22, now + 0.05);
+        gain.gain.linearRampToValueAtTime(0.18, now + 0.2);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
         osc.start(now);
         osc.stop(now + 0.8);
     }
     
-    /**
-     * 冲刺/跳跃 - "whoosh"
-     */
-    playDash() {
+    synthDash() {
         const now = this.ctx.currentTime;
-        
-        // 使用带通滤波的噪声模拟风声
         const bufferSize = this.ctx.sampleRate * 0.2;
         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
-        
         for (let i = 0; i < bufferSize; i++) {
             data[i] = Math.random() * 2 - 1;
         }
-        
         const noise = this.ctx.createBufferSource();
         noise.buffer = buffer;
-        
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'bandpass';
         filter.frequency.setValueAtTime(1000, now);
         filter.frequency.exponentialRampToValueAtTime(3000, now + 0.2);
         filter.Q.value = 1;
-        
+        const lowpass = this.ctx.createBiquadFilter();
+        lowpass.type = 'lowpass';
+        lowpass.frequency.setValueAtTime(4000, now);
         const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.18, now + 0.02);
+        gain.gain.linearRampToValueAtTime(0.15, now + 0.05);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-        
         noise.connect(filter);
-        filter.connect(gain);
+        filter.connect(lowpass);
+        lowpass.connect(gain);
         gain.connect(this.sfxGain);
-        
         noise.start(now);
         noise.stop(now + 0.2);
     }
     
-    /**
-     * 护盾激活 - "shield"
-     */
-    playShield() {
+    synthShield() {
         const now = this.ctx.currentTime;
-        
-        // 上升的合成音
         const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
         const gain = this.ctx.createGain();
-        osc.connect(gain);
+        osc.connect(filter);
+        filter.connect(gain);
         gain.connect(this.sfxGain);
-        
         osc.type = 'sine';
         osc.frequency.setValueAtTime(300, now);
         osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(3000, now);
         gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.3, now + 0.05);
+        gain.gain.linearRampToValueAtTime(0.2, now + 0.03);
+        gain.gain.linearRampToValueAtTime(0.18, now + 0.1);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
         osc.start(now);
         osc.stop(now + 0.3);
-        
-        // 泛音
-        const osc2 = this.ctx.createOscillator();
-        const gain2 = this.ctx.createGain();
-        osc2.connect(gain2);
-        gain2.connect(this.sfxGain);
-        
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(600, now + 0.05);
-        osc2.frequency.exponentialRampToValueAtTime(1200, now + 0.2);
-        gain2.gain.setValueAtTime(0.15, now + 0.05);
-        gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-        osc2.start(now + 0.05);
-        osc2.stop(now + 0.35);
     }
     
-    /**
-     * 治疗 - "heal"
-     */
-    playHeal() {
+    synthHeal() {
         const now = this.ctx.currentTime;
-        
-        // 上升琶音
-        const notes = [440, 554.37, 659.25, 880]; // A4, C#5, E5, A5
-        
+        const notes = [440, 554.37, 659.25, 880];
         notes.forEach((freq, i) => {
             const osc = this.ctx.createOscillator();
+            const filter = this.ctx.createBiquadFilter();
             const gain = this.ctx.createGain();
-            
-            osc.connect(gain);
+            osc.connect(filter);
+            filter.connect(gain);
             gain.connect(this.sfxGain);
-            
             osc.type = 'sine';
             osc.frequency.value = freq;
-            
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(6000, now);
             const startTime = now + i * 0.08;
             gain.gain.setValueAtTime(0, startTime);
-            gain.gain.linearRampToValueAtTime(0.2, startTime + 0.03);
+            gain.gain.linearRampToValueAtTime(0.15, startTime + 0.03);
+            gain.gain.linearRampToValueAtTime(0.12, startTime + 0.08);
             gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.25);
-            
             osc.start(startTime);
             osc.stop(startTime + 0.25);
         });
     }
     
-    /**
-     * 升级 - "levelup"
-     */
-    playLevelUp() {
+    synthLevelUp() {
         const now = this.ctx.currentTime;
-        
-        // 上升音阶
-        const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51]; // C5, E5, G5, C6, E6
-        
+        const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
         notes.forEach((freq, i) => {
             const osc = this.ctx.createOscillator();
+            const filter = this.ctx.createBiquadFilter();
             const gain = this.ctx.createGain();
-            
-            osc.connect(gain);
+            osc.connect(filter);
+            filter.connect(gain);
             gain.connect(this.sfxGain);
-            
-            osc.type = 'square';
+            osc.type = 'triangle';
             osc.frequency.value = freq;
-            
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(5000, now);
             const startTime = now + i * 0.1;
-            gain.gain.setValueAtTime(0.15, startTime);
+            gain.gain.setValueAtTime(0, startTime);
+            gain.gain.linearRampToValueAtTime(0.15, startTime + 0.02);
+            gain.gain.linearRampToValueAtTime(0.12, startTime + 0.05);
             gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
-            
             osc.start(startTime);
             osc.stop(startTime + 0.2);
         });
     }
     
-    /**
-     * 按钮点击 - "click"
-     */
-    playClick() {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        
-        osc.connect(gain);
-        gain.connect(this.sfxGain);
-        
+    synthClick() {
         const now = this.ctx.currentTime;
-        osc.type = 'square';
+        const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.type = 'triangle';
         osc.frequency.setValueAtTime(600, now);
         osc.frequency.setValueAtTime(800, now + 0.02);
-        gain.gain.setValueAtTime(0.15, now);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(3000, now);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.12, now + 0.01);
+        gain.gain.linearRampToValueAtTime(0.1, now + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-        
         osc.start(now);
         osc.stop(now + 0.08);
     }
     
-    /**
-     * 菜单切换 - "switch"
-     */
-    playSwitch() {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        
-        osc.connect(gain);
-        gain.connect(this.sfxGain);
-        
+    synthSwitch() {
         const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
         osc.type = 'sine';
         osc.frequency.setValueAtTime(400, now);
         osc.frequency.setValueAtTime(600, now + 0.05);
-        gain.gain.setValueAtTime(0.2, now);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(3000, now);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.15, now + 0.02);
+        gain.gain.linearRampToValueAtTime(0.12, now + 0.04);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-        
         osc.start(now);
         osc.stop(now + 0.1);
     }
     
-    /**
-     * 宝箱打开 - "chest"
-     */
-    playChest() {
+    synthChest() {
         const now = this.ctx.currentTime;
-        
-        // 解锁声
         const osc1 = this.ctx.createOscillator();
+        const filter1 = this.ctx.createBiquadFilter();
         const gain1 = this.ctx.createGain();
-        osc1.connect(gain1);
+        osc1.connect(filter1);
+        filter1.connect(gain1);
         gain1.connect(this.sfxGain);
-        
-        osc1.type = 'square';
+        osc1.type = 'triangle';
         osc1.frequency.setValueAtTime(200, now);
         osc1.frequency.setValueAtTime(300, now + 0.1);
-        gain1.gain.setValueAtTime(0.2, now);
+        filter1.type = 'lowpass';
+        filter1.frequency.setValueAtTime(1500, now);
+        gain1.gain.setValueAtTime(0, now);
+        gain1.gain.linearRampToValueAtTime(0.15, now + 0.02);
+        gain1.gain.linearRampToValueAtTime(0.12, now + 0.08);
         gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
         osc1.start(now);
         osc1.stop(now + 0.15);
-        
-        // 打开的光芒声
         const osc2 = this.ctx.createOscillator();
+        const filter2 = this.ctx.createBiquadFilter();
         const gain2 = this.ctx.createGain();
-        osc2.connect(gain2);
+        osc2.connect(filter2);
+        filter2.connect(gain2);
         gain2.connect(this.sfxGain);
-        
         osc2.type = 'sine';
         osc2.frequency.setValueAtTime(600, now + 0.15);
         osc2.frequency.exponentialRampToValueAtTime(1200, now + 0.35);
+        filter2.type = 'lowpass';
+        filter2.frequency.setValueAtTime(4000, now);
         gain2.gain.setValueAtTime(0, now + 0.15);
-        gain2.gain.linearRampToValueAtTime(0.25, now + 0.2);
+        gain2.gain.linearRampToValueAtTime(0.2, now + 0.2);
+        gain2.gain.linearRampToValueAtTime(0.18, now + 0.3);
         gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
         osc2.start(now + 0.15);
         osc2.stop(now + 0.5);
     }
     
-    /**
-     * 传送门 - "portal"
-     */
-    playPortal() {
+    synthPortal() {
         const now = this.ctx.currentTime;
-        
-        // 持续的嗡鸣声
         const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
         const gain = this.ctx.createGain();
-        osc.connect(gain);
+        osc.connect(filter);
+        filter.connect(gain);
         gain.connect(this.sfxGain);
-        
         osc.type = 'sine';
         osc.frequency.setValueAtTime(200, now);
         osc.frequency.linearRampToValueAtTime(400, now + 0.5);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(2000, now);
+        filter.frequency.linearRampToValueAtTime(3000, now + 0.5);
         gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.2, now + 0.1);
+        gain.gain.linearRampToValueAtTime(0.18, now + 0.1);
+        gain.gain.linearRampToValueAtTime(0.15, now + 0.3);
         gain.gain.linearRampToValueAtTime(0, now + 0.5);
         osc.start(now);
         osc.stop(now + 0.5);
-        
-        // 泛音
-        const osc2 = this.ctx.createOscillator();
-        const gain2 = this.ctx.createGain();
-        osc2.connect(gain2);
-        gain2.connect(this.sfxGain);
-        
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(400, now + 0.1);
-        osc2.frequency.linearRampToValueAtTime(800, now + 0.4);
-        gain2.gain.setValueAtTime(0.1, now + 0.1);
-        gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-        osc2.start(now + 0.1);
-        osc2.stop(now + 0.5);
     }
     
-    /**
-     * Boss出场 - "boss"
-     */
-    playBoss() {
+    synthBoss() {
         const now = this.ctx.currentTime;
-        
-        // 低沉的警告音
         const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
         const gain = this.ctx.createGain();
-        osc.connect(gain);
+        osc.connect(filter);
+        filter.connect(gain);
         gain.connect(this.sfxGain);
-        
-        osc.type = 'sawtooth';
+        osc.type = 'triangle';
         osc.frequency.setValueAtTime(80, now);
         osc.frequency.setValueAtTime(100, now + 0.3);
         osc.frequency.setValueAtTime(80, now + 0.6);
-        gain.gain.setValueAtTime(0.4, now);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(600, now);
+        filter.frequency.exponentialRampToValueAtTime(200, now + 0.8);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.25, now + 0.05);
+        gain.gain.linearRampToValueAtTime(0.2, now + 0.2);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
         osc.start(now);
         osc.stop(now + 0.8);
+        this.playNoise(0.1, 0.6);
     }
     
-    /**
-     * 胜利 - "victory"
-     */
-    playVictory() {
+    synthFlame() {
         const now = this.ctx.currentTime;
-        
-        // 胜利旋律：C大调上行
+        const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.3);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(800, now);
+        filter.frequency.exponentialRampToValueAtTime(300, now + 0.3);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.2, now + 0.02);
+        gain.gain.linearRampToValueAtTime(0.18, now + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+        this.playNoise(0.15, 0.25);
+    }
+    
+    synthHoming() {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(200, now + 0.4);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1500, now);
+        filter.frequency.exponentialRampToValueAtTime(500, now + 0.4);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.18, now + 0.03);
+        gain.gain.linearRampToValueAtTime(0.15, now + 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+        osc.start(now);
+        osc.stop(now + 0.4);
+        this.playNoise(0.08, 0.3);
+    }
+    
+    synthKill() {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(200, now);
+        osc.frequency.exponentialRampToValueAtTime(80, now + 0.15);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1000, now);
+        filter.frequency.exponentialRampToValueAtTime(300, now + 0.15);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.22, now + 0.02);
+        gain.gain.linearRampToValueAtTime(0.18, now + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc.start(now);
+        osc.stop(now + 0.15);
+    }
+    
+    synthBossAttack() {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(100, now);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.5);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(600, now);
+        filter.frequency.exponentialRampToValueAtTime(150, now + 0.5);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.25, now + 0.05);
+        gain.gain.linearRampToValueAtTime(0.2, now + 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+        osc.start(now);
+        osc.stop(now + 0.5);
+        this.playNoise(0.12, 0.4);
+    }
+    
+    synthFreeze() {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(200, now + 0.3);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(2500, now);
+        filter.frequency.exponentialRampToValueAtTime(800, now + 0.3);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.18, now + 0.02);
+        gain.gain.linearRampToValueAtTime(0.15, now + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+    }
+    
+    synthVictory() {
+        const now = this.ctx.currentTime;
         const melody = [
-            { note: 523.25, time: 0 },      // C5
-            { note: 659.25, time: 0.15 },   // E5
-            { note: 783.99, time: 0.3 },    // G5
-            { note: 1046.50, time: 0.45 }   // C6
+            { note: 523.25, time: 0 },
+            { note: 659.25, time: 0.15 },
+            { note: 783.99, time: 0.3 },
+            { note: 1046.50, time: 0.45 }
         ];
-        
         melody.forEach(({ note, time }) => {
             const osc = this.ctx.createOscillator();
+            const filter = this.ctx.createBiquadFilter();
             const gain = this.ctx.createGain();
-            
-            osc.connect(gain);
+            osc.connect(filter);
+            filter.connect(gain);
             gain.connect(this.sfxGain);
-            
             osc.type = 'sine';
             osc.frequency.value = note;
-            
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(6000, now);
             const startTime = now + time;
             gain.gain.setValueAtTime(0, startTime);
-            gain.gain.linearRampToValueAtTime(0.3, startTime + 0.05);
+            gain.gain.linearRampToValueAtTime(0.18, startTime + 0.05);
+            gain.gain.linearRampToValueAtTime(0.15, startTime + 0.15);
             gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.5);
-            
             osc.start(startTime);
             osc.stop(startTime + 0.5);
         });
     }
     
-    /**
-     * 失败 - "defeat"
-     */
-    playDefeat() {
+    synthDefeat() {
         const now = this.ctx.currentTime;
-        
-        // 下行的悲伤旋律
         const melody = [
-            { note: 440, time: 0 },         // A4
-            { note: 392, time: 0.2 },       // G4
-            { note: 349.23, time: 0.4 },    // F4
-            { note: 261.63, time: 0.6 }     // C4
+            { note: 440, time: 0 },
+            { note: 392, time: 0.2 },
+            { note: 349.23, time: 0.4 },
+            { note: 261.63, time: 0.6 }
         ];
-        
         melody.forEach(({ note, time }) => {
             const osc = this.ctx.createOscillator();
+            const filter = this.ctx.createBiquadFilter();
             const gain = this.ctx.createGain();
-            
-            osc.connect(gain);
+            osc.connect(filter);
+            filter.connect(gain);
             gain.connect(this.sfxGain);
-            
-            osc.type = 'sawtooth';
+            osc.type = 'triangle';
             osc.frequency.value = note;
-            
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(2000, now);
             const startTime = now + time;
-            gain.gain.setValueAtTime(0.25, startTime);
+            gain.gain.setValueAtTime(0, startTime);
+            gain.gain.linearRampToValueAtTime(0.18, startTime + 0.03);
+            gain.gain.linearRampToValueAtTime(0.15, startTime + 0.1);
             gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.4);
-            
             osc.start(startTime);
             osc.stop(startTime + 0.4);
         });
@@ -708,38 +869,27 @@ class SoundManager {
     
     // ==================== 辅助方法 ====================
     
-    /**
-     * 播放白噪声
-     * @param {number} volume - 音量
-     * @param {number} duration - 持续时间（秒）
-     */
     playNoise(volume, duration) {
         const bufferSize = this.ctx.sampleRate * duration;
         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
-        
         for (let i = 0; i < bufferSize; i++) {
             data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
         }
-        
         const noise = this.ctx.createBufferSource();
         noise.buffer = buffer;
-        
         const gain = this.ctx.createGain();
         gain.gain.value = volume;
-        
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
         filter.frequency.value = 1000;
-        
         noise.connect(filter);
         filter.connect(gain);
         gain.connect(this.sfxGain);
-        
         noise.start();
     }
     
-    // ==================== 背景音乐 ====================
+    // ==================== 背景音乐（多层合成，无限循环） ====================
     
     /**
      * 播放背景音乐
@@ -748,117 +898,226 @@ class SoundManager {
     playMusic(musicType = 'dungeon') {
         this.stopMusic();
         
-        const now = this.ctx.currentTime;
+        const musicConfigs = {
+            dungeon: { bpm: 100, layers: ['bass', 'melody', 'pad'] },
+            boss: { bpm: 150, layers: ['bass', 'melody', 'percussion', 'pad'] },
+            menu: { bpm: 80, layers: ['melody', 'pad'] },
+            victory: { bpm: 120, layers: ['melody', 'percussion'] }
+        };
         
-        switch (musicType) {
-            case 'dungeon':
-                this.playDungeonMusic(now);
-                break;
-            case 'boss':
-                this.playBossMusic(now);
-                break;
-            case 'menu':
-                this.playMenuMusic(now);
-                break;
-            case 'victory':
-                this.playVictoryMusic(now);
-                break;
-        }
-        
+        const config = musicConfigs[musicType] || musicConfigs.dungeon;
+        this.startProceduralBGM(musicType, config);
         this.currentMusic = musicType;
     }
     
     /**
-     * 地牢背景音乐（简单的循环旋律）
+     * 启动程序化BGM
      */
-    playDungeonMusic(startTime) {
-        const notes = [261.63, 293.66, 329.63, 349.23, 392, 349.23, 329.63, 293.66];
-        const noteDuration = 0.5;
+    startProceduralBGM(musicType, config) {
+        const beatDuration = 60 / config.bpm;
+        const barDuration = beatDuration * 4;
+        const musicData = this.getMusicData(musicType);
         
-        this.playLoopMusic(startTime, notes, noteDuration, 'triangle', 0.08);
-    }
-    
-    /**
-     * Boss战音乐（紧张急促）
-     */
-    playBossMusic(startTime) {
-        const notes = [220, 196, 220, 246.94, 220, 196, 174.61, 196];
-        const noteDuration = 0.25;
-        
-        this.playLoopMusic(startTime, notes, noteDuration, 'sawtooth', 0.06);
-    }
-    
-    /**
-     * 主菜单音乐（轻松的）
-     */
-    playMenuMusic(startTime) {
-        const notes = [392, 440, 493.88, 523.25, 493.88, 440, 392, 349.23];
-        const noteDuration = 0.4;
-        
-        this.playLoopMusic(startTime, notes, noteDuration, 'sine', 0.06);
-    }
-    
-    /**
-     * 胜利音乐
-     */
-    playVictoryMusic(startTime) {
-        const notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50];
-        const noteDuration = 0.3;
-        
-        notes.forEach((freq, i) => {
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            
-            osc.connect(gain);
-            gain.connect(this.musicGain);
-            
-            osc.type = 'sine';
-            osc.frequency.value = freq;
-            
-            const noteTime = startTime + i * noteDuration;
-            gain.gain.setValueAtTime(0, noteTime);
-            gain.gain.linearRampToValueAtTime(0.15, noteTime + 0.05);
-            gain.gain.exponentialRampToValueAtTime(0.01, noteTime + noteDuration * 1.5);
-            
-            osc.start(noteTime);
-            osc.stop(noteTime + noteDuration * 1.5);
-            
-            this.musicOscillators.push(osc);
+        config.layers.forEach(layerName => {
+            const layer = musicData[layerName];
+            if (!layer) return;
+            this.scheduleLayer(layerName, layer, beatDuration, barDuration);
         });
     }
     
     /**
-     * 播放循环音乐
+     * 获取音乐数据
      */
-    playLoopMusic(startTime, notes, noteDuration, type, volume) {
-        const loopDuration = notes.length * noteDuration;
-        const totalDuration = 30;
+    getMusicData(musicType) {
+        const musicData = {
+            dungeon: {
+                bass: {
+                    type: 'triangle', volume: 0.08,
+                    notes: [
+                        { freq: 65.41, beats: [0, 2] },
+                        { freq: 73.42, beats: [1, 3] },
+                        { freq: 82.41, beats: [0, 2] },
+                        { freq: 73.42, beats: [1, 3] }
+                    ]
+                },
+                melody: {
+                    type: 'square', volume: 0.05,
+                    notes: [
+                        { freq: 261.63, beats: [0] },
+                        { freq: 293.66, beats: [1] },
+                        { freq: 329.63, beats: [2] },
+                        { freq: 349.23, beats: [3] },
+                        { freq: 392.00, beats: [0, 2] },
+                        { freq: 349.23, beats: [1, 3] }
+                    ]
+                },
+                pad: {
+                    type: 'sine', volume: 0.03,
+                    notes: [
+                        { freq: 130.81, beats: [0], duration: 4 },
+                        { freq: 164.81, beats: [0], duration: 4 }
+                    ]
+                }
+            },
+            boss: {
+                bass: {
+                    type: 'sawtooth', volume: 0.07,
+                    notes: [
+                        { freq: 55.00, beats: [0, 1, 2, 3] },
+                        { freq: 61.74, beats: [0, 1, 2, 3] }
+                    ]
+                },
+                melody: {
+                    type: 'square', volume: 0.06,
+                    notes: [
+                        { freq: 440.00, beats: [0] },
+                        { freq: 493.88, beats: [0.5] },
+                        { freq: 523.25, beats: [1] },
+                        { freq: 493.88, beats: [1.5] },
+                        { freq: 440.00, beats: [2] },
+                        { freq: 392.00, beats: [2.5] },
+                        { freq: 349.23, beats: [3] },
+                        { freq: 392.00, beats: [3.5] }
+                    ]
+                },
+                percussion: {
+                    type: 'noise', volume: 0.04,
+                    notes: [
+                        { freq: 0, beats: [0, 2] },
+                        { freq: 0, beats: [1, 3], volume: 0.02 }
+                    ]
+                },
+                pad: {
+                    type: 'sine', volume: 0.02,
+                    notes: [
+                        { freq: 220.00, beats: [0], duration: 4 },
+                        { freq: 277.18, beats: [0], duration: 4 }
+                    ]
+                }
+            },
+            menu: {
+                melody: {
+                    type: 'sine', volume: 0.06,
+                    notes: [
+                        { freq: 392.00, beats: [0] },
+                        { freq: 440.00, beats: [1] },
+                        { freq: 493.88, beats: [2] },
+                        { freq: 523.25, beats: [3] },
+                        { freq: 493.88, beats: [2] },
+                        { freq: 440.00, beats: [1] },
+                        { freq: 392.00, beats: [0] },
+                        { freq: 349.23, beats: [3] }
+                    ]
+                },
+                pad: {
+                    type: 'sine', volume: 0.025,
+                    notes: [
+                        { freq: 196.00, beats: [0], duration: 4 },
+                        { freq: 261.63, beats: [0], duration: 4 }
+                    ]
+                }
+            },
+            victory: {
+                melody: {
+                    type: 'square', volume: 0.06,
+                    notes: [
+                        { freq: 523.25, beats: [0] },
+                        { freq: 659.25, beats: [1] },
+                        { freq: 783.99, beats: [2] },
+                        { freq: 1046.50, beats: [3] }
+                    ]
+                },
+                percussion: {
+                    type: 'noise', volume: 0.03,
+                    notes: [
+                        { freq: 0, beats: [0, 1, 2, 3] }
+                    ]
+                }
+            }
+        };
         
-        for (let loop = 0; loop < Math.ceil(totalDuration / loopDuration); loop++) {
-            const loopStart = startTime + loop * loopDuration;
+        return musicData[musicType] || musicData.dungeon;
+    }
+    
+    /**
+     * 调度一个音乐层级的播放
+     */
+    scheduleLayer(layerName, layerData, beatDuration, barDuration) {
+        const scheduleBar = () => {
+            if (!this.currentMusic) return;
             
-            notes.forEach((freq, i) => {
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
+            const now = this.ctx.currentTime;
+            
+            layerData.notes.forEach(note => {
+                const noteTime = now + note.beats[0] * beatDuration;
+                const duration = (note.duration || 0.5) * beatDuration;
+                const volume = (note.volume !== undefined ? note.volume : layerData.volume);
                 
-                osc.connect(gain);
-                gain.connect(this.musicGain);
-                
-                osc.type = type;
-                osc.frequency.value = freq;
-                
-                const noteTime = loopStart + i * noteDuration;
-                gain.gain.setValueAtTime(0, noteTime);
-                gain.gain.linearRampToValueAtTime(volume, noteTime + 0.05);
-                gain.gain.linearRampToValueAtTime(volume * 0.8, noteTime + noteDuration - 0.1);
-                gain.gain.exponentialRampToValueAtTime(0.01, noteTime + noteDuration);
-                
-                osc.start(noteTime);
-                osc.stop(noteTime + noteDuration + 0.05);
-                
-                this.musicOscillators.push(osc);
+                if (layerData.type === 'noise') {
+                    this.scheduleNoise(noteTime, duration, volume);
+                } else {
+                    this.scheduleNote(noteTime, duration, note.freq, layerData.type, volume);
+                }
             });
+        };
+        
+        scheduleBar();
+        
+        const loopInterval = barDuration * 1000;
+        const intervalId = setInterval(() => {
+            if (!this.currentMusic) {
+                clearInterval(intervalId);
+                return;
+            }
+            scheduleBar();
+        }, loopInterval);
+        
+        this.musicOscillators.push({ stop: () => clearInterval(intervalId) });
+    }
+    
+    /**
+     * 调度单个音符
+     */
+    scheduleNote(time, duration, frequency, type, volume) {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.musicGain);
+        osc.type = type;
+        osc.frequency.value = frequency;
+        gain.gain.setValueAtTime(0, time);
+        gain.gain.linearRampToValueAtTime(volume, time + 0.02);
+        gain.gain.setValueAtTime(volume, time + duration - 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+        osc.start(time);
+        osc.stop(time + duration + 0.01);
+        this.musicOscillators.push(osc);
+    }
+    
+    /**
+     * 调度噪声打击乐
+     */
+    scheduleNoise(time, duration, volume) {
+        const bufferSize = this.ctx.sampleRate * duration;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
         }
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.value = 5000;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(volume, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.musicGain);
+        noise.start(time);
+        noise.stop(time + duration);
+        this.musicOscillators.push(noise);
     }
     
     /**
@@ -876,17 +1135,10 @@ class SoundManager {
     
     // ==================== 环境音 ====================
     
-    /**
-     * 播放环境音
-     * @param {string} type - 环境音类型
-     */
     playAmbientSound(type = 'torch') {
         if (!this.ambientSoundEnabled) return;
-        
         this.stopAmbientSound();
-        
         const now = this.ctx.currentTime;
-        
         switch (type) {
             case 'torch':
                 this.playTorchSound(now);
@@ -897,63 +1149,46 @@ class SoundManager {
         }
     }
     
-    /**
-     * 火把声（持续的噼啪声）
-     */
     playTorchSound(startTime) {
         const duration = 2;
         const bufferSize = this.ctx.sampleRate * duration;
         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
-        
         for (let i = 0; i < bufferSize; i++) {
             data[i] = (Math.random() * 2 - 1) * 0.3;
         }
-        
         const noise = this.ctx.createBufferSource();
         noise.buffer = buffer;
         noise.loop = true;
-        
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'bandpass';
         filter.frequency.value = 800;
         filter.Q.value = 0.5;
-        
         const gain = this.ctx.createGain();
         gain.gain.value = 0.05;
-        
         noise.connect(filter);
         filter.connect(gain);
         gain.connect(this.ambientGain);
-        
         noise.start(startTime);
         this.ambientSound = noise;
     }
     
-    /**
-     * 风声
-     */
     playWindSound(startTime) {
         const duration = 3;
         const bufferSize = this.ctx.sampleRate * duration;
         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
-        
         for (let i = 0; i < bufferSize; i++) {
             data[i] = (Math.random() * 2 - 1);
         }
-        
         const noise = this.ctx.createBufferSource();
         noise.buffer = buffer;
         noise.loop = true;
-        
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
         filter.frequency.value = 500;
-        
         const gain = this.ctx.createGain();
         gain.gain.value = 0.04;
-        
         const lfo = this.ctx.createOscillator();
         const lfoGain = this.ctx.createGain();
         lfo.frequency.value = 0.2;
@@ -961,18 +1196,13 @@ class SoundManager {
         lfo.connect(lfoGain);
         lfoGain.connect(filter.frequency);
         lfo.start();
-        
         noise.connect(filter);
         filter.connect(gain);
         gain.connect(this.ambientGain);
-        
         noise.start(startTime);
         this.ambientSound = noise;
     }
     
-    /**
-     * 停止环境音
-     */
     stopAmbientSound() {
         if (this.ambientSound) {
             try {
@@ -984,10 +1214,6 @@ class SoundManager {
     
     // ==================== 音量控制 ====================
     
-    /**
-     * 设置主音量
-     * @param {number} volume - 0-1
-     */
     setMasterVolume(volume) {
         this.masterVolume = Math.max(0, Math.min(1, volume));
         if (this.masterGain) {
@@ -995,10 +1221,6 @@ class SoundManager {
         }
     }
     
-    /**
-     * 设置音效音量
-     * @param {number} volume - 0-1
-     */
     setSfxVolume(volume) {
         this.sfxVolume = Math.max(0, Math.min(1, volume));
         if (this.sfxGain) {
@@ -1006,10 +1228,6 @@ class SoundManager {
         }
     }
     
-    /**
-     * 设置音乐音量
-     * @param {number} volume - 0-1
-     */
     setMusicVolume(volume) {
         this.musicVolume = Math.max(0, Math.min(1, volume));
         if (this.musicGain) {
@@ -1017,10 +1235,6 @@ class SoundManager {
         }
     }
     
-    /**
-     * 设置环境音音量
-     * @param {number} volume - 0-1
-     */
     setAmbientVolume(volume) {
         this.ambientVolume = Math.max(0, Math.min(1, volume));
         if (this.ambientGain) {
@@ -1028,18 +1242,10 @@ class SoundManager {
         }
     }
     
-    /**
-     * 设置UI音效开关
-     * @param {boolean} enabled
-     */
     setUISoundEnabled(enabled) {
         this.uiSoundEnabled = enabled;
     }
     
-    /**
-     * 设置环境音开关
-     * @param {boolean} enabled
-     */
     setAmbientSoundEnabled(enabled) {
         this.ambientSoundEnabled = enabled;
         if (!enabled) {
@@ -1048,5 +1254,4 @@ class SoundManager {
     }
 }
 
-// 创建全局音效管理器实例
 const soundManager = new SoundManager();

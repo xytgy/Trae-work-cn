@@ -8,59 +8,46 @@
  */
 class Bullet {
     constructor(x, y, dirX, dirY, config = {}) {
-        // 位置
         this.x = x;
         this.y = y;
         
-        // 方向
         this.dirX = dirX;
         this.dirY = dirY;
         
-        // 速度
         this.speed = config.speed || 10;
         
-        // 伤害
         this.damage = config.damage || 1;
         
-        // 颜色
         this.color = config.color || COLORS.BULLET.NORMAL;
         
-        // 是否是敌人子弹
         this.isEnemyBullet = config.isEnemyBullet || false;
         
-        // 尺寸
         this.size = PIXEL_SIZE.BULLET;
         
-        // 活跃状态
         this.active = true;
         
-        // 穿透计数
         this.penetrateCount = config.penetrate || 0;
         this.penetrateMax = this.penetrateCount;
         
-        // 榴弹爆炸半径
         this.explosionRadius = config.explosionRadius || 0;
         
-        // 火焰喷射器射程
         this.range = config.range || 0;
         this.distanceTraveled = 0;
         
-        // 回旋镖相关
         this.isBoomerang = config.isBoomerang || false;
         this.boomerangReturned = false;
         this.startX = x;
         this.startY = y;
         
-        // 生命周期
         this.lifetime = config.lifetime || 5000;
         this.age = 0;
         
-        // 子弹类型
         this.bulletType = 'normal';
         
-        // 拖尾轨迹
         this.trail = [];
         this.trailMaxLength = 8;
+        
+        this.gameLogic = config.gameLogic || null;
     }
     
     /**
@@ -99,9 +86,13 @@ class Bullet {
         // 记录移动距离（用于射程检测）
         this.distanceTraveled += moveDist;
         
-        // 边界检测
-        if (this.x < 0 || this.x > GAME_WIDTH ||
-            this.y < 0 || this.y > GAME_HEIGHT) {
+        // 边界检测（使用世界坐标范围）
+        const worldLeft = 0;
+        const worldRight = 10000;
+        const worldTop = 0;
+        const worldBottom = 10000;
+        if (this.x < worldLeft || this.x > worldRight ||
+            this.y < worldTop || this.y > worldBottom) {
             this.active = false;
         }
         
@@ -444,8 +435,10 @@ class FlameBullet extends Bullet {
     draw(ctx) {
         if (!this.active) return;
         
-        // 生成火焰粒子
-        if (this.particles.length < 20) {
+        const canSpawnParticles = !this.gameLogic || 
+            this.gameLogic.particles.length < PARTICLES.MAX_COUNT;
+        
+        if (canSpawnParticles && this.particles.length < 20) {
             this.particles.push({
                 x: this.x + (Math.random() - 0.5) * 4,
                 y: this.y + (Math.random() - 0.5) * 4,
@@ -726,8 +719,10 @@ class FreezeBullet extends Bullet {
     draw(ctx) {
         if (!this.active) return;
         
-        // 生成冰晶粒子
-        if (this.iceParticles.length < 8) {
+        const canSpawnParticles = !this.gameLogic || 
+            this.gameLogic.particles.length < PARTICLES.MAX_COUNT;
+        
+        if (canSpawnParticles && this.iceParticles.length < 8) {
             this.iceParticles.push({
                 x: this.x + (Math.random() - 0.5) * 6,
                 y: this.y + (Math.random() - 0.5) * 6,

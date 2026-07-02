@@ -574,9 +574,11 @@ class InputManager {
     getAimTarget(playerPos) {
         // 优先使用鼠标瞄准
         if (this.mouse.worldX !== 0 || this.mouse.worldY !== 0) {
+            const cameraX = typeof camera !== 'undefined' && camera ? camera.x : 0;
+            const cameraY = typeof camera !== 'undefined' && camera ? camera.y : 0;
             return {
-                x: this.mouse.smoothedX,
-                y: this.mouse.smoothedY
+                x: this.mouse.smoothedX + cameraX,
+                y: this.mouse.smoothedY + cameraY
             };
         }
         
@@ -586,7 +588,6 @@ class InputManager {
             const rightY = this.gamepad.axes.rightY;
             
             if (Math.abs(rightX) > 0.1 || Math.abs(rightY) > 0.1) {
-                // 右摇杆方向作为瞄准方向，距离设为固定值
                 const aimDistance = 200;
                 return {
                     x: playerPos.x + rightX * aimDistance,
@@ -603,6 +604,12 @@ class InputManager {
      * 获取鼠标世界坐标
      */
     getMouseWorldPosition() {
+        if (typeof camera !== 'undefined' && camera) {
+            return {
+                x: this.mouse.worldX + camera.x,
+                y: this.mouse.worldY + camera.y
+            };
+        }
         return {
             x: this.mouse.worldX,
             y: this.mouse.worldY
@@ -613,8 +620,10 @@ class InputManager {
      * 获取鼠标相对于玩家的方向
      */
     getMouseDirection(playerPos) {
-        const dx = this.mouse.worldX - playerPos.x;
-        const dy = this.mouse.worldY - playerPos.y;
+        const cameraX = typeof camera !== 'undefined' && camera ? camera.x : 0;
+        const cameraY = typeof camera !== 'undefined' && camera ? camera.y : 0;
+        const dx = this.mouse.worldX + cameraX - playerPos.x;
+        const dy = this.mouse.worldY + cameraY - playerPos.y;
         const length = Math.sqrt(dx * dx + dy * dy);
         
         if (length === 0) {

@@ -171,8 +171,9 @@ class RoomRenderer {
         ctx.fillRect(0, 0, this.width, this.height);
 
         this.drawFloorPattern(ctx);
-        this.drawWalls(ctx, colors);
+        this.drawWalls(ctx, colors, roomNode);
         this.drawDoors(ctx, roomNode, colors);
+        this.drawDoorGlows(ctx, roomNode, colors);
     }
 
     drawFloorPattern(ctx) {
@@ -201,11 +202,39 @@ class RoomRenderer {
         }
     }
 
-    drawWalls(ctx, colors) {
-        this.drawBrickWall(ctx, 0, 0, this.width, this.wallThickness, 'top', colors);
-        this.drawBrickWall(ctx, 0, this.height - this.wallThickness, this.width, this.wallThickness, 'bottom', colors);
-        this.drawBrickWall(ctx, 0, 0, this.wallThickness, this.height, 'left', colors);
-        this.drawBrickWall(ctx, this.width - this.wallThickness, 0, this.wallThickness, this.height, 'right', colors);
+    drawWalls(ctx, colors, roomNode) {
+        const centerX = this.width / 2;
+        const centerY = this.height / 2;
+        const doorWidth = this.doorSize;
+        const halfDoorWidth = doorWidth / 2;
+
+        if (roomNode.hasDoor(DOOR.TOP)) {
+            this.drawBrickWall(ctx, 0, 0, centerX - halfDoorWidth, this.wallThickness, 'top', colors);
+            this.drawBrickWall(ctx, centerX + halfDoorWidth, 0, this.width - centerX - halfDoorWidth, this.wallThickness, 'top', colors);
+        } else {
+            this.drawBrickWall(ctx, 0, 0, this.width, this.wallThickness, 'top', colors);
+        }
+
+        if (roomNode.hasDoor(DOOR.BOTTOM)) {
+            this.drawBrickWall(ctx, 0, this.height - this.wallThickness, centerX - halfDoorWidth, this.wallThickness, 'bottom', colors);
+            this.drawBrickWall(ctx, centerX + halfDoorWidth, this.height - this.wallThickness, this.width - centerX - halfDoorWidth, this.wallThickness, 'bottom', colors);
+        } else {
+            this.drawBrickWall(ctx, 0, this.height - this.wallThickness, this.width, this.wallThickness, 'bottom', colors);
+        }
+
+        if (roomNode.hasDoor(DOOR.LEFT)) {
+            this.drawBrickWall(ctx, 0, 0, this.wallThickness, centerY - halfDoorWidth, 'left', colors);
+            this.drawBrickWall(ctx, 0, centerY + halfDoorWidth, this.wallThickness, this.height - centerY - halfDoorWidth, 'left', colors);
+        } else {
+            this.drawBrickWall(ctx, 0, 0, this.wallThickness, this.height, 'left', colors);
+        }
+
+        if (roomNode.hasDoor(DOOR.RIGHT)) {
+            this.drawBrickWall(ctx, this.width - this.wallThickness, 0, this.wallThickness, centerY - halfDoorWidth, 'right', colors);
+            this.drawBrickWall(ctx, this.width - this.wallThickness, centerY + halfDoorWidth, this.wallThickness, this.height - centerY - halfDoorWidth, 'right', colors);
+        } else {
+            this.drawBrickWall(ctx, this.width - this.wallThickness, 0, this.wallThickness, this.height, 'right', colors);
+        }
     }
 
     drawBrickWall(ctx, x, y, width, height, side, colors) {
@@ -239,27 +268,104 @@ class RoomRenderer {
     }
 
     drawDoors(ctx, roomNode, colors) {
-        ctx.fillStyle = colors.doorColor;
-
         const doorWidth = this.doorSize;
         const doorHeight = this.wallThickness;
         const centerX = this.width / 2;
         const centerY = this.height / 2;
+        const frameThickness = 3;
 
-        if (!roomNode.hasDoor(DOOR.TOP)) {
-            ctx.fillRect(centerX - doorWidth / 2, 0, doorWidth, doorHeight);
+        const drawDoorFrame = (x, y, w, h, isVertical) => {
+            ctx.fillStyle = colors.doorColor;
+            ctx.fillRect(x, y, w, h);
+
+            ctx.fillStyle = '#3a3a4a';
+            ctx.fillRect(x + frameThickness, y + frameThickness, w - frameThickness * 2, h - frameThickness * 2);
+
+            ctx.fillStyle = '#5a5a6a';
+            if (isVertical) {
+                ctx.fillRect(x + 2, y + 2, 2, h - 4);
+                ctx.fillRect(x + w - 4, y + 2, 2, h - 4);
+            } else {
+                ctx.fillRect(x + 2, y + 2, w - 4, 2);
+                ctx.fillRect(x + 2, y + h - 4, w - 4, 2);
+            }
+
+            ctx.fillStyle = '#2a2a3a';
+            if (isVertical) {
+                ctx.fillRect(x + w - 1, y, 1, h);
+                ctx.fillRect(x, y + h - 1, w, 1);
+            } else {
+                ctx.fillRect(x + w - 1, y, 1, h);
+                ctx.fillRect(x, y + h - 1, w, 1);
+            }
+        };
+
+        if (roomNode.hasDoor(DOOR.TOP)) {
+            drawDoorFrame(centerX - doorWidth / 2, 0, doorWidth, doorHeight, false);
         }
 
-        if (!roomNode.hasDoor(DOOR.BOTTOM)) {
-            ctx.fillRect(centerX - doorWidth / 2, this.height - doorHeight, doorWidth, doorHeight);
+        if (roomNode.hasDoor(DOOR.BOTTOM)) {
+            drawDoorFrame(centerX - doorWidth / 2, this.height - doorHeight, doorWidth, doorHeight, false);
         }
 
-        if (!roomNode.hasDoor(DOOR.LEFT)) {
-            ctx.fillRect(0, centerY - doorWidth / 2, doorHeight, doorWidth);
+        if (roomNode.hasDoor(DOOR.LEFT)) {
+            drawDoorFrame(0, centerY - doorWidth / 2, doorHeight, doorWidth, true);
         }
 
-        if (!roomNode.hasDoor(DOOR.RIGHT)) {
-            ctx.fillRect(this.width - doorHeight, centerY - doorWidth / 2, doorHeight, doorWidth);
+        if (roomNode.hasDoor(DOOR.RIGHT)) {
+            drawDoorFrame(this.width - doorHeight, centerY - doorWidth / 2, doorHeight, doorWidth, true);
+        }
+    }
+
+    drawDoorGlows(ctx, roomNode, colors) {
+        const doorWidth = this.doorSize;
+        const centerX = this.width / 2;
+        const centerY = this.height / 2;
+        const glowSize = 40;
+
+        const drawGlow = (cx, cy, direction) => {
+            const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowSize);
+            gradient.addColorStop(0, 'rgba(255, 255, 200, 0.2)');
+            gradient.addColorStop(0.5, 'rgba(255, 255, 200, 0.1)');
+            gradient.addColorStop(1, 'rgba(255, 255, 200, 0)');
+            ctx.fillStyle = gradient;
+
+            let rectX, rectY, rectW, rectH;
+            if (direction === 'top') {
+                rectX = cx - glowSize;
+                rectY = this.wallThickness - 5;
+                rectW = glowSize * 2;
+                rectH = glowSize;
+            } else if (direction === 'bottom') {
+                rectX = cx - glowSize;
+                rectY = this.height - this.wallThickness - glowSize + 5;
+                rectW = glowSize * 2;
+                rectH = glowSize;
+            } else if (direction === 'left') {
+                rectX = this.wallThickness - 5;
+                rectY = cy - glowSize;
+                rectW = glowSize;
+                rectH = glowSize * 2;
+            } else {
+                rectX = this.width - this.wallThickness - glowSize + 5;
+                rectY = cy - glowSize;
+                rectW = glowSize;
+                rectH = glowSize * 2;
+            }
+            ctx.fillRect(rectX, rectY, rectW, rectH);
+        };
+
+        if (roomNode.hasDoor(DOOR.TOP)) {
+            drawGlow(centerX, this.wallThickness, 'top');
+        }
+        if (roomNode.hasDoor(DOOR.BOTTOM)) {
+            drawGlow(centerX, this.height - this.wallThickness, 'bottom');
+        }
+        if (roomNode.hasDoor(DOOR.LEFT)) {
+            drawGlow(this.wallThickness, centerY, 'left');
+        }
+        if (roomNode.hasDoor(DOOR.RIGHT)) {
+            drawGlow(this.width - this.wallThickness, centerY, 'right');
         }
     }
 
@@ -383,17 +489,17 @@ class RoomRenderer {
         ];
 
         for (let i = 0; i < directions.length; i++) {
-            if (!roomNode.hasDoor(doorDirections[i])) {
+            if (roomNode.hasDoor(doorDirections[i])) {
                 const state = doorManager.getDoorState(roomNode, directions[i]);
                 const pos = positions[i];
 
                 if (state === 'closed' || state === 'locked') {
                     ctx.fillStyle = state === 'locked' ? '#8b0000' : '#4a4060';
-                    ctx.fillRect(pos.x, pos.y, pos.w, pos.h);
+                    ctx.fillRect(pos.x + 2, pos.y + 2, pos.w - 4, pos.h - 4);
 
                     if (state === 'locked') {
                         ctx.fillStyle = '#ffd700';
-                        ctx.font = '16px "Courier New", monospace';
+                        ctx.font = '14px "Courier New", monospace';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
                         ctx.fillText('🔒', pos.x + pos.w / 2, pos.y + pos.h / 2);

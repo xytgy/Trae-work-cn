@@ -9,6 +9,7 @@ class DungeonLevel {
         this.startRoom = null;
         this.bossRoom = null;
         this.portalRooms = [];
+        this.corridors = [];
     }
 
     initGrid() {
@@ -108,6 +109,7 @@ class DungeonLevel {
             roomB.addDoor(directionB);
             roomA.addConnection(roomB);
             roomB.addConnection(roomA);
+            this.corridors.push(new Corridor(roomA, roomB));
         }
     }
 

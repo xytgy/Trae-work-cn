@@ -426,7 +426,7 @@ class DamageSystem {
 
         gl.particleManager.spawnDamageParticles(gl.player.x, gl.player.y);
 
-        audioManager.playSound(AUDIO.HURT);
+        soundManager.play(SOUND_EFFECTS.HURT);
 
         if (gl.state.isState(GAME_STATE.GAME_OVER)) {
             console.log('玩家死亡');
@@ -459,7 +459,7 @@ class DamageSystem {
 
         gl.particleManager.spawnDamageParticles(gl.player.x, gl.player.y);
 
-        audioManager.playSound(AUDIO.HURT);
+        soundManager.play(SOUND_EFFECTS.HURT);
 
         if (gl.state.isState(GAME_STATE.GAME_OVER)) {
             console.log('玩家死亡');

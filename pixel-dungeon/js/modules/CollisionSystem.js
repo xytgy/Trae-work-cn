@@ -37,4 +37,66 @@ class CollisionSystem {
                bullet.y - bulletSize / 2 < target.y + targetSize / 2 &&
                bullet.y + bulletSize / 2 > target.y - targetSize / 2;
     }
+
+    /**
+     * 检查玩家与墙壁碰撞
+     * @param {number} x - 玩家X坐标（世界坐标）
+     * @param {number} y - 玩家Y坐标（世界坐标）
+     * @param {number} width - 玩家宽度
+     * @param {number} height - 玩家高度
+     */
+    checkWallCollision(x, y, width, height) {
+        if (game.dungeonLevel && game.dungeonLevel.corridors) {
+            for (const corridor of game.dungeonLevel.corridors) {
+                if (this.checkCorridorCollision(x, y, width, height, corridor)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 检查玩家与走廊墙壁碰撞
+     * @param {number} x - 玩家X坐标（世界坐标）
+     * @param {number} y - 玩家Y坐标（世界坐标）
+     * @param {number} width - 玩家宽度
+     * @param {number} height - 玩家高度
+     * @param {Object} corridor - 走廊对象
+     */
+    checkCorridorCollision(x, y, width, height, corridor) {
+        const wallThickness = 20;
+        
+        if (corridor.direction === 'right' || corridor.direction === 'left') {
+            const topWallBottom = corridor.top;
+            const topWallTop = corridor.top - wallThickness;
+            const bottomWallTop = corridor.bottom;
+            const bottomWallBottom = corridor.bottom + wallThickness;
+            
+            if (x < corridor.right && x + width > corridor.left) {
+                if (y < topWallBottom && y + height > topWallTop) {
+                    return true;
+                }
+                if (y < bottomWallBottom && y + height > bottomWallTop) {
+                    return true;
+                }
+            }
+        } else {
+            const leftWallRight = corridor.left;
+            const leftWallLeft = corridor.left - wallThickness;
+            const rightWallLeft = corridor.right;
+            const rightWallRight = corridor.right + wallThickness;
+            
+            if (y < corridor.bottom && y + height > corridor.top) {
+                if (x < leftWallRight && x + width > leftWallLeft) {
+                    return true;
+                }
+                if (x < rightWallRight && x + width > rightWallLeft) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
 }

@@ -136,7 +136,7 @@ class DropSystem {
 
                 if (added) {
                     console.log(`拾取了武器: ${drop.weapon.NAME}`);
-                    audioManager.playSound(AUDIO.PICKUP);
+                    soundManager.play(SOUND_EFFECTS.PICKUP);
                     uiManager.updateWeapon();
                     uiManager.updateWeaponInfo();
 

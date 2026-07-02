@@ -1,0 +1,10 @@
+- [x] Checkpoint 1: soundManager中所有合成音效方法已添加低通滤波器
+- [x] Checkpoint 2: soundManager中所有合成音效已使用三角波/正弦波替代方波/锯齿波
+- [x] Checkpoint 3: soundManager中所有合成音效已添加ADSR包络
+- [x] Checkpoint 4: soundManager中射击、爆炸等音效已添加噪声层
+- [x] Checkpoint 5: soundManager中所有合成音效音量已降低到0.15-0.25范围
+- [x] Checkpoint 6: game.js中所有audioManager.playSound()调用已替换为soundManager.play()
+- [ ] Checkpoint 7: boss.js、DamageSystem.js、DropSystem.js、RoomManager.js、skills.js、state.js中的audioManager.playSound()调用已替换
+- [ ] Checkpoint 8: BGM合成已优化（波形、滤波、音量）
+- [ ] Checkpoint 9: 游戏帧率保持在60fps
+- [ ] Checkpoint 10: 所有音效正常播放，质量明显改善（无刺耳噪音）

@@ -26,6 +26,25 @@ class Camera {
         
         // 是否启用跟随
         this.enableFollow = false;
+        
+        // 过渡动画属性
+        this.transitioning = false;
+        this.transitionStartX = 0;
+        this.transitionStartY = 0;
+        this.transitionTargetX = 0;
+        this.transitionTargetY = 0;
+        this.transitionDuration = 0;
+        this.transitionTimer = 0;
+        this.onTransitionComplete = null;
+        
+        // 相机模式
+        this.mode = 'explore';
+        
+        // 锁定边界
+        this.lockLeft = -Infinity;
+        this.lockRight = Infinity;
+        this.lockTop = -Infinity;
+        this.lockBottom = Infinity;
     }
     
     /**
@@ -60,6 +79,61 @@ class Camera {
     }
     
     /**
+     * 设置相机模式
+     * @param {string} mode - 相机模式（'explore' 或 'battle'）
+     */
+    setMode(mode) {
+        this.mode = mode;
+    }
+    
+    /**
+     * 设置锁定边界
+     * @param {number} left - 左边界
+     * @param {number} right - 右边界
+     * @param {number} top - 上边界
+     * @param {number} bottom - 下边界
+     */
+    setLockBounds(left, right, top, bottom) {
+        this.lockLeft = left;
+        this.lockRight = right;
+        this.lockTop = top;
+        this.lockBottom = bottom;
+    }
+    
+    /**
+     * 清除锁定边界
+     */
+    clearLockBounds() {
+        this.lockLeft = -Infinity;
+        this.lockRight = Infinity;
+        this.lockTop = -Infinity;
+        this.lockBottom = Infinity;
+    }
+    
+    /**
+     * 开始相机过渡动画
+     * @param {number} fromX - 起始X坐标
+     * @param {number} fromY - 起始Y坐标
+     * @param {number} toX - 目标X坐标
+     * @param {number} toY - 目标Y坐标
+     * @param {number} duration - 过渡持续时间（毫秒）
+     * @param {function} onComplete - 过渡完成回调
+     */
+    startTransition(fromX, fromY, toX, toY, duration, onComplete) {
+        this.transitionStartX = fromX;
+        this.transitionStartY = fromY;
+        this.transitionTargetX = toX;
+        this.transitionTargetY = toY;
+        this.transitionDuration = duration;
+        this.transitionTimer = duration;
+        this.onTransitionComplete = onComplete;
+        this.transitioning = true;
+        
+        this.x = fromX;
+        this.y = fromY;
+    }
+    
+    /**
      * 更新相机
      * @param {number} deltaTime - 距离上一帧的时间（毫秒）
      */
@@ -67,8 +141,30 @@ class Camera {
         // 更新震动
         this.updateShake(deltaTime);
         
-        // 更新跟随
-        this.updateFollow(deltaTime);
+        // 过渡期间优先处理插值
+        if (this.transitioning) {
+            this.transitionTimer -= deltaTime;
+            
+            if (this.transitionTimer <= 0) {
+                this.x = this.transitionTargetX;
+                this.y = this.transitionTargetY;
+                this.transitioning = false;
+                
+                if (this.onTransitionComplete) {
+                    this.onTransitionComplete();
+                    this.onTransitionComplete = null;
+                }
+            } else {
+                const t = 1 - this.transitionTimer / this.transitionDuration;
+                const easedT = t * t * (3 - 2 * t);
+                
+                this.x = this.transitionStartX + (this.transitionTargetX - this.transitionStartX) * easedT;
+                this.y = this.transitionStartY + (this.transitionTargetY - this.transitionStartY) * easedT;
+            }
+        } else {
+            // 更新跟随
+            this.updateFollow(deltaTime);
+        }
     }
     
     /**
@@ -105,13 +201,16 @@ class Camera {
     updateFollow(deltaTime) {
         if (!this.enableFollow || !this.followTarget) return;
         
-        // 目标位置（目标在屏幕中心）
         const targetX = this.followTarget.x - GAME_WIDTH / 2;
         const targetY = this.followTarget.y - GAME_HEIGHT / 2;
         
-        // 平滑跟随
         this.x += (targetX - this.x) * this.followSmoothness;
         this.y += (targetY - this.y) * this.followSmoothness;
+        
+        if (this.mode === 'battle') {
+            this.x = Math.max(this.lockLeft, Math.min(this.x, this.lockRight - GAME_WIDTH));
+            this.y = Math.max(this.lockTop, Math.min(this.y, this.lockBottom - GAME_HEIGHT));
+        }
     }
     
     /**
@@ -135,6 +234,16 @@ class Camera {
         this.shakeTimer = 0;
         this.followTarget = null;
         this.enableFollow = false;
+        
+        // 重置过渡动画属性
+        this.transitioning = false;
+        this.transitionStartX = 0;
+        this.transitionStartY = 0;
+        this.transitionTargetX = 0;
+        this.transitionTargetY = 0;
+        this.transitionDuration = 0;
+        this.transitionTimer = 0;
+        this.onTransitionComplete = null;
     }
     
     /**

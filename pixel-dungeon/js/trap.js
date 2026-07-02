@@ -758,32 +758,36 @@ class TrapManager {
             const x = playableArea.x + margin + Math.random() * (playableArea.width - margin * 2);
             const y = playableArea.y + margin + Math.random() * (playableArea.height - margin * 2);
             
-            let trap;
-            switch (type) {
-                case TRAP_TYPES.SPIKE:
-                    trap = new SpikeTrap(x, y);
-                    break;
-                case TRAP_TYPES.FIRE:
-                    trap = new FireTrap(x, y);
-                    break;
-                case TRAP_TYPES.POISON:
-                    trap = new PoisonTrap(x, y);
-                    break;
-                case TRAP_TYPES.ICE:
-                    trap = new IceTrap(x, y);
-                    break;
-                case TRAP_TYPES.ROCK:
-                    trap = new RockTrap(x, y);
-                    break;
-                case TRAP_TYPES.TELEPORT:
-                    trap = new TeleportTrap(x, y);
-                    break;
-                default:
-                    trap = new SpikeTrap(x, y);
-            }
-            
-            this.traps.push(trap);
+            this.addTrap(x, y, type);
         }
+    }
+    
+    addTrap(x, y, trapType) {
+        let trap;
+        switch (trapType) {
+            case TRAP_TYPES.SPIKE:
+                trap = new SpikeTrap(x, y);
+                break;
+            case TRAP_TYPES.FIRE:
+                trap = new FireTrap(x, y);
+                break;
+            case TRAP_TYPES.POISON:
+                trap = new PoisonTrap(x, y);
+                break;
+            case TRAP_TYPES.ICE:
+                trap = new IceTrap(x, y);
+                break;
+            case TRAP_TYPES.ROCK:
+                trap = new RockTrap(x, y);
+                break;
+            case TRAP_TYPES.TELEPORT:
+                trap = new TeleportTrap(x, y);
+                break;
+            default:
+                trap = new SpikeTrap(x, y);
+        }
+        
+        this.traps.push(trap);
     }
     
     /**

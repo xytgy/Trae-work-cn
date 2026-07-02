@@ -118,6 +118,10 @@ class TimeManager {
         // 时间停止相关
         this.timeStopTimer = 0;
         this.timeStopDuration = 0;
+        
+        // 冻结帧（命中停顿）
+        this.freezeTimer = 0;
+        this.isFrozen = false;
     }
     
     /**
@@ -149,10 +153,28 @@ class TimeManager {
     }
     
     /**
+     * 触发冻结帧（命中停顿）
+     * @param {number} duration - 冻结持续时间（毫秒）
+     */
+    freeze(duration) {
+        this.freezeTimer = Math.max(this.freezeTimer, duration);
+        this.isFrozen = true;
+    }
+    
+    /**
      * 更新时间管理器
      * @param {number} deltaTime - 原始delta time（毫秒）
      */
     update(deltaTime) {
+        // 更新冻结帧（使用真实时间）
+        if (this.freezeTimer > 0) {
+            this.freezeTimer -= deltaTime;
+            if (this.freezeTimer <= 0) {
+                this.freezeTimer = 0;
+                this.isFrozen = false;
+            }
+        }
+        
         // 更新时间停止（使用真实时间更新计时器）
         if (this.timeStopTimer > 0) {
             this.timeStopTimer -= deltaTime;
@@ -207,6 +229,9 @@ class TimeManager {
      * @returns {number} 缩放后的delta time
      */
     getScaledDeltaTime(originalDelta) {
+        if (this.isFrozen && this.freezeTimer > 0) {
+            return 0;
+        }
         return originalDelta * this.timeScale;
     }
     
@@ -220,6 +245,8 @@ class TimeManager {
         this.slowMoTargetScale = 1.0;
         this.timeStopTimer = 0;
         this.timeStopDuration = 0;
+        this.freezeTimer = 0;
+        this.isFrozen = false;
     }
 }
 
@@ -254,8 +281,20 @@ class GameLogic {
         // 当前房间
         this.currentRoom = null;
         
+        // 宝箱列表
+        this.chests = [];
+        
         // 当前房间节点（DungeonLevel驱动）
         this.currentRoomNode = null;
+        
+        // 待切换的房间节点（过渡期间使用）
+        this.pendingRoomNode = null;
+        
+        // 已访问房间缓存（存储所有已进入的 Room 对象）
+        this.visitedRooms = new Map();
+        
+        // 输入锁定状态（房间过渡期间锁定）
+        this.inputLocked = false;
         
         // DungeonLevel 实例
         this.dungeonLevel = null;
@@ -331,10 +370,8 @@ class GameLogic {
         // 成就通知队列
         this.achievementNotifications = [];
         
-        // 清空旧事件监听（防止内存泄漏）
-        if (this.eventBus) {
-            this.eventBus.clearAll();
-        }
+        // 事件订阅句柄列表（用于清理）
+        this._eventSubscriptions = [];
 
         // 注册事件监听
         this._registerEventListeners();
@@ -346,41 +383,59 @@ class GameLogic {
     _registerEventListeners() {
         if (!this.eventBus) return;
         
-        this.eventBus.subscribe('ENEMY_KILLED', (data) => {
-            this.onEnemyKilledEvent(data);
-        });
+        this._eventSubscriptions.push(
+            this.eventBus.subscribe('ENEMY_KILLED', (data) => {
+                this.onEnemyKilledEvent(data);
+            })
+        );
         
-        this.eventBus.subscribe('PLAYER_HURT', (data) => {
-            this.onPlayerHurtEvent(data);
-        });
+        this._eventSubscriptions.push(
+            this.eventBus.subscribe('PLAYER_HURT', (data) => {
+                this.onPlayerHurtEvent(data);
+            })
+        );
         
-        this.eventBus.subscribe('SKILL_USED', (data) => {
-            this.onSkillUsedEvent(data);
-        });
+        this._eventSubscriptions.push(
+            this.eventBus.subscribe('SKILL_USED', (data) => {
+                this.onSkillUsedEvent(data);
+            })
+        );
         
-        this.eventBus.subscribe('BOSS_SPAWN', (data) => {
-            this.onBossSpawnEvent(data);
-        });
+        this._eventSubscriptions.push(
+            this.eventBus.subscribe('BOSS_SPAWN', (data) => {
+                this.onBossSpawnEvent(data);
+            })
+        );
         
-        this.eventBus.subscribe('BOSS_DEATH', (data) => {
-            this.onBossDeathEvent(data);
-        });
+        this._eventSubscriptions.push(
+            this.eventBus.subscribe('BOSS_DEATH', (data) => {
+                this.onBossDeathEvent(data);
+            })
+        );
         
-        this.eventBus.subscribe('ROOM_CLEARED', (data) => {
-            this.onRoomClearedEvent(data);
-        });
+        this._eventSubscriptions.push(
+            this.eventBus.subscribe('ROOM_CLEARED', (data) => {
+                this.onRoomClearedEvent(data);
+            })
+        );
         
-        this.eventBus.subscribe('WEAPON_PICKUP', (data) => {
-            this.onWeaponPickupEvent(data);
-        });
+        this._eventSubscriptions.push(
+            this.eventBus.subscribe('WEAPON_PICKUP', (data) => {
+                this.onWeaponPickupEvent(data);
+            })
+        );
         
-        this.eventBus.subscribe('GOLD_EARNED', (data) => {
-            this.onGoldEarnedEvent(data);
-        });
+        this._eventSubscriptions.push(
+            this.eventBus.subscribe('GOLD_EARNED', (data) => {
+                this.onGoldEarnedEvent(data);
+            })
+        );
         
-        this.eventBus.subscribe('BUFF_APPLIED', (data) => {
-            this.onBuffAppliedEvent(data);
-        });
+        this._eventSubscriptions.push(
+            this.eventBus.subscribe('BUFF_APPLIED', (data) => {
+                this.onBuffAppliedEvent(data);
+            })
+        );
     }
     
     /**
@@ -510,6 +565,17 @@ class GameLogic {
         // 生成地牢（基于当前act和stage）
         const act = this.state.getData().currentAct || 1;
         const stage = this.state.getData().currentStage || 1;
+        
+        if (!this.dungeonGenerator) {
+            this.dungeonGenerator = new DungeonGenerator();
+        }
+        if (!this.doorManager) {
+            this.doorManager = new DoorManager();
+        }
+        if (!this.minimap) {
+            this.minimap = new Minimap();
+        }
+        
         this.dungeonLevel = this.dungeonGenerator.generate(act, stage);
         console.log(`地牢生成完成: Act ${act}, Stage ${stage}`);
         console.log(this.dungeonLevel.toString());
@@ -551,6 +617,9 @@ class GameLogic {
         this.currentRoomNode = null;
         this.allEnemiesCleared = false;
         
+        // 清理已访问房间缓存
+        this.visitedRooms.clear();
+        
         // P1-1: 清理 Player 对象和数组
         this.player = null;
         this.damageNumbers = [];
@@ -586,10 +655,13 @@ class GameLogic {
         // P0-3-03: 清理 chests
         this.chests = [];
         
-        // P0-3-06: 清理事件总线
-        if (this.eventBus) {
-            this.eventBus.clearAll();
+        // P0-3-06: 清理事件总线（只清理当前实例的订阅）
+        for (const subscription of this._eventSubscriptions) {
+            if (subscription && subscription.unsubscribe) {
+                subscription.unsubscribe();
+            }
         }
+        this._eventSubscriptions = [];
         
         // P0-3-04: 清理 aimAssist
         if (this.aimAssist) {
@@ -633,7 +705,26 @@ class GameLogic {
         const roomIndex = Math.min(currentStage, 7);
         const isBossRoom = roomType === ROOM_TYPES.BOSS;
 
-        this.currentRoom = new Room(roomType, roomIndex, isBossRoom);
+        const roomKey = `${roomNode.gridX},${roomNode.gridY}`;
+        if (this.visitedRooms.has(roomKey)) {
+            this.currentRoom = this.visitedRooms.get(roomKey);
+        } else {
+            this.currentRoom = new Room(roomType, roomIndex, isBossRoom, roomNode.worldX, roomNode.worldY);
+            this.currentRoom.preRenderBackground(roomNode);
+            this.visitedRooms.set(roomKey, this.currentRoom);
+        }
+
+        // 设置玩家世界坐标为房间中心
+        if (this.player) {
+            this.player.x = roomNode.getCenterWorldX();
+            this.player.y = roomNode.getCenterWorldY();
+            this.player.renderX = this.player.x;
+            this.player.renderY = this.player.y;
+        }
+
+        // 设置相机位置到房间中心
+        camera.setPosition(roomNode.getCenterWorldX() - GAME_WIDTH / 2, roomNode.getCenterWorldY() - GAME_HEIGHT / 2);
+        camera.setFollowTarget(this.player);
 
         this.enemies = [];
         this.bullets = [];
@@ -641,6 +732,11 @@ class GameLogic {
         this.boss = null;
         this.portal = null;
         this.allEnemiesCleared = false;
+
+        if (roomNode.cleared) {
+            console.log(`房间 [${roomNode.gridX},${roomNode.gridY}] 已清空，跳过敌人生成`);
+            return;
+        }
 
         // 标记房间类型为已访问(仅非Boss特殊房)
         if (roomType !== ROOM_TYPES.BATTLE && roomType !== ROOM_TYPES.BOSS && roomType !== ROOM_TYPES.ELITE) {
@@ -699,8 +795,10 @@ class GameLogic {
             }
         }
 
-        this.currentRoomNode = nextRoomNode;
-        nextRoomNode.markEntered();
+        if (this.inputLocked) {
+            console.log('正在进行房间过渡，无法切换');
+            return;
+        }
 
         const roomType = nextRoomNode.roomType;
 
@@ -708,21 +806,51 @@ class GameLogic {
             this.state.data.currentLevel = 7;
         }
 
-        this.initRoom(nextRoomNode);
+        this.pendingRoomNode = nextRoomNode;
+        this.inputLocked = true;
 
-        this.player.x = GAME_WIDTH / 2;
-        this.player.y = GAME_HEIGHT / 2;
+        const currentStage = this.state.getData().currentStage || 1;
+        const roomIndex = Math.min(currentStage, 7);
+        const isBossRoom = roomType === ROOM_TYPES.BOSS;
+        this.pendingRoom = new Room(roomType, roomIndex, isBossRoom, nextRoomNode.worldX, nextRoomNode.worldY);
 
-        camera.setPosition(0, 0);
-        camera.setFollowTarget(null);
+        if (typeof this.pendingRoom.preRenderBackground === 'function') {
+            this.pendingRoom.preRenderBackground(nextRoomNode);
+        } else if (typeof renderer.preRender === 'function') {
+            renderer.preRender(this.pendingRoom, nextRoomNode);
+        }
 
-        this.eventBus.publish('ROOM_CHANGED', {
-            fromRoom: currentNode,
-            toRoom: nextRoomNode,
-            roomType: roomType
+        if (roomType === ROOM_TYPES.ELITE) {
+            this.showPickupText(GAME_WIDTH / 2, GAME_HEIGHT / 2, '⚠️ 精英房', 'system');
+        }
+
+        const offsetX = (nextRoomNode.gridX - currentNode.gridX) * LEVELS.ROOM_WIDTH;
+        const offsetY = (nextRoomNode.gridY - currentNode.gridY) * LEVELS.ROOM_HEIGHT;
+
+        camera.startTransition(camera.x, camera.y, camera.x + offsetX, camera.y + offsetY, 400, () => {
+            camera.setPosition(0, 0);
+            camera.setFollowTarget(null);
+
+            this.currentRoomNode = nextRoomNode;
+            nextRoomNode.markEntered();
+
+            this.initRoom(nextRoomNode);
+
+            this.player.x = GAME_WIDTH / 2;
+            this.player.y = GAME_HEIGHT / 2;
+
+            this.inputLocked = false;
+            this.pendingRoomNode = null;
+            this.pendingRoom = null;
+
+            this.eventBus.publish('ROOM_CHANGED', {
+                fromRoom: currentNode,
+                toRoom: nextRoomNode,
+                roomType: roomType
+            });
+
+            console.log(`切换到房间 [${nextRoomNode.gridX},${nextRoomNode.gridY}] - 类型: ${nextRoomNode.getRoomTypeName()}`);
         });
-
-        console.log(`切换到房间 [${nextRoomNode.gridX},${nextRoomNode.gridY}] - 类型: ${nextRoomNode.getRoomTypeName()}`);
     }
 
     /**
@@ -737,22 +865,22 @@ class GameLogic {
 
         let nextRoomNode = null;
 
-        if (playerX < DOOR_THRESHOLD && this.currentRoomNode.hasDoor(DOOR.LEFT)) {
+        if (playerX < this.currentRoomNode.left + DOOR_THRESHOLD && this.currentRoomNode.hasDoor(DOOR.LEFT)) {
             const neighbor = this.dungeonLevel.getRoomAt(this.currentRoomNode.gridX - 1, this.currentRoomNode.gridY);
             if (neighbor && this.doorManager.isDoorOpen(this.currentRoomNode, DOOR.LEFT)) {
                 nextRoomNode = neighbor;
             }
-        } else if (playerX > GAME_WIDTH - DOOR_THRESHOLD && this.currentRoomNode.hasDoor(DOOR.RIGHT)) {
+        } else if (playerX > this.currentRoomNode.right - DOOR_THRESHOLD && this.currentRoomNode.hasDoor(DOOR.RIGHT)) {
             const neighbor = this.dungeonLevel.getRoomAt(this.currentRoomNode.gridX + 1, this.currentRoomNode.gridY);
             if (neighbor && this.doorManager.isDoorOpen(this.currentRoomNode, DOOR.RIGHT)) {
                 nextRoomNode = neighbor;
             }
-        } else if (playerY < DOOR_THRESHOLD && this.currentRoomNode.hasDoor(DOOR.TOP)) {
+        } else if (playerY < this.currentRoomNode.top + DOOR_THRESHOLD && this.currentRoomNode.hasDoor(DOOR.TOP)) {
             const neighbor = this.dungeonLevel.getRoomAt(this.currentRoomNode.gridX, this.currentRoomNode.gridY - 1);
             if (neighbor && this.doorManager.isDoorOpen(this.currentRoomNode, DOOR.TOP)) {
                 nextRoomNode = neighbor;
             }
-        } else if (playerY > GAME_HEIGHT - DOOR_THRESHOLD && this.currentRoomNode.hasDoor(DOOR.BOTTOM)) {
+        } else if (playerY > this.currentRoomNode.bottom - DOOR_THRESHOLD && this.currentRoomNode.hasDoor(DOOR.BOTTOM)) {
             const neighbor = this.dungeonLevel.getRoomAt(this.currentRoomNode.gridX, this.currentRoomNode.gridY + 1);
             if (neighbor && this.doorManager.isDoorOpen(this.currentRoomNode, DOOR.BOTTOM)) {
                 nextRoomNode = neighbor;
@@ -762,6 +890,158 @@ class GameLogic {
         if (nextRoomNode) {
             this.changeRoom(nextRoomNode);
         }
+    }
+
+    /**
+     * 检查玩家是否进入传送门
+     */
+    checkPortalCollision() {
+        if (!this.player || !this.currentRoom) return;
+        
+        if (this.currentRoom.checkPortalCollision(this.player)) {
+            this.enterPortal();
+        }
+    }
+
+    /**
+     * 进入传送门，切换到下一关
+     */
+    enterPortal() {
+        console.log('玩家进入传送门，切换到下一关');
+        
+        const state = this.state;
+        const act = state.getData().currentAct || 1;
+        const stage = state.getData().currentStage || 1;
+        
+        if (stage >= 7) {
+            if (act >= 4) {
+                state.victory();
+            } else {
+                state.advanceAct();
+            }
+        } else {
+            state.advanceStage();
+        }
+        
+        this.init();
+    }
+
+    /**
+     * 检查玩家所在区域（无缝房间切换）
+     */
+    checkPlayerArea() {
+        if (!this.player || !this.dungeonLevel || !this.dungeonLevel.rooms) return;
+
+        const playerWorldX = this.player.x;
+        const playerWorldY = this.player.y;
+
+        let currentRoomNode = null;
+        for (const roomNode of this.dungeonLevel.rooms) {
+            if (roomNode.containsWorldPoint(playerWorldX, playerWorldY)) {
+                currentRoomNode = roomNode;
+                break;
+            }
+        }
+
+        if (!currentRoomNode) return;
+
+        if (this.currentRoomNode !== currentRoomNode) {
+            this.enterRoom(currentRoomNode);
+        }
+
+        const hasEnemies = this.enemies.length > 0 || (this.boss && this.boss.alive);
+
+        if (hasEnemies && camera.mode !== 'battle') {
+            camera.setMode('battle');
+            const margin = LEVELS.WALL_THICKNESS;
+            camera.setLockBounds(
+                currentRoomNode.left + margin,
+                currentRoomNode.right - margin,
+                currentRoomNode.top + margin,
+                currentRoomNode.bottom - margin
+            );
+        } else if (!hasEnemies && camera.mode !== 'explore') {
+            camera.setMode('explore');
+            camera.clearLockBounds();
+        }
+    }
+
+    /**
+     * 进入新房间
+     * @param {RoomNode} roomNode - 目标房间节点
+     */
+    enterRoom(roomNode) {
+        this.currentRoomNode = roomNode;
+        roomNode.markEntered();
+
+        this.doorManager.onPlayerEnterRoom(roomNode);
+
+        const roomType = roomNode.roomType;
+        const currentStage = this.state.getData().currentStage || 1;
+        const roomIndex = Math.min(currentStage, 7);
+        const isBossRoom = roomType === ROOM_TYPES.BOSS;
+
+        const roomKey = `${roomNode.gridX},${roomNode.gridY}`;
+        
+        if (this.visitedRooms.has(roomKey)) {
+            this.currentRoom = this.visitedRooms.get(roomKey);
+        } else {
+            this.currentRoom = new Room(roomType, roomIndex, isBossRoom, roomNode.worldX, roomNode.worldY);
+            this.currentRoom.preRenderBackground(roomNode);
+            this.visitedRooms.set(roomKey, this.currentRoom);
+        }
+
+        this.enemies = [];
+        this.bullets = [];
+        this.particles = [];
+        this.boss = null;
+        this.portal = null;
+        this.allEnemiesCleared = false;
+
+        if (roomNode.cleared) {
+            console.log(`房间 [${roomNode.gridX},${roomNode.gridY}] 已清空，跳过敌人生成`);
+        } else {
+            if (roomType !== ROOM_TYPES.BATTLE && roomType !== ROOM_TYPES.BOSS && roomType !== ROOM_TYPES.ELITE) {
+                this.state.markRoomVisited(roomType);
+            }
+
+            switch (roomType) {
+                case ROOM_TYPES.BOSS:
+                    this.initBossRoom();
+                    break;
+                case ROOM_TYPES.ELITE:
+                    this.initEliteRoom(roomIndex);
+                    break;
+                case ROOM_TYPES.BATTLE:
+                    this.initBattleRoom(roomIndex);
+                    break;
+                case ROOM_TYPES.CHEST:
+                    this.initBattleRoom(roomIndex, true);
+                    break;
+                case ROOM_TYPES.SHOP:
+                    this.initShopRoom(roomIndex);
+                    break;
+                case ROOM_TYPES.TRAP:
+                    this.initBattleRoom(roomIndex, true);
+                    break;
+                case ROOM_TYPES.REST:
+                    this.initRestRoom(roomIndex);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        this.minimap.setPlayerRoom(roomNode);
+
+        const roomCenterX = roomNode.getCenterWorldX() - GAME_WIDTH / 2;
+        const roomCenterY = roomNode.getCenterWorldY() - GAME_HEIGHT / 2;
+        camera.setPosition(roomCenterX, roomCenterY);
+
+        this.player.x = GAME_WIDTH / 2;
+        this.player.y = GAME_HEIGHT / 2;
+
+        console.log(`进入房间 [${roomNode.gridX},${roomNode.gridY}] - 类型: ${roomNode.getRoomTypeName()}, 敌人数量: ${this.enemies.length}, Boss: ${!!this.boss}`);
     }
 
     /**
@@ -803,8 +1083,13 @@ class GameLogic {
             const enemyTypes = this.getEnemyTypesForRoom(roomIndex);
             for (let i = 0; i < guardCount; i++) {
                 const enemyType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
-                const x = 100 + Math.random() * (GAME_WIDTH - 200);
-                const y = 100 + Math.random() * (GAME_HEIGHT - 200);
+                const margin = LEVELS.WALL_THICKNESS + 50;
+                const roomLeft = this.currentRoomNode ? this.currentRoomNode.left + margin : margin;
+                const roomRight = this.currentRoomNode ? this.currentRoomNode.right - margin : GAME_WIDTH - margin;
+                const roomTop = this.currentRoomNode ? this.currentRoomNode.top + margin : margin;
+                const roomBottom = this.currentRoomNode ? this.currentRoomNode.bottom - margin : GAME_HEIGHT - margin;
+                const x = roomLeft + Math.random() * (roomRight - roomLeft);
+                const y = roomTop + Math.random() * (roomBottom - roomTop);
                 const enemy = this.createEnemy(enemyType, x, y, roomIndex);
                 if (enemy) {
                     this.enemies.push(enemy);
@@ -827,11 +1112,16 @@ class GameLogic {
         }
 
         const enemyTypes = this.getEnemyTypesForRoom(roomIndex);
+        const margin = LEVELS.WALL_THICKNESS + 50;
+        const roomLeft = this.currentRoomNode ? this.currentRoomNode.left + margin : margin;
+        const roomRight = this.currentRoomNode ? this.currentRoomNode.right - margin : GAME_WIDTH - margin;
+        const roomTop = this.currentRoomNode ? this.currentRoomNode.top + margin : margin;
+        const roomBottom = this.currentRoomNode ? this.currentRoomNode.bottom - margin : GAME_HEIGHT - margin;
 
         for (let i = 0; i < enemyCount; i++) {
             const enemyType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
-            const x = 100 + Math.random() * (GAME_WIDTH - 200);
-            const y = 100 + Math.random() * (GAME_HEIGHT - 200);
+            const x = roomLeft + Math.random() * (roomRight - roomLeft);
+            const y = roomTop + Math.random() * (roomBottom - roomTop);
 
             const enemy = this.createEnemy(enemyType, x, y, roomIndex);
             if (enemy) {
@@ -845,13 +1135,13 @@ class GameLogic {
      * @param {number} roomIndex - 房间索引
      */
     initEliteRoom(roomIndex) {
-        const centerX = GAME_WIDTH / 2;
-        const centerY = GAME_HEIGHT / 3;
+        const centerX = this.currentRoomNode ? this.currentRoomNode.getCenterWorldX() : GAME_WIDTH / 2;
+        const centerY = this.currentRoomNode ? this.currentRoomNode.getCenterWorldY() : GAME_HEIGHT / 3;
         
         const difficultyConfig = this.state.getDifficultyConfig();
         const roomProgressMult = this.state.getRoomDifficultyMultiplier(roomIndex, false);
         
-        const eliteStatMult = ELITE_ROOM_CONFIG.ELITE_STATS_MULTIPLIER || { health: 1.5, damage: 1.2, speed: 1.1 };
+        const eliteStatMult = ELITE_ROOM_CONFIG.ELITE_STATS_MULTIPLIER || { health: 1.2, damage: 1.0, speed: 1.05 };
         const healthMult = (difficultyConfig?.enemy?.healthMultiplier || 1) * roomProgressMult * eliteStatMult.health;
         const damageMult = (difficultyConfig?.enemy?.damageMultiplier || 1) * roomProgressMult * eliteStatMult.damage;
         const speedMult = (difficultyConfig?.enemy?.speedMultiplier || 1) * eliteStatMult.speed;
@@ -951,7 +1241,9 @@ class GameLogic {
         const speedMult = difficultyConfig?.enemy?.speedMultiplier || 1;
         const aiLevel = difficultyConfig?.enemy?.aiLevel || 1;
         
-        this.boss = new Boss(GAME_WIDTH / 2, 150, { eventBus: this.eventBus });
+        const bossX = this.currentRoomNode ? this.currentRoomNode.getCenterWorldX() : GAME_WIDTH / 2;
+        const bossY = this.currentRoomNode ? this.currentRoomNode.top + 150 : 150;
+        this.boss = new Boss(bossX, bossY, { eventBus: this.eventBus });
         
         if (this.boss) {
             this.boss.maxHealth = Math.ceil(this.boss.maxHealth * healthMult);
@@ -960,7 +1252,7 @@ class GameLogic {
             this.boss.aiLevel = aiLevel;
         }
         
-        audioManager.playSound(AUDIO.BOSS_APPEAR);
+        soundManager.play(SOUND_EFFECTS.BOSS);
         
         // 发布Boss出现事件
         if (this.eventBus) {
@@ -977,8 +1269,8 @@ class GameLogic {
         this.enemies = [];
         this.boss = null;
         
-        const centerX = GAME_WIDTH / 2;
-        const centerY = GAME_HEIGHT / 2;
+        const centerX = this.currentRoomNode ? this.currentRoomNode.getCenterWorldX() : GAME_WIDTH / 2;
+        const centerY = this.currentRoomNode ? this.currentRoomNode.getCenterWorldY() : GAME_HEIGHT / 2;
         
         this.shopManager.spawnMerchant(centerX, centerY);
         
@@ -1139,6 +1431,9 @@ class GameLogic {
         // 更新玩家
         this.updatePlayer(scaledDelta);
         
+        // 检查玩家所在区域（用于无缝房间切换）
+        this.checkPlayerArea();
+        
         // 更新敌人
         this.updateEnemies(scaledDelta);
         
@@ -1168,6 +1463,14 @@ class GameLogic {
         
         // 更新UI
         uiManager.update(scaledDelta);
+        
+        // 更新低血量暗角
+        const playerHealth = this.state.data.playerHealth || PLAYER.MAX_HEALTH;
+        const maxHealth = this.state.data.maxHealth || PLAYER.MAX_HEALTH;
+        if (playerHealth > 0 && maxHealth > 0) {
+            const healthPercent = playerHealth / maxHealth;
+            renderer.updateLowHealthVignette(healthPercent, scaledDelta);
+        }
         
         // 更新怒气系统
         this.rageSystem.update(scaledDelta);
@@ -1248,6 +1551,8 @@ class GameLogic {
     updatePlayer(deltaTime) {
         if (!this.player) return;
 
+        if (this.inputLocked) return;
+
         // 获取移动输入
         const movement = inputManager.getMovementVector();
 
@@ -1270,49 +1575,110 @@ class GameLogic {
     }
     
     /**
-     * 限制玩家在房间范围内
+     * 限制玩家在房间范围内（使用世界坐标）
+     * 战斗模式下限制玩家在当前房间，探索模式下允许玩家通过走廊移动
      */
     clampPlayerToRoom() {
         const margin = LEVELS.WALL_THICKNESS;
         const playerHalfSize = PLAYER.SIZE / 2;
         
-        // 限制X坐标
-        if (this.player.x < margin + playerHalfSize) {
-            this.player.x = margin + playerHalfSize;
-            // 碰到左墙，停止X方向速度
-            if (this.player.velocityX < 0) {
-                this.player.velocityX = 0;
+        // 战斗模式下限制玩家在当前房间
+        if (camera.mode === 'battle' && this.currentRoomNode) {
+            // 限制X坐标
+            if (this.player.x < this.currentRoomNode.left + margin + playerHalfSize) {
+                this.player.x = this.currentRoomNode.left + margin + playerHalfSize;
+                if (this.player.velocityX < 0) {
+                    this.player.velocityX = 0;
+                }
             }
-        }
-        if (this.player.x > GAME_WIDTH - margin - playerHalfSize) {
-            this.player.x = GAME_WIDTH - margin - playerHalfSize;
-            // 碰到右墙，停止X方向速度
-            if (this.player.velocityX > 0) {
-                this.player.velocityX = 0;
+            if (this.player.x > this.currentRoomNode.right - margin - playerHalfSize) {
+                this.player.x = this.currentRoomNode.right - margin - playerHalfSize;
+                if (this.player.velocityX > 0) {
+                    this.player.velocityX = 0;
+                }
+            }
+            
+            // 限制Y坐标
+            if (this.player.y < this.currentRoomNode.top + margin + playerHalfSize) {
+                this.player.y = this.currentRoomNode.top + margin + playerHalfSize;
+                if (this.player.velocityY < 0) {
+                    this.player.velocityY = 0;
+                }
+            }
+            if (this.player.y > this.currentRoomNode.bottom - margin - playerHalfSize) {
+                this.player.y = this.currentRoomNode.bottom - margin - playerHalfSize;
+                if (this.player.velocityY > 0) {
+                    this.player.velocityY = 0;
+                }
             }
         }
         
-        // 限制Y坐标
-        if (this.player.y < margin + playerHalfSize) {
-            this.player.y = margin + playerHalfSize;
-            // 碰到上墙，停止Y方向速度
-            if (this.player.velocityY < 0) {
-                this.player.velocityY = 0;
-            }
-        }
-        if (this.player.y > GAME_HEIGHT - margin - playerHalfSize) {
-            this.player.y = GAME_HEIGHT - margin - playerHalfSize;
-            // 碰到下墙，停止Y方向速度
-            if (this.player.velocityY > 0) {
-                this.player.velocityY = 0;
-            }
+        // 探索模式下检查走廊墙壁碰撞
+        if (camera.mode === 'explore') {
+            this.checkCorridorWallCollision();
         }
         
-        // 同步渲染位置也需要跟随实际位置（防止穿墙时的插值问题
+        // 同步渲染位置
         if (this.player.renderX !== this.player.x || this.player.renderY !== this.player.y) {
-            // 如果实际位置被限制了，渲染位置也相应调整
             this.player.renderX = this.player.x;
             this.player.renderY = this.player.y;
+        }
+    }
+    
+    /**
+     * 检查走廊墙壁碰撞
+     */
+    checkCorridorWallCollision() {
+        if (!this.dungeonLevel || !this.dungeonLevel.corridors) return;
+        
+        const playerHalfSize = PLAYER.SIZE / 2;
+        const playerLeft = this.player.x - playerHalfSize;
+        const playerRight = this.player.x + playerHalfSize;
+        const playerTop = this.player.y - playerHalfSize;
+        const playerBottom = this.player.y + playerHalfSize;
+        
+        for (const corridor of this.dungeonLevel.corridors) {
+            const wallThickness = 20;
+            
+            if (corridor.direction === 'right' || corridor.direction === 'left') {
+                // 水平走廊
+                const topWallBottom = corridor.top;
+                const topWallTop = corridor.top - wallThickness;
+                const bottomWallTop = corridor.bottom;
+                const bottomWallBottom = corridor.bottom + wallThickness;
+                
+                if (playerRight > corridor.left && playerLeft < corridor.right) {
+                    // 顶部墙壁碰撞
+                    if (playerBottom > topWallTop && playerTop < topWallBottom) {
+                        this.player.y = topWallTop - playerHalfSize;
+                        if (this.player.velocityY > 0) this.player.velocityY = 0;
+                    }
+                    // 底部墙壁碰撞
+                    if (playerTop < bottomWallBottom && playerBottom > bottomWallTop) {
+                        this.player.y = bottomWallBottom + playerHalfSize;
+                        if (this.player.velocityY < 0) this.player.velocityY = 0;
+                    }
+                }
+            } else {
+                // 垂直走廊
+                const leftWallRight = corridor.left;
+                const leftWallLeft = corridor.left - wallThickness;
+                const rightWallLeft = corridor.right;
+                const rightWallRight = corridor.right + wallThickness;
+                
+                if (playerBottom > corridor.top && playerTop < corridor.bottom) {
+                    // 左侧墙壁碰撞
+                    if (playerRight > leftWallLeft && playerLeft < leftWallRight) {
+                        this.player.x = leftWallLeft - playerHalfSize;
+                        if (this.player.velocityX > 0) this.player.velocityX = 0;
+                    }
+                    // 右侧墙壁碰撞
+                    if (playerLeft < rightWallRight && playerRight > rightWallLeft) {
+                        this.player.x = rightWallRight + playerHalfSize;
+                        if (this.player.velocityX < 0) this.player.velocityX = 0;
+                    }
+                }
+            }
         }
     }
     
@@ -1321,6 +1687,7 @@ class GameLogic {
      * @param {number} deltaTime - 距离上一帧的时间（毫秒）
      */
     updateEnemies(deltaTime) {
+        if (this.inputLocked) return;
         this.enemies.forEach(enemy => {
             if (enemy.alive) {
                 enemy.update(deltaTime, this.player);
@@ -1336,6 +1703,7 @@ class GameLogic {
      * @param {number} deltaTime - 距离上一帧的时间（毫秒）
      */
     updateBoss(deltaTime) {
+        if (this.inputLocked) return;
         if (!this.boss || !this.boss.alive) return;
         
         this.boss.update(deltaTime, this.player, this);
@@ -1483,8 +1851,7 @@ class GameLogic {
         // 重置帧子弹轨迹计数
         this.frameBulletTrails = 0;
         
-        // 粒子数量警告阈值
-        const MAX_PARTICLES = 500;
+        const MAX_PARTICLES = PARTICLES.MAX_COUNT;
         
         // 从后往前遍历，避免使用filter分配新数组
         for (let i = this.particles.length - 1; i >= 0; i--) {
@@ -1545,7 +1912,7 @@ class GameLogic {
                     }
                     this.state.playerHurt(actualDamage);
                     this.spawnDamageParticles(this.player.x, this.player.y);
-                    audioManager.playSound(AUDIO.HURT);
+                    soundManager.play(SOUND_EFFECTS.HURT);
                 }
             }
         });
@@ -1609,6 +1976,9 @@ class GameLogic {
         
         // 应用伤害和击退
         enemy.takeDamage(damage, knockbackDir, knockbackForce);
+        
+        // 击中停顿
+        this.timeManager.freeze(FEEDBACK.HIT_STOP.ENEMY_HIT);
     }
     
     /**
@@ -1642,6 +2012,9 @@ class GameLogic {
         
         // 应用伤害和击退
         this.boss.takeDamage(damage, knockbackDir, knockbackForce);
+        
+        // Boss击中停顿
+        this.timeManager.freeze(FEEDBACK.HIT_STOP.BOSS_HIT);
     }
     
     /**
@@ -1665,6 +2038,9 @@ class GameLogic {
         
         // 应用伤害和击退
         this.boss.takeDamage(damage, knockbackDir, knockbackForce);
+        
+        // Boss击中停顿
+        this.timeManager.freeze(FEEDBACK.HIT_STOP.BOSS_HIT);
     }
     
     /**
@@ -1697,6 +2073,9 @@ class GameLogic {
         
         // 应用伤害和击退
         enemy.takeDamage(damage, knockbackDir, knockbackForce);
+        
+        // 击中停顿
+        this.timeManager.freeze(FEEDBACK.HIT_STOP.ENEMY_HIT);
     }
     
     /**
@@ -2139,7 +2518,7 @@ class GameLogic {
         this.spawnDamageParticles(this.player.x, this.player.y);
         
         // 播放受伤音效
-        audioManager.playSound(AUDIO.HURT);
+        soundManager.play(SOUND_EFFECTS.HURT);
         
         if (this.state.isState(GAME_STATE.GAME_OVER)) {
             console.log('玩家死亡');
@@ -2177,7 +2556,7 @@ class GameLogic {
         this.spawnDamageParticles(this.player.x, this.player.y);
         
         // 播放受伤音效
-        audioManager.playSound(AUDIO.HURT);
+        soundManager.play(SOUND_EFFECTS.HURT);
         
         if (this.state.isState(GAME_STATE.GAME_OVER)) {
             console.log('玩家死亡');
@@ -2206,7 +2585,7 @@ class GameLogic {
         this.spawnDeathParticles(enemy.x, enemy.y, enemy.color);
         
         // 播放击杀音效
-        audioManager.playSound(AUDIO.KILL);
+        soundManager.play(SOUND_EFFECTS.KILL);
         
         // 触发屏幕震动
         camera.shake(FEEDBACK.SCREEN_SHAKE.ENEMY_KILLED.intensity, FEEDBACK.SCREEN_SHAKE.ENEMY_KILLED.duration);
@@ -2261,7 +2640,7 @@ class GameLogic {
         }
         
         // 播放胜利音效
-        audioManager.playSound(AUDIO.VICTORY);
+        soundManager.play(SOUND_EFFECTS.VICTORY);
         
         // Boss击杀成就
         const data = this.state.getData();
@@ -2288,6 +2667,12 @@ class GameLogic {
         
         this.spawnDeathParticles(enemy.x, enemy.y, enemy.color);
         camera.shake(FEEDBACK.SCREEN_SHAKE.ENEMY_KILLED.intensity, FEEDBACK.SCREEN_SHAKE.ENEMY_KILLED.duration);
+        
+        // 击杀停顿（更强）
+        this.timeManager.freeze(FEEDBACK.HIT_STOP.ENEMY_KILL);
+        
+        // 击杀屏幕闪光
+        renderer.triggerScreenFlash(enemy.color, 0.15);
     }
     
     /**
@@ -2310,7 +2695,7 @@ class GameLogic {
         }
         
         this.spawnDamageParticles(this.player.x, this.player.y);
-        audioManager.playSound(AUDIO.HURT);
+        soundManager.play(SOUND_EFFECTS.HURT);
     }
     
     /**
@@ -2333,7 +2718,35 @@ class GameLogic {
         if (boss) {
             this.boss = boss;
         }
-        audioManager.playSound(AUDIO.BOSS_APPEAR);
+        
+        // Boss出场动画序列
+        this.bossEntranceAnimation();
+    }
+    
+    /**
+     * Boss出场动画
+     */
+    bossEntranceAnimation() {
+        soundManager.play(SOUND_EFFECTS.BOSS);
+        
+        // 阶段1: 镜头拉近
+        renderer.setCameraZoom(1.3);
+        
+        // 500ms后: 屏幕震动+闪白
+        setTimeout(() => {
+            camera.shake(8, 500);
+            renderer.triggerScreenFlash('#ff0000', 0.4);
+        }, 500);
+        
+        // 1000ms后: 慢动作
+        setTimeout(() => {
+            this.timeManager.startSlowMotion(500, 0.3);
+        }, 1000);
+        
+        // 1500ms后: 恢复正常镜头
+        setTimeout(() => {
+            renderer.resetCameraZoom();
+        }, 1500);
     }
     
     /**
@@ -2345,7 +2758,7 @@ class GameLogic {
         if (boss && boss.x !== undefined && boss.y !== undefined) {
             this.spawnBossExplosion(boss.x, boss.y);
         }
-        audioManager.playSound(AUDIO.VICTORY);
+        soundManager.play(SOUND_EFFECTS.VICTORY);
     }
     
     /**
@@ -2613,6 +3026,12 @@ class GameLogic {
                     if (this.currentRoom) {
                         this.currentRoom.spawnPortal();
                         this.spawnGoldenChest();
+                    }
+                }, PORTAL.SPAWN_DELAY);
+            } else if (this.currentRoomNode.hasPortal) {
+                setTimeout(() => {
+                    if (this.currentRoom) {
+                        this.currentRoom.spawnPortal();
                     }
                 }, PORTAL.SPAWN_DELAY);
             }
@@ -2951,7 +3370,7 @@ class GameLogic {
                     this.player.y,
                     direction.x,
                     direction.y,
-                    weapon
+                    { ...weapon, gameLogic: this }
                 );
                 this.bullets.push(flameBullet);
                 break;
@@ -2981,7 +3400,8 @@ class GameLogic {
                         speed: weapon.BULLET_SPEED,
                         color: COLORS.BULLET.FREEZE,
                         slowFactor: weapon.SLOW_FACTOR,
-                        slowDuration: weapon.SLOW_DURATION
+                        slowDuration: weapon.SLOW_DURATION,
+                        gameLogic: this
                     }
                 );
                 this.bullets.push(freezeBullet);
@@ -3059,28 +3479,28 @@ class GameLogic {
     playShootSound(weapon) {
         switch (weapon.ID) {
             case WEAPONS.LIGHTNING.ID:
-                audioManager.playSound(AUDIO.SHOOT.LIGHTNING);
+                soundManager.play(SOUND_EFFECTS.LASER);
                 break;
             case WEAPONS.GRENADE.ID:
-                audioManager.playSound(AUDIO.SHOOT.GRENADE);
+                soundManager.play(SOUND_EFFECTS.EXPLOSION);
                 break;
             case WEAPONS.FLAME.ID:
-                audioManager.playSound(AUDIO.SHOOT.FLAME);
+                soundManager.play(SOUND_EFFECTS.FLAME);
                 break;
             case WEAPONS.BOOMERANG.ID:
-                audioManager.playSound(AUDIO.SHOOT.BOOMERANG);
+                soundManager.play(SOUND_EFFECTS.DASH);
                 break;
             case WEAPONS.FREEZE.ID:
-                audioManager.playSound(AUDIO.SHOOT.FREEZE);
+                soundManager.play(SOUND_EFFECTS.FREEZE);
                 break;
             case WEAPONS.SHOTGUN.ID:
-                audioManager.playSound(AUDIO.SHOOT.SHOTGUN);
+                soundManager.play(SOUND_EFFECTS.SHOTGUN);
                 break;
             case WEAPONS.HOMING.ID:
-                audioManager.playSound(AUDIO.SHOOT.HOMING);
+                soundManager.play(SOUND_EFFECTS.HOMING);
                 break;
             default:
-                audioManager.playSound(AUDIO.SHOOT.PISTOL);
+                soundManager.play(SOUND_EFFECTS.PISTOL);
         }
     }
     
@@ -3165,7 +3585,7 @@ class GameLogic {
                 if (added) {
                     console.log(`拾取了武器: ${drop.weapon.NAME}`);
                     // 播放拾取音效
-                    audioManager.playSound(AUDIO.PICKUP);
+                    soundManager.play(SOUND_EFFECTS.PICKUP);
                     // 更新UI
                     uiManager.updateWeapon();
                     uiManager.updateWeaponInfo();
@@ -3251,76 +3671,77 @@ class GameLogic {
      * @param {boolean} isCritKill - 是否暴击击杀
      */
     spawnDeathParticles(x, y, color, isCritKill = false) {
-        // 主要爆炸粒子（圆形）- 增加数量
-        for (let i = 0; i < 25; i++) {
-            const angle = (i / 25) * Math.PI * 2 + Math.random() * 0.3;
-            const speed = 2 + Math.random() * 5;
+        const cfg = PARTICLES.TYPES.KILL_BURST;
+        const mult = isCritKill ? 1.5 : 1.0;
+        
+        // 径向爆射粒子（主要视觉）
+        const radialCount = Math.floor(cfg.RADIAL_COUNT * mult);
+        for (let i = 0; i < radialCount; i++) {
+            const angle = (i / radialCount) * Math.PI * 2 + Math.random() * 0.2;
+            const speed = cfg.RADIAL_SPEED_MIN + Math.random() * (cfg.RADIAL_SPEED_MAX - cfg.RADIAL_SPEED_MIN);
+            const size = cfg.RADIAL_SIZE_MIN + Math.random() * (cfg.RADIAL_SIZE_MAX - cfg.RADIAL_SIZE_MIN);
             
             const particle = new Particle(
                 x, y,
                 Math.cos(angle) * speed,
                 Math.sin(angle) * speed,
-                color,
-                4 + Math.random() * 6,
-                600 + Math.random() * 400
+                Math.random() < 0.3 ? '#ffffff' : color,
+                size,
+                cfg.RADIAL_LIFETIME
             );
             particle.setKind(PARTICLES.KIND.CIRCLE);
-            particle.setGravity(0.15);
+            particle.setGravity(0.1);
             this.particles.push(particle);
         }
         
-        // 小碎片（方形）- 增加数量
-        for (let i = 0; i < 20; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const speed = 1 + Math.random() * 4;
-            
+        // 环形冲击波（快速扩散）
+        for (let i = 0; i < cfg.RING_COUNT; i++) {
+            const angle = (i / cfg.RING_COUNT) * Math.PI * 2;
             const particle = new Particle(
                 x, y,
-                Math.cos(angle) * speed,
-                Math.sin(angle) * speed - 2,
-                '#ffffff',
-                2 + Math.random() * 3,
-                400 + Math.random() * 300
-            );
-            particle.setKind(PARTICLES.KIND.SQUARE);
-            particle.setGravity(0.2);
-            particle.enableFlicker(0.05);
-            this.particles.push(particle);
-        }
-        
-        // 冲击波（环形粒子）- 增加数量
-        for (let i = 0; i < 12; i++) {
-            const angle = (i / 12) * Math.PI * 2;
-            const particle = new Particle(
-                x, y,
-                Math.cos(angle) * 7,
-                Math.sin(angle) * 7,
+                Math.cos(angle) * cfg.RING_SPEED,
+                Math.sin(angle) * cfg.RING_SPEED,
                 color,
-                8,
-                250
+                cfg.RING_SIZE,
+                cfg.RING_LIFETIME
             );
             particle.setKind(PARTICLES.KIND.CIRCLE);
             particle.setGravity(0);
             this.particles.push(particle);
         }
         
-        // 中心闪光 - 增大尺寸
+        // 中心白色闪光
         const flash = new Particle(
-            x, y,
-            0, 0,
+            x, y, 0, 0,
             '#ffffff',
-            30,
-            150
+            cfg.FLASH_SIZE * mult,
+            cfg.FLASH_LIFETIME
         );
-        flash.disableShrink();
-        flash.disableFade();
+        flash.setKind(PARTICLES.KIND.CIRCLE);
+        flash.setGravity(0);
         this.particles.push(flash);
         
-        // 添加星形粒子
+        // 小碎片（额外细节）
+        for (let i = 0; i < 15; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 1 + Math.random() * 3;
+            const particle = new Particle(
+                x, y,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed - 2,
+                '#ffffff',
+                1 + Math.random() * 2,
+                300 + Math.random() * 200
+            );
+            particle.setKind(PARTICLES.KIND.SQUARE);
+            particle.setGravity(0.15);
+            this.particles.push(particle);
+        }
+        
+        // 星形粒子
         for (let i = 0; i < 8; i++) {
             const angle = (i / 8) * Math.PI * 2;
             const speed = 3 + Math.random() * 3;
-            
             const particle = new Particle(
                 x, y,
                 Math.cos(angle) * speed,
@@ -3331,25 +3752,6 @@ class GameLogic {
             );
             particle.setKind(PARTICLES.KIND.STAR);
             particle.setGravity(0.1);
-            this.particles.push(particle);
-        }
-        
-        // 添加螺旋粒子
-        for (let i = 0; i < 15; i++) {
-            const angle = (i / 15) * Math.PI * 2;
-            const speed = 1.5 + Math.random() * 2;
-            
-            const particle = new Particle(
-                x, y,
-                Math.cos(angle) * speed,
-                Math.sin(angle) * speed,
-                '#ff88ff',
-                3 + Math.random() * 2,
-                500 + Math.random() * 300
-            );
-            particle.setKind(PARTICLES.KIND.CIRCLE);
-            particle.setGravity(0.08);
-            particle.setRotationSpeed((Math.random() - 0.5) * 0.2);
             this.particles.push(particle);
         }
         
@@ -3580,7 +3982,13 @@ class GameLogic {
         ctx.save();
         camera.apply(ctx);
         
-        // 渲染房间（使用room的预渲染背景，包含地砖和3D墙壁）
+        // 渲染所有已访问房间的背景和装饰物
+        this.renderVisitedRooms(renderer);
+        
+        // 渲染所有走廊
+        this.renderCorridors(renderer);
+        
+        // 渲染当前房间（使用room的预渲染背景，包含地砖和3D墙壁）
         if (this.currentRoom) {
             this.currentRoom.render(renderer);
             
@@ -3600,6 +4008,27 @@ class GameLogic {
         // 渲染传送门（使用room的传送门）
         if (this.currentRoom) {
             this.currentRoom.renderPortal(renderer);
+        }
+        
+        // 过渡期间渲染目标房间
+        if (camera.transitioning && this.pendingRoom && this.currentRoomNode) {
+            const progress = Math.min(camera.transitionTimer / camera.transitionDuration, 1);
+            const eased = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+            
+            const offsetX = (this.currentRoomNode.gridX - this.pendingRoomNode.gridX) * LEVELS.ROOM_WIDTH * (1 - eased);
+            const offsetY = (this.currentRoomNode.gridY - this.pendingRoomNode.gridY) * LEVELS.ROOM_HEIGHT * (1 - eased);
+            
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+            
+            this.pendingRoom.render(renderer);
+            this.pendingRoom.renderDecorations(renderer);
+            this.pendingRoom.renderTraps(renderer);
+            this.pendingRoom.renderChests(renderer);
+            this.pendingRoom.renderFountain(renderer);
+            this.pendingRoom.renderPortal(renderer);
+            
+            ctx.restore();
         }
         
         // 渲染武器掉落
@@ -3649,7 +4078,55 @@ class GameLogic {
         });
         
         // 渲染准星（在UI层之上，不受相机影响）
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
         this.renderCrosshair(ctx);
+        ctx.restore();
+    }
+    
+    /**
+     * 渲染所有已访问房间的背景和装饰物
+     * @param {Renderer} renderer - 渲染器引用
+     */
+    renderVisitedRooms(renderer) {
+        if (!this.dungeonLevel) return;
+        
+        const ctx = renderer.ctx;
+        
+        for (const roomNode of this.dungeonLevel.rooms) {
+            if (roomNode.entered && roomNode !== this.currentRoomNode) {
+                const roomKey = `${roomNode.gridX},${roomNode.gridY}`;
+                const room = this.visitedRooms.get(roomKey);
+                
+                if (room) {
+                    room.render(renderer);
+                    room.renderDecorations(renderer);
+                    room.renderTraps(renderer);
+                    room.renderChests(renderer);
+                    room.renderFountain(renderer);
+                    room.renderPortal(renderer);
+                }
+            }
+        }
+    }
+    
+    /**
+     * 渲染所有走廊
+     * @param {Renderer} renderer - 渲染器引用
+     */
+    renderCorridors(renderer) {
+        if (!this.dungeonLevel || !this.dungeonLevel.corridors) return;
+        
+        const ctx = renderer.ctx;
+        
+        for (const corridor of this.dungeonLevel.corridors) {
+            const roomAKey = `${corridor.fromRoom.gridX},${corridor.fromRoom.gridY}`;
+            const roomBKey = `${corridor.toRoom.gridX},${corridor.toRoom.gridY}`;
+            
+            if (this.visitedRooms.has(roomAKey) && this.visitedRooms.has(roomBKey)) {
+                corridor.render(ctx);
+            }
+        }
     }
     
     /**
@@ -3659,13 +4136,15 @@ class GameLogic {
     renderCrosshair(ctx) {
         if (!gameState.isPlaying()) return;
         
-        const mousePos = inputManager.getMouseWorldPosition();
+        const mousePos = {
+            x: inputManager.mouse.worldX,
+            y: inputManager.mouse.worldY
+        };
         if (!mousePos || mousePos.x === undefined || mousePos.y === undefined) return;
         
         const weapon = this.state.getCurrentWeapon();
         const color = weapon ? weapon.COLOR : '#ffffff';
         
-        ctx.save();
         ctx.translate(mousePos.x, mousePos.y);
         
         const size = 16;
@@ -4730,8 +5209,10 @@ class GameLogic {
         const drawY = renderY + baseYOffset;
         
         // 计算朝向鼠标的角度
-        const mouseX = inputManager.mouse.worldX || renderX;
-        const mouseY = inputManager.mouse.worldY || renderY;
+        const cameraX = typeof camera !== 'undefined' && camera ? camera.x : 0;
+        const cameraY = typeof camera !== 'undefined' && camera ? camera.y : 0;
+        const mouseX = (inputManager.mouse.worldX || 0) + cameraX;
+        const mouseY = (inputManager.mouse.worldY || 0) + cameraY;
         const angle = Math.atan2(mouseY - renderY, mouseX - renderX);
         
         // 无敌闪烁判断

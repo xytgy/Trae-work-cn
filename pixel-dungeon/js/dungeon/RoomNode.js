@@ -18,6 +18,10 @@ class RoomNode {
         this.hasPortal = false;
         this.worldX = gridX * LEVELS.ROOM_WIDTH;
         this.worldY = gridY * LEVELS.ROOM_HEIGHT;
+        this.left = this.worldX;
+        this.right = this.worldX + LEVELS.ROOM_WIDTH;
+        this.top = this.worldY;
+        this.bottom = this.worldY + LEVELS.ROOM_HEIGHT;
         this.neighbors = [];
         this.index = gridY * 5 + gridX;
     }
@@ -69,6 +73,18 @@ class RoomNode {
 
     spawnPortal() {
         this.hasPortal = true;
+    }
+
+    getCenterWorldX() {
+        return this.worldX + LEVELS.ROOM_WIDTH / 2;
+    }
+
+    getCenterWorldY() {
+        return this.worldY + LEVELS.ROOM_HEIGHT / 2;
+    }
+
+    containsWorldPoint(x, y) {
+        return x >= this.left && x <= this.right && y >= this.top && y <= this.bottom;
     }
 
     getRoomTypeName() {

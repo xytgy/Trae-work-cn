@@ -212,9 +212,13 @@ class Decoration {
 }
 
 class Room {
-    constructor(roomType = ROOM_TYPES.BATTLE, roomIndex = 0, isBossRoom = false) {
+    constructor(roomType = ROOM_TYPES.BATTLE, roomIndex = 0, isBossRoom = false, worldX = 0, worldY = 0) {
         // 房间类型
         this.roomType = roomType;
+        
+        // 世界坐标（用于多房间渲染时的位置偏移）
+        this.worldX = worldX;
+        this.worldY = worldY;
         
         // 房间索引（用于难度递增）
         this.roomIndex = roomIndex;
@@ -556,20 +560,158 @@ class Room {
     
     /**
      * 初始化预渲染背景
+     * @param {RoomNode} roomNode - 房间节点（可选）
      */
-    initBackground() {
-        // 创建离屏Canvas
+    initBackground(roomNode) {
         this.backgroundCanvas = document.createElement('canvas');
         this.backgroundCanvas.width = this.width;
         this.backgroundCanvas.height = this.height;
         
         this.backgroundCtx = this.backgroundCanvas.getContext('2d');
         
-        // 生成地砖
         this.generateFloorTiles();
         
-        // 绘制静态背景
-        this.renderStaticBackground();
+        const ctx = this.backgroundCtx;
+
+        ctx.fillStyle = this.backgroundColor;
+        ctx.fillRect(0, 0, this.width, this.height);
+
+        this.drawFloorPattern(ctx);
+
+        if (roomNode) {
+            this.drawWallsWithDoors(ctx, roomNode);
+            this.drawDoorsWithDoors(ctx, roomNode);
+        } else {
+            this.drawWalls(ctx);
+            this.drawDoors(ctx);
+        }
+    }
+    
+    /**
+     * 根据房间节点预渲染背景（支持门信息）
+     * @param {RoomNode} roomNode - 房间节点
+     */
+    preRenderBackground(roomNode) {
+        if (!roomNode) {
+            this.initBackground();
+            return;
+        }
+
+        this.backgroundCanvas = document.createElement('canvas');
+        this.backgroundCanvas.width = this.width;
+        this.backgroundCanvas.height = this.height;
+        this.backgroundCtx = this.backgroundCanvas.getContext('2d');
+
+        this.generateFloorTiles();
+
+        const ctx = this.backgroundCtx;
+
+        ctx.fillStyle = this.backgroundColor;
+        ctx.fillRect(0, 0, this.width, this.height);
+
+        this.drawFloorPattern(ctx);
+        this.drawWallsWithDoors(ctx, roomNode);
+        this.drawDoorsWithDoors(ctx, roomNode);
+    }
+    
+    /**
+     * 根据门信息绘制墙壁
+     * @param {CanvasRenderingContext2D} ctx - 渲染上下文
+     * @param {RoomNode} roomNode - 房间节点
+     */
+    drawWallsWithDoors(ctx, roomNode) {
+        const centerX = this.width / 2;
+        const centerY = this.height / 2;
+        const doorWidth = this.doorSize;
+        const halfDoorWidth = doorWidth / 2;
+
+        if (roomNode.hasDoor(DOOR.TOP)) {
+            this.drawBrickWall(ctx, 0, 0, centerX - halfDoorWidth, this.wallThickness, 'top');
+            this.drawBrickWall(ctx, centerX + halfDoorWidth, 0, this.width - centerX - halfDoorWidth, this.wallThickness, 'top');
+        } else {
+            this.drawBrickWall(ctx, 0, 0, this.width, this.wallThickness, 'top');
+        }
+
+        if (roomNode.hasDoor(DOOR.BOTTOM)) {
+            this.drawBrickWall(ctx, 0, this.height - this.wallThickness, centerX - halfDoorWidth, this.wallThickness, 'bottom');
+            this.drawBrickWall(ctx, centerX + halfDoorWidth, this.height - this.wallThickness, this.width - centerX - halfDoorWidth, this.wallThickness, 'bottom');
+        } else {
+            this.drawBrickWall(ctx, 0, this.height - this.wallThickness, this.width, this.wallThickness, 'bottom');
+        }
+
+        if (roomNode.hasDoor(DOOR.LEFT)) {
+            this.drawBrickWall(ctx, 0, 0, this.wallThickness, centerY - halfDoorWidth, 'left');
+            this.drawBrickWall(ctx, 0, centerY + halfDoorWidth, this.wallThickness, this.height - centerY - halfDoorWidth, 'left');
+        } else {
+            this.drawBrickWall(ctx, 0, 0, this.wallThickness, this.height, 'left');
+        }
+
+        if (roomNode.hasDoor(DOOR.RIGHT)) {
+            this.drawBrickWall(ctx, this.width - this.wallThickness, 0, this.wallThickness, centerY - halfDoorWidth, 'right');
+            this.drawBrickWall(ctx, this.width - this.wallThickness, centerY + halfDoorWidth, this.wallThickness, this.height - centerY - halfDoorWidth, 'right');
+        } else {
+            this.drawBrickWall(ctx, this.width - this.wallThickness, 0, this.wallThickness, this.height, 'right');
+        }
+    }
+    
+    /**
+     * 根据门信息绘制门
+     * @param {CanvasRenderingContext2D} ctx - 渲染上下文
+     * @param {RoomNode} roomNode - 房间节点
+     */
+    drawDoorsWithDoors(ctx, roomNode) {
+        const doorWidth = this.doorSize;
+        const doorHeight = this.wallThickness;
+        const centerX = this.width / 2;
+        const centerY = this.height / 2;
+        const frameThickness = 4;
+
+        const drawDoorFrame = (x, y, w, h, isVertical) => {
+            ctx.shadowColor = this.doorColor;
+            ctx.shadowBlur = 15;
+            ctx.fillStyle = this.doorColor;
+            ctx.fillRect(x, y, w, h);
+            ctx.shadowBlur = 0;
+
+            const gradient = ctx.createLinearGradient(x, y, x + w, y + h);
+            gradient.addColorStop(0, '#2a1a3a');
+            gradient.addColorStop(0.5, '#1a0a2a');
+            gradient.addColorStop(1, '#0f051a');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x + frameThickness, y + frameThickness, w - frameThickness * 2, h - frameThickness * 2);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            if (isVertical) {
+                ctx.fillRect(x + 2, y + 2, 3, h - 4);
+                ctx.fillRect(x + w - 5, y + 2, 3, h - 4);
+            } else {
+                ctx.fillRect(x + 2, y + 2, w - 4, 3);
+                ctx.fillRect(x + 2, y + h - 5, w - 4, 3);
+            }
+
+            ctx.fillStyle = 'rgba(100, 100, 120, 0.2)';
+            const tileSize = 10;
+            for (let ty = y + frameThickness + 5; ty < y + h - frameThickness - 5; ty += tileSize) {
+                for (let tx = x + frameThickness + 5; tx < x + w - frameThickness - 5; tx += tileSize) {
+                    if ((tx + ty) % (tileSize * 2) < tileSize) {
+                        ctx.fillRect(tx, ty, tileSize - 2, tileSize - 2);
+                    }
+                }
+            }
+        };
+
+        if (roomNode.hasDoor(DOOR.TOP)) {
+            drawDoorFrame(centerX - doorWidth / 2, 0, doorWidth, doorHeight, false);
+        }
+        if (roomNode.hasDoor(DOOR.BOTTOM)) {
+            drawDoorFrame(centerX - doorWidth / 2, this.height - doorHeight, doorWidth, doorHeight, false);
+        }
+        if (roomNode.hasDoor(DOOR.LEFT)) {
+            drawDoorFrame(0, centerY - doorWidth / 2, doorHeight, doorWidth, true);
+        }
+        if (roomNode.hasDoor(DOOR.RIGHT)) {
+            drawDoorFrame(this.width - doorHeight, centerY - doorWidth / 2, doorHeight, doorWidth, true);
+        }
     }
     
     /**
@@ -638,7 +780,8 @@ class Room {
         }
         
         // 生成石柱（随机位置，避开中心）
-        for (let i = 0; i < DECORATIONS.PILLAR_COUNT; i++) {
+        const pillarCount = this.roomType === ROOM_TYPES.ELITE ? 1 : DECORATIONS.PILLAR_COUNT;
+        for (let i = 0; i < pillarCount; i++) {
             let x, y;
             let attempts = 0;
             do {
@@ -1082,11 +1225,15 @@ class Room {
      * 生成传送门（击杀所有敌人后调用）
      */
     spawnPortal() {
+        if (this.portal) {
+            console.log('传送门已存在，跳过生成');
+            return;
+        }
         this.portal = {
             x: this.width / 2,
             y: this.height / 2,
             size: PORTAL.SIZE,
-            spawnTime: PORTAL.SPAWN_DELAY, // 3秒后可用
+            spawnTime: PORTAL.SPAWN_DELAY,
             active: true,
             particleTimer: 0
         };
@@ -1134,8 +1281,11 @@ class Room {
         // 如果传送门未激活，不能进入
         if (!this.portal || !this.portalActive) return false;
         
-        const dx = player.x - this.portal.x;
-        const dy = player.y - this.portal.y;
+        const portalWorldX = this.portal.x + this.worldX;
+        const portalWorldY = this.portal.y + this.worldY;
+        
+        const dx = player.x - portalWorldX;
+        const dy = player.y - portalWorldY;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
         // 传送门碰撞半径
@@ -1149,9 +1299,16 @@ class Room {
      * @param {Renderer} renderer - 渲染器引用
      */
     renderDecorations(renderer) {
+        const ctx = renderer.ctx;
+        
+        ctx.save();
+        ctx.translate(this.worldX, this.worldY);
+        
         for (const decoration of this.decorations) {
-            decoration.render(renderer.ctx);
+            decoration.render(ctx);
         }
+        
+        ctx.restore();
     }
     
     /**
@@ -1264,9 +1421,16 @@ class Room {
      * @param {Renderer} renderer - 渲染器引用
      */
     renderTraps(renderer) {
-        if (this.trapManager) {
-            this.trapManager.render(renderer.ctx);
-        }
+        if (!this.trapManager) return;
+        
+        const ctx = renderer.ctx;
+        
+        ctx.save();
+        ctx.translate(this.worldX, this.worldY);
+        
+        this.trapManager.render(ctx);
+        
+        ctx.restore();
     }
     
     /**
@@ -1274,9 +1438,16 @@ class Room {
      * @param {Renderer} renderer - 渲染器引用
      */
     renderChests(renderer) {
-        if (this.chestManager) {
-            this.chestManager.render(renderer.ctx);
-        }
+        if (!this.chestManager) return;
+        
+        const ctx = renderer.ctx;
+        
+        ctx.save();
+        ctx.translate(this.worldX, this.worldY);
+        
+        this.chestManager.render(ctx);
+        
+        ctx.restore();
     }
     
     /**
@@ -1284,9 +1455,16 @@ class Room {
      * @param {Renderer} renderer - 渲染器引用
      */
     renderFountain(renderer) {
-        if (this.healingFountain) {
-            this.healingFountain.render(renderer.ctx);
-        }
+        if (!this.healingFountain) return;
+        
+        const ctx = renderer.ctx;
+        
+        ctx.save();
+        ctx.translate(this.worldX, this.worldY);
+        
+        this.healingFountain.render(ctx);
+        
+        ctx.restore();
     }
     
     /**
@@ -1313,6 +1491,7 @@ class Room {
     renderPortal(renderer) {
         if (!this.portal || !this.portal.active) return;
         
+        const ctx = renderer.ctx;
         const portal = this.portal;
         const time = Date.now() / 1000;
         
@@ -1326,26 +1505,29 @@ class Room {
             alpha = Math.sin(time * 10) > 0 ? 1 : 0.3;
         }
         
+        ctx.save();
+        ctx.translate(this.worldX, this.worldY);
+        
         // 绘制传送门光圈
-        renderer.ctx.save();
-        renderer.ctx.translate(portal.x, portal.y);
-        renderer.ctx.rotate(rotation);
-        renderer.ctx.globalAlpha = alpha;
+        ctx.save();
+        ctx.translate(portal.x, portal.y);
+        ctx.rotate(rotation);
+        ctx.globalAlpha = alpha;
         
         // 绘制多个光环
         for (let i = 0; i < 3; i++) {
             const size = portal.size - i * 8;
             const ringAlpha = 0.3 + (i * 0.2);
-            renderer.ctx.fillStyle = `rgba(156, 39, 176, ${ringAlpha})`;
-            renderer.ctx.fillRect(-size / 2, -size / 2, size, size);
+            ctx.fillStyle = `rgba(156, 39, 176, ${ringAlpha})`;
+            ctx.fillRect(-size / 2, -size / 2, size, size);
         }
         
-        renderer.ctx.restore();
+        ctx.restore();
         
         // 绘制中心
-        renderer.ctx.globalAlpha = alpha;
+        ctx.globalAlpha = alpha;
         renderer.drawCircle(portal.x, portal.y, 10, COLORS.PARTICLE.PORTAL);
-        renderer.ctx.globalAlpha = 1;
+        ctx.globalAlpha = 1;
         
         // 如果传送门未激活，显示倒计时提示
         if (!this.portalActive) {
@@ -1358,6 +1540,8 @@ class Room {
                 '14px "Courier New", monospace'
             );
         }
+        
+        ctx.restore();
     }
     
     /**
@@ -1365,13 +1549,22 @@ class Room {
      * @param {Renderer} renderer - 渲染器引用
      */
     render(renderer) {
+        const ctx = renderer.ctx;
+        
+        ctx.save();
+        ctx.translate(this.worldX, this.worldY);
+        
         // 如果有预渲染的背景，直接绘制
         if (this.backgroundCanvas) {
-            renderer.ctx.drawImage(this.backgroundCanvas, 0, 0);
+            ctx.drawImage(this.backgroundCanvas, 0, 0);
+        } else {
+            console.warn('Room.render(): backgroundCanvas is null');
         }
         
         // 添加精英房间特殊视觉效果
         this.renderEliteRoomEffects(renderer);
+        
+        ctx.restore();
     }
     
     /**

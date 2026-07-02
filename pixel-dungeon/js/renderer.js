@@ -172,6 +172,10 @@ class Renderer {
         this.screenFlashAlpha = 0;
         this.screenFlashColor = '#ffffff';
         
+        // 低血量红色暗角
+        this.lowHealthVignetteAlpha = 0;
+        this.lowHealthVignettePulse = 0;
+        
         // 画质设置
         this.quality = QUALITY_SETTINGS.DEFAULT;
     }
@@ -660,10 +664,42 @@ class Renderer {
     }
     
     /**
+     * 更新低血量暗角效果
+     * @param {number} healthPercent - 玩家血量百分比（0-1）
+     * @param {number} deltaTime - 时间增量
+     */
+    updateLowHealthVignette(healthPercent, deltaTime) {
+        if (healthPercent <= 0.3) {
+            const targetAlpha = (0.3 - healthPercent) / 0.3 * 0.6;
+            this.lowHealthVignetteAlpha += (targetAlpha - this.lowHealthVignetteAlpha) * 0.05;
+            this.lowHealthVignettePulse += deltaTime * 0.005;
+            const pulse = Math.sin(this.lowHealthVignettePulse) * 0.15;
+            this.lowHealthVignetteAlpha = Math.max(0, this.lowHealthVignetteAlpha + pulse);
+        } else {
+            this.lowHealthVignetteAlpha *= 0.95;
+            if (this.lowHealthVignetteAlpha < 0.01) {
+                this.lowHealthVignetteAlpha = 0;
+            }
+        }
+    }
+    
+    /**
      * 渲染屏幕效果（在所有游戏内容渲染完成后调用）
      */
     renderScreenEffects() {
         const ctx = this.ctx;
+        
+        // 低血量红色暗角（带脉动）
+        if (this.lowHealthVignetteAlpha > 0.01) {
+            const gradient = ctx.createRadialGradient(
+                this.width / 2, this.height / 2, Math.min(this.width, this.height) * 0.2,
+                this.width / 2, this.height / 2, Math.max(this.width, this.height) * 0.7
+            );
+            gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            gradient.addColorStop(1, `rgba(180, 0, 0, ${this.lowHealthVignetteAlpha})`);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, this.width, this.height);
+        }
         
         // 受伤红边
         if (this.hurtVignetteAlpha > 0.01) {

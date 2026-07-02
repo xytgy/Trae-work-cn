@@ -24,7 +24,7 @@ class DoorManager {
                 if (roomType === ROOM_TYPES.BATTLE ||
                     roomType === ROOM_TYPES.ELITE ||
                     roomType === ROOM_TYPES.BOSS) {
-                    initialState = 'open';
+                    initialState = 'closed';
                 } else {
                     initialState = 'open';
                 }
@@ -86,6 +86,8 @@ class DoorManager {
     }
 
     onPlayerEnterRoom(roomNode) {
+        if (roomNode.cleared) return;
+
         const isInitialRoom = this.dungeonLevel && 
                               this.dungeonLevel.startRoom && 
                               roomNode === this.dungeonLevel.startRoom;

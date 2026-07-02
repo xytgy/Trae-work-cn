@@ -29,6 +29,12 @@ class Game {
         
         // 事件总线
         this.eventBus = eventBus;
+        
+        // 崩溃界面状态
+        this._crashScreenActive = false;
+        this._crashError = null;
+        this._crashRetryBtn = null;
+        this._crashMenuBtn = null;
     }
     
     /**
@@ -187,6 +193,12 @@ class Game {
         const scaleY = GAME_HEIGHT / rect.height;
         const x = (e.clientX - rect.left) * scaleX;
         const y = (e.clientY - rect.top) * scaleY;
+        
+        // 如果崩溃界面激活，拦截所有点击
+        if (this._crashScreenActive) {
+            this.handleCrashClick(x, y);
+            return;
+        }
         
         // 初始化音效（首次用户交互时）
         if (typeof soundManager !== 'undefined' && !soundManager.initialized) {
@@ -886,6 +898,7 @@ class Game {
      */
     checkPortalCollision() {
         this.gameLogic.checkDoorCollision();
+        this.gameLogic.checkPortalCollision();
     }
     
     /**
@@ -903,6 +916,117 @@ class Game {
                 this.returnToMenu();
             }
         }
+    }
+    
+    /**
+     * 处理未捕获的全局错误
+     * @param {Error} error - 错误对象
+     */
+    handleError(error) {
+        console.error('[GLOBAL ERROR]', error);
+        
+        // 停止游戏循环
+        this.running = false;
+        this.menuLoopRunning = false;
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
+        if (this.menuAnimationFrameId) {
+            cancelAnimationFrame(this.menuAnimationFrameId);
+            this.menuAnimationFrameId = null;
+        }
+        
+        // 保存错误信息用于渲染
+        this._crashError = error;
+        this._crashScreenActive = true;
+        
+        // 渲染崩溃界面
+        this.renderCrashScreen();
+    }
+    
+    /**
+     * 渲染崩溃界面到Canvas
+     */
+    renderCrashScreen() {
+        const canvas = renderer.getCanvas();
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        
+        const w = canvas.width;
+        const h = canvas.height;
+        
+        // 半透明黑色遮罩
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+        ctx.fillRect(0, 0, w, h);
+        
+        // 标题
+        ctx.fillStyle = '#e94560';
+        ctx.font = 'bold 36px "Courier New", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('游戏遇到问题', w / 2, h / 2 - 100);
+        
+        // 错误信息
+        ctx.fillStyle = '#888888';
+        ctx.font = '14px "Courier New", monospace';
+        const errorMsg = this._crashError ? (this._crashError.message || '未知错误') : '未知错误';
+        ctx.fillText(errorMsg.substring(0, 60), w / 2, h / 2 - 50);
+        
+        // "重试" 按钮
+        this._crashRetryBtn = { x: w / 2 - 100, y: h / 2, w: 200, h: 50 };
+        ctx.fillStyle = '#0f3460';
+        ctx.fillRect(this._crashRetryBtn.x, this._crashRetryBtn.y, this._crashRetryBtn.w, this._crashRetryBtn.h);
+        ctx.strokeStyle = '#e94560';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(this._crashRetryBtn.x, this._crashRetryBtn.y, this._crashRetryBtn.w, this._crashRetryBtn.h);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 18px "Courier New", monospace';
+        ctx.fillText('重试', w / 2, h / 2 + 25);
+        
+        // "返回主菜单" 按钮
+        this._crashMenuBtn = { x: w / 2 - 100, y: h / 2 + 70, w: 200, h: 50 };
+        ctx.fillStyle = '#0f3460';
+        ctx.fillRect(this._crashMenuBtn.x, this._crashMenuBtn.y, this._crashMenuBtn.w, this._crashMenuBtn.h);
+        ctx.strokeStyle = '#e94560';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(this._crashMenuBtn.x, this._crashMenuBtn.y, this._crashMenuBtn.w, this._crashMenuBtn.h);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 18px "Courier New", monospace';
+        ctx.fillText('返回主菜单', w / 2, h / 2 + 95);
+    }
+    
+    /**
+     * 处理崩溃界面的点击
+     * @param {number} x - Canvas X坐标
+     * @param {number} y - Canvas Y坐标
+     * @returns {boolean} 是否被崩溃界面处理
+     */
+    handleCrashClick(x, y) {
+        if (!this._crashScreenActive) return false;
+        
+        // 检查"重试"按钮
+        if (this._crashRetryBtn && 
+            x >= this._crashRetryBtn.x && x <= this._crashRetryBtn.x + this._crashRetryBtn.w &&
+            y >= this._crashRetryBtn.y && y <= this._crashRetryBtn.y + this._crashRetryBtn.h) {
+            this._crashScreenActive = false;
+            this._crashError = null;
+            this.restart();
+            return true;
+        }
+        
+        // 检查"返回主菜单"按钮
+        if (this._crashMenuBtn && 
+            x >= this._crashMenuBtn.x && x <= this._crashMenuBtn.x + this._crashMenuBtn.w &&
+            y >= this._crashMenuBtn.y && y <= this._crashMenuBtn.y + this._crashMenuBtn.h) {
+            this._crashScreenActive = false;
+            this._crashError = null;
+            this.returnToMenu();
+            return true;
+        }
+        
+        return true; // 拦截所有点击，防止穿透
     }
     
     /**
@@ -963,7 +1087,7 @@ class Game {
         this.running = false;
         
         // 设置胜利状态
-        gameState.setVictory();
+        gameState.victory();
         
         // 播放胜利音效
         if (typeof soundManager !== 'undefined' && soundManager.initialized) {
@@ -1179,4 +1303,21 @@ window.addEventListener('keydown', (e) => {
             e.preventDefault();
         }
     }
+});
+
+// ==================== 全局错误捕获 ====================
+window.onerror = function(msg, url, line, col, error) {
+    console.error('[WINDOW ONERROR]', { msg, url, line, col, error });
+    if (game) {
+        game.handleError(error || new Error(msg));
+    }
+    return true;
+};
+
+window.addEventListener('unhandledrejection', (e) => {
+    console.error('[UNHANDLED REJECTION]', e.reason);
+    if (game) {
+        game.handleError(e.reason instanceof Error ? e.reason : new Error(String(e.reason)));
+    }
+    e.preventDefault();
 });

@@ -178,7 +178,7 @@ class RoomManager {
             gl.boss.aiLevel = aiLevel;
         }
 
-        audioManager.playSound(AUDIO.BOSS_APPEAR);
+        soundManager.play(SOUND_EFFECTS.BOSS);
 
         if (this.eventBus) {
             this.eventBus.publish('BOSS_SPAWN', { boss: gl.boss });

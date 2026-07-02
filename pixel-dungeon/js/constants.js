@@ -422,7 +422,23 @@ const PARTICLES = {
         },
 
         // 蓄力光环
-        CAST_RING: { size: 20, lifetime: 400, color: '#ffff00' }
+        CAST_RING: { size: 20, lifetime: 400, color: '#ffff00' },
+        
+        // 击杀爆发
+        KILL_BURST: {
+            RADIAL_COUNT: 30,
+            RADIAL_SPEED_MIN: 4,
+            RADIAL_SPEED_MAX: 10,
+            RADIAL_SIZE_MIN: 3,
+            RADIAL_SIZE_MAX: 7,
+            RADIAL_LIFETIME: 500,
+            RING_COUNT: 16,
+            RING_SPEED: 8,
+            RING_SIZE: 6,
+            RING_LIFETIME: 300,
+            FLASH_SIZE: 40,
+            FLASH_LIFETIME: 200
+        }
     }
 };
 
@@ -824,6 +840,14 @@ const FEEDBACK = {
     TIME_STOP: {
         POWER_WEAPON: 300,      // 强力武器拾取（毫秒）
         VICTORY: 500            // 通关瞬间（毫秒）
+    },
+    
+    // 命中停顿（冻结帧）
+    HIT_STOP: {
+        ENEMY_HIT: 30,      // 击中普通敌人冻结30ms
+        ENEMY_KILL: 50,     // 击杀敌人冻结50ms
+        BOSS_HIT: 40,       // 击中Boss冻结40ms
+        CRIT_HIT: 60        // 暴击冻结60ms
     }
 };
 
@@ -1217,13 +1241,13 @@ const NEW_ENEMIES = {
 // 精英房配置
 const ELITE_ROOM_CONFIG = {
     ELITE_COUNT: 1,
-    MINION_COUNT: 2,
+    MINION_COUNT: 1,
     REWARD_CHEST_TYPE: CHEST_TYPES.GOLDEN,
     
     ELITE_STATS_MULTIPLIER: {
-        health: 1.5,
-        damage: 1.2,
-        speed: 1.1
+        health: 1.1,
+        damage: 1.0,
+        speed: 1.05
     },
     
     MINION_TYPES: ['slime', 'bat', 'skeleton'],
@@ -2032,8 +2056,12 @@ const SOUND_EFFECTS = {
     SHOTGUN: 'shotgun',
     LASER: 'laser',
     EXPLOSION: 'explosion',
+    FLAME: 'flame',
+    HOMING: 'homing',
+    FREEZE: 'freeze',
     HIT: 'hit',
     COIN: 'coin',
+    KILL: 'kill',
     PICKUP: 'pickup',
     HURT: 'hurt',
     DEATH: 'death',
@@ -2046,6 +2074,7 @@ const SOUND_EFFECTS = {
     CHEST: 'chest',
     PORTAL: 'portal',
     BOSS: 'boss',
+    BOSS_ATTACK: 'boss_attack',
     VICTORY: 'victory',
     DEFEAT: 'defeat'
 };

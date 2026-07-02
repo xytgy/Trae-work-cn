@@ -818,7 +818,7 @@ class UIManager {
         this.renderHearts(20, this.topBarHeight / 2, data.playerHealth, PLAYER.MAX_HEALTH);
         
         // 绘制关卡显示（中央）
-        ctx.font = '24px "Courier New", monospace';
+        ctx.font = '18px "Courier New", monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = COLORS.UI.TEXT;

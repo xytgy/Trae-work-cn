@@ -150,7 +150,7 @@ class BulletManager {
                     gl.player.y,
                     direction.x,
                     direction.y,
-                    weapon
+                    { ...weapon, gameLogic: gl }
                 );
                 gl.bullets.push(flameBullet);
                 break;
@@ -178,7 +178,8 @@ class BulletManager {
                         speed: weapon.BULLET_SPEED,
                         color: COLORS.BULLET.FREEZE,
                         slowFactor: weapon.SLOW_FACTOR,
-                        slowDuration: weapon.SLOW_DURATION
+                        slowDuration: weapon.SLOW_DURATION,
+                        gameLogic: gl
                     }
                 );
                 gl.bullets.push(freezeBullet);

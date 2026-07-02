@@ -275,6 +275,22 @@ class Boss {
         if (typeof particleSystem !== 'undefined' && particleSystem.createPhaseTransition) {
             particleSystem.createPhaseTransition(this.x, this.y, newPhase);
         }
+        
+        // 屏幕闪白
+        if (typeof renderer !== 'undefined' && renderer.triggerScreenFlash) {
+            const flashColor = newPhase === 2 ? '#ff6600' : '#ffff00';
+            renderer.triggerScreenFlash(flashColor, 0.5);
+        }
+        
+        // 相机震动
+        if (typeof camera !== 'undefined' && camera.shake) {
+            camera.shake(6, 400);
+        }
+        
+        // 短暂慢动作
+        if (typeof game !== 'undefined' && game.timeManager && game.timeManager.startSlowMotion) {
+            game.timeManager.startSlowMotion(300, 0.2);
+        }
     }
     
     /**
@@ -751,7 +767,7 @@ class Boss {
         const bulletSpeed = BOSS.PHASE1.BULLET_SPEED;
         
         // 播放Boss攻击音效
-        audioManager.playSound(AUDIO.BOSS_ATTACK);
+        soundManager.play(SOUND_EFFECTS.BOSS_ATTACK);
         
         for (let i = 0; i < bulletCount; i++) {
             // 计算散开角度
@@ -785,7 +801,7 @@ class Boss {
         this.laserTimer = BOSS.PHASE3.LASER_WARNING;
         
         // 播放Boss攻击音效
-        audioManager.playSound(AUDIO.BOSS_ATTACK);
+        soundManager.play(SOUND_EFFECTS.BOSS_ATTACK);
         
         // 计算激光角度（朝向玩家）
         const dx = gameLogic.player.x - this.x;

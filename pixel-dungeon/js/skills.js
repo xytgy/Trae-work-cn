@@ -206,7 +206,7 @@ class LightningChainSkill extends ActiveSkill {
         this.spawnLightningEffect(previousTarget, target);
         
         // 播放音效
-        audioManager.playSound(AUDIO.SHOOT.LIGHTNING);
+        soundManager.play(SOUND_EFFECTS.LASER);
         
         // 找下一个目标
         let nextTarget = null;
@@ -396,7 +396,7 @@ class MineSkill extends ActiveSkill {
         this.spawnExplosionEffect(mine);
         
         // 音效
-        audioManager.playSound(AUDIO.SHOOT.GRENADE);
+        soundManager.play(SOUND_EFFECTS.EXPLOSION);
     }
     
     /**
