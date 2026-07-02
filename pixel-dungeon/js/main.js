@@ -272,6 +272,15 @@ class Game {
                 case 'tutorial':
                     this.startTutorial();
                     break;
+                case 'route_elite':
+                    this.confirmRoute('elite');
+                    break;
+                case 'route_shop':
+                    this.confirmRoute('shop');
+                    break;
+                case 'route_rest':
+                    this.confirmRoute('rest');
+                    break;
             }
             return;
         }
@@ -675,7 +684,30 @@ class Game {
         // 启动游戏循环
         this.gameLoop(this.lastTime);
     }
-    
+
+    /**
+     * 确认路线选择
+     * @param {string} roomType - 选择的房间类型
+     */
+    confirmRoute(roomType) {
+        console.log('选择路线:', roomType);
+
+        // 跳转到对应房间（使用gameLogic的initRoom）
+        this.gameLogic._pendingRoomType = ROOM_TYPES[roomType.toUpperCase()] || ROOM_TYPES.CHEST;
+        this.gameLogic.state.getData().currentLevel++;
+        this.gameLogic.initRoom();
+        this.gameLogic.portal = null;
+        this.gameLogic.allEnemiesCleared = false;
+
+        // 切回游戏状态
+        gameState.setState(GAME_STATE.PLAYING);
+
+        // 播放选择音效
+        if (typeof soundManager !== 'undefined' && soundManager.initialized) {
+            soundManager.play(SOUND_EFFECTS.CLICK);
+        }
+    }
+
     /**
      * 启动菜单动画循环
      */
@@ -1032,7 +1064,22 @@ window.addEventListener('keydown', (e) => {
         }
         return;
     }
-    
+
+    // 处理路线选择界面的键盘输入
+    if (gameState.isState(GAME_STATE.ROUTE_SELECT)) {
+        if (e.code === 'Digit1') {
+            game.confirmRoute('chest');
+        } else if (e.code === 'Digit2') {
+            game.confirmRoute('shop');
+        } else if (e.code === 'Digit3') {
+            game.confirmRoute('rest');
+        } else if (e.code === 'Escape') {
+            game.returnToMenu();
+        }
+        e.preventDefault();
+        return;
+    }
+
     // 处理难度选择界面的键盘输入
     if (gameState.isState(GAME_STATE.DIFFICULTY_SELECT)) {
         if (e.code === 'ArrowUp' || e.code === 'KeyW') {

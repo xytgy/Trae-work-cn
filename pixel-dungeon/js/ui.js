@@ -336,6 +336,23 @@ class UIManager {
         if (currentState === GAME_STATE.DIFFICULTY_SELECT) {
             this.updateDifficultySelect(deltaTime);
         }
+
+        // 路线选择界面悬停检测
+        if (currentState === GAME_STATE.ROUTE_SELECT) {
+            const mouseX = inputManager.mouse.x || 0;
+            const mouseY = inputManager.mouse.y || 0;
+            this._routeSelectHoverIndex = -1;
+            if (this.routeSelectCards) {
+                for (let i = 0; i < this.routeSelectCards.length; i++) {
+                    const card = this.routeSelectCards[i];
+                    if (mouseX >= card.x && mouseX <= card.x + card.width &&
+                        mouseY >= card.y && mouseY <= card.y + card.height) {
+                        this._routeSelectHoverIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
     }
     
     /**
@@ -582,7 +599,10 @@ class UIManager {
                 
             case GAME_STATE.HELP:
                 return this.handleHelpClick(x, y);
-                
+
+            case GAME_STATE.ROUTE_SELECT:
+                return this.handleRouteSelectClick(x, y);
+
             case GAME_STATE.GAME_OVER:
                 if (this.isPointInButton(x, y, this.gameOverButtons.retry)) {
                     return 'restart';
@@ -693,7 +713,11 @@ class UIManager {
             case GAME_STATE.HELP:
                 this.renderHelpScreen();
                 break;
-                
+
+            case GAME_STATE.ROUTE_SELECT:
+                this.renderRouteSelectScreen();
+                break;
+
             case GAME_STATE.GAME_OVER:
                 this.renderGameOverScreen();
                 break;
@@ -2409,7 +2433,7 @@ class UIManager {
         y += 20;
         ctx.fillText('火焰喷射器、回旋镖、冰冻枪、散弹枪、追踪导弹', 60, y);
     }
-    
+
     /**
      * 帮助界面点击处理
      */
@@ -2419,7 +2443,122 @@ class UIManager {
         }
         return null;
     }
-    
+
+    /**
+     * 渲染路线选择画面
+     */
+    renderRouteSelectScreen() {
+        const ctx = renderer.ctx;
+
+        // 背景
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+        ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+        // 标题
+        ctx.fillStyle = '#ffcc00';
+        ctx.font = 'bold 28px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('选择下一片区域', GAME_WIDTH / 2, 80);
+
+        const options = this.state ? this.state.getAvailableRouteOptions() : [];
+
+        if (options.length === 0) {
+            ctx.fillStyle = '#888888';
+            ctx.font = '16px Arial';
+            ctx.fillText('没有可选的路线', GAME_WIDTH / 2, GAME_HEIGHT / 2);
+            return;
+        }
+
+        // 选项配置（图标、名称、描述）
+        const optionConfigs = {
+            'elite': { icon: '🏆', name: '精英房', desc: '强力敌人，高额奖励', color: '#ff4444' },
+            'shop': { icon: '🛒', name: '商店房', desc: '使用金币购买道具', color: '#ffd700' },
+            'rest': { icon: '💤', name: '休息房', desc: '恢复生命值', color: '#4caf50' }
+        };
+
+        const cardWidth = 180;
+        const cardHeight = 200;
+        const gap = 30;
+        const totalWidth = options.length * cardWidth + (options.length - 1) * gap;
+        const startX = GAME_WIDTH / 2 - totalWidth / 2;
+        const cardY = GAME_HEIGHT / 2 - cardHeight / 2 + 30;
+
+        // 保存卡片信息用于点击检测
+        this.routeSelectCards = [];
+
+        options.forEach((optionType, index) => {
+            const config = optionConfigs[optionType];
+            if (!config) return;
+
+            const cx = startX + index * (cardWidth + gap);
+
+            // 卡片背景
+            const isHovered = this._routeSelectHoverIndex === index;
+            const bgColor = isHovered ? 'rgba(60, 50, 80, 0.95)' : 'rgba(40, 35, 55, 0.9)';
+            const borderColor = isHovered ? config.color : '#555555';
+
+            ctx.fillStyle = bgColor;
+            this.drawRoundedRect(ctx, cx, cardY, cardWidth, cardHeight, 12, bgColor);
+
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = isHovered ? 3 : 2;
+            this.drawRoundedRect(ctx, cx, cardY, cardWidth, cardHeight, 12, null, borderColor, isHovered ? 3 : 2);
+
+            // 图标
+            ctx.font = '48px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(config.icon, cx + cardWidth / 2, cardY + 60);
+
+            // 名称
+            ctx.fillStyle = config.color;
+            ctx.font = 'bold 20px Arial';
+            ctx.fillText(config.name, cx + cardWidth / 2, cardY + 115);
+
+            // 描述
+            ctx.fillStyle = '#aaaaaa';
+            ctx.font = '14px Arial';
+            ctx.fillText(config.desc, cx + cardWidth / 2, cardY + 145);
+
+            // 数字键提示
+            ctx.fillStyle = '#666666';
+            ctx.font = '12px Arial';
+            ctx.fillText(`[ ${index + 1} ]`, cx + cardWidth / 2, cardY + cardHeight - 15);
+
+            // 保存点击区域
+            this.routeSelectCards.push({
+                x: cx, y: cardY, width: cardWidth, height: cardHeight,
+                type: optionType, index: index
+            });
+        });
+
+        // 底部提示
+        ctx.fillStyle = '#666666';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('点击选择 或 按数字键 1/2/3', GAME_WIDTH / 2, GAME_HEIGHT - 60);
+    }
+
+    /**
+     * 处理路线选择点击
+     * @param {number} x - 点击X坐标
+     * @param {number} y - 点击Y坐标
+     * @returns {string|null} - 返回动作或null
+     */
+    handleRouteSelectClick(x, y) {
+        if (!this.routeSelectCards) return null;
+
+        for (const card of this.routeSelectCards) {
+            if (x >= card.x && x <= card.x + card.width &&
+                y >= card.y && y <= card.y + card.height) {
+                // 返回选择的房间类型
+                return 'route_' + card.type;
+            }
+        }
+        return null;
+    }
+
     // ==================== 以下为兼容旧版DOM UI的方法 ====================
     
     /**

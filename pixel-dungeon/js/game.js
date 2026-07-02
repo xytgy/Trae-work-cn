@@ -505,19 +505,52 @@ class GameLogic {
     initRoom() {
         const level = this.state.getData().currentLevel;
         const roomIndex = level - 1;
-        
-        const roomType = this.getRoomType(roomIndex);
-        const isBossRoom = roomType === ROOM_TYPES.BOSS || level >= LEVELS.COUNT;
-        
+
+        let roomType;
+        let isBossRoom = false;
+
+        if (roomIndex >= 6) {
+            // 第7间房 = Boss房
+            roomType = ROOM_TYPES.BOSS;
+            isBossRoom = true;
+        } else if (roomIndex === 0) {
+            // 第1间房 = 固定战斗房
+            roomType = ROOM_TYPES.BATTLE;
+        } else if (roomIndex === 1) {
+            // 第2间房 = 固定战斗房
+            roomType = ROOM_TYPES.BATTLE;
+        } else if (roomIndex === 4) {
+            // 第5间房 = 精英房（分支选择后的战斗房）
+            roomType = ROOM_TYPES.ELITE;
+        } else if (roomIndex === 2) {
+            // 第3间房（分支选择后落地）
+            roomType = ROOM_TYPES.BATTLE;
+        } else if (roomIndex === 3 || roomIndex === 5) {
+            roomType = ROOM_TYPES.BATTLE;
+        } else {
+            roomType = ROOM_TYPES.BATTLE;
+        }
+
+        // 如果是通过分支选择进来的，roomType在调用方已确定
+        if (this._pendingRoomType) {
+            roomType = this._pendingRoomType;
+            this._pendingRoomType = null;
+        }
+
         this.currentRoom = new Room(roomType, roomIndex, isBossRoom);
-        
+
         this.enemies = [];
         this.bullets = [];
         this.particles = [];
         this.boss = null;
         this.portal = null;
         this.allEnemiesCleared = false;
-        
+
+        // 标记房间类型为已访问(仅非Boss特殊房)
+        if (roomType !== ROOM_TYPES.BATTLE && roomType !== ROOM_TYPES.BOSS && roomType !== ROOM_TYPES.ELITE) {
+            this.state.markRoomVisited(roomType);
+        }
+
         switch (roomType) {
             case ROOM_TYPES.BOSS:
                 this.initBossRoom();
@@ -529,14 +562,30 @@ class GameLogic {
                 this.initBattleRoom(roomIndex);
                 break;
             case ROOM_TYPES.CHEST:
-            case ROOM_TYPES.TRAP:
-            case ROOM_TYPES.REST:
+                this.initBattleRoom(roomIndex); // 宝箱房也有守卫
+                break;
             case ROOM_TYPES.SHOP:
+                this.initBattleRoom(roomIndex); // 商店房也有守卫
+                break;
+            case ROOM_TYPES.TRAP:
+                this.initBattleRoom(roomIndex); // 陷阱房也有守卫
+                break;
+            case ROOM_TYPES.REST:
             default:
                 break;
         }
-        
+
         console.log(`房间 ${level} 初始化完成 - 类型: ${this.currentRoom.getRoomTypeName()}, 敌人数量: ${this.enemies.length}, Boss: ${!!this.boss}`);
+    }
+
+    /**
+     * 触发路线选择（在固定战斗房之后调用）
+     */
+    triggerRouteSelect() {
+        const options = this.state.getAvailableRouteOptions();
+        if (options.length > 0) {
+            this.state.startRouteSelect();
+        }
     }
     
     /**
@@ -545,29 +594,13 @@ class GameLogic {
      * @returns {string} 房间类型
      */
     getRoomType(roomIndex) {
-        if (roomIndex >= LEVELS.COUNT - 1) {
+        // 只用于第一间房检查（向后兼容）
+        if (roomIndex === 0) {
+            return ROOM_TYPES.BATTLE;
+        }
+        if (roomIndex >= 6) {
             return ROOM_TYPES.BOSS;
         }
-        
-        const roomTypes = [
-            { type: ROOM_TYPES.BATTLE, weight: ROOM_SPAWN_CONFIG.BATTLE },
-            { type: ROOM_TYPES.CHEST, weight: ROOM_SPAWN_CONFIG.CHEST },
-            { type: ROOM_TYPES.SHOP, weight: ROOM_SPAWN_CONFIG.SHOP },
-            { type: ROOM_TYPES.TRAP, weight: ROOM_SPAWN_CONFIG.TRAP },
-            { type: ROOM_TYPES.ELITE, weight: ROOM_SPAWN_CONFIG.ELITE },
-            { type: ROOM_TYPES.REST, weight: ROOM_SPAWN_CONFIG.REST }
-        ];
-        
-        const totalWeight = roomTypes.reduce((sum, rt) => sum + rt.weight, 0);
-        let rand = Math.random() * totalWeight;
-        
-        for (const rt of roomTypes) {
-            rand -= rt.weight;
-            if (rand <= 0) {
-                return rt.type;
-            }
-        }
-        
         return ROOM_TYPES.BATTLE;
     }
     
@@ -575,11 +608,28 @@ class GameLogic {
      * 初始化战斗房
      * @param {number} roomIndex - 房间索引
      */
-    initBattleRoom(roomIndex) {
+    initBattleRoom(roomIndex, isSpecialRoom = false) {
         const difficultyConfig = this.state.getDifficultyConfig();
-        const baseCount = 3 + Math.floor(roomIndex * 0.5);
+
+        // 特殊房（宝箱/商店/陷阱）只有少量守卫
+        if (isSpecialRoom) {
+            const guardCount = 1 + Math.floor(roomIndex * 0.5);
+            const enemyTypes = this.getEnemyTypesForRoom(roomIndex);
+            for (let i = 0; i < guardCount; i++) {
+                const enemyType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+                const x = 100 + Math.random() * (GAME_WIDTH - 200);
+                const y = 100 + Math.random() * (GAME_HEIGHT - 200);
+                const enemy = this.createEnemy(enemyType, x, y, roomIndex);
+                if (enemy) {
+                    this.enemies.push(enemy);
+                }
+            }
+            return;
+        }
+
+        const baseCount = 4 + Math.floor(roomIndex * 0.8);
         let enemyCount = baseCount;
-        
+
         if (difficultyConfig?.room) {
             if (difficultyConfig.id === 'easy') {
                 enemyCount = Math.max(2, Math.floor(baseCount * 0.8));
@@ -589,14 +639,14 @@ class GameLogic {
                 enemyCount = Math.floor(baseCount * 1.5);
             }
         }
-        
+
         const enemyTypes = this.getEnemyTypesForRoom(roomIndex);
-        
+
         for (let i = 0; i < enemyCount; i++) {
             const enemyType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
             const x = 100 + Math.random() * (GAME_WIDTH - 200);
             const y = 100 + Math.random() * (GAME_HEIGHT - 200);
-            
+
             const enemy = this.createEnemy(enemyType, x, y, roomIndex);
             if (enemy) {
                 this.enemies.push(enemy);
@@ -679,12 +729,13 @@ class GameLogic {
      * @returns {Array} 敌人类型数组
      */
     getEnemyTypesForRoom(roomIndex) {
-        if (roomIndex <= 1) {
-            return ['slime', 'skeleton'];
-        } else if (roomIndex <= 2) {
+        // 根据房间索引解锁敌人类型（提前解锁以增加前期多样性）
+        if (roomIndex <= 0) {
             return ['slime', 'bat', 'skeleton'];
-        } else if (roomIndex <= 3) {
-            return ['slime', 'bat', 'skeleton', 'archer'];
+        } else if (roomIndex <= 1) {
+            return ['slime', 'bat', 'skeleton', 'ghost', 'archer'];
+        } else if (roomIndex <= 2) {
+            return ['slime', 'bat', 'skeleton', 'ghost', 'archer', 'mage'];
         } else {
             return ['slime', 'bat', 'ghost', 'skeleton', 'archer', 'mage', 'bomber'];
         }
@@ -2229,22 +2280,34 @@ class GameLogic {
      */
     checkRoomClear() {
         if (!this.currentRoom) return;
-        
+
         const roomCompleted = this.currentRoom.checkRoomCompleted(this);
-        
+
         if (roomCompleted && !this.allEnemiesCleared) {
             this.allEnemiesCleared = true;
-            
+
             const roomType = this.currentRoom.roomType;
             const isBossRoom = roomType === ROOM_TYPES.BOSS || this.boss;
-            
-            if (!isBossRoom) {
-                setTimeout(() => {
-                    if (this.currentRoom) {
-                        this.currentRoom.spawnPortal();
-                    }
-                }, PORTAL.SPAWN_DELAY);
+            const level = this.state.getData().currentLevel;
+
+            if (isBossRoom) {
+                return;
             }
+
+            // 第2间房（level=2）清空后触发路线选择
+            if (level === 2) {
+                setTimeout(() => {
+                    this.state.startRouteSelect();
+                }, 1000);
+                return;
+            }
+
+            // 其他房间正常生成传送门
+            setTimeout(() => {
+                if (this.currentRoom) {
+                    this.currentRoom.spawnPortal();
+                }
+            }, PORTAL.SPAWN_DELAY);
         }
     }
     

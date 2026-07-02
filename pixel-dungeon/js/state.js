@@ -137,7 +137,8 @@ class GameStateManager {
             [GAME_STATE.LEADERBOARD]: [GAME_STATE.MENU, GAME_STATE.GAME_OVER, GAME_STATE.VICTORY],
             [GAME_STATE.ACHIEVEMENTS]: [GAME_STATE.MENU],
             [GAME_STATE.HELP]: [GAME_STATE.MENU],
-            [GAME_STATE.TUTORIAL]: [GAME_STATE.PLAYING, GAME_STATE.MENU]
+            [GAME_STATE.TUTORIAL]: [GAME_STATE.PLAYING, GAME_STATE.MENU],
+            [GAME_STATE.ROUTE_SELECT]: [GAME_STATE.PLAYING, GAME_STATE.MENU],
         };
         
         return validTransitions[from]?.includes(to) || false;
@@ -188,6 +189,10 @@ class GameStateManager {
                 this.data.finalScore = this.calculateScore();
                 this.triggerCallbacks('onVictory');
                 break;
+
+            case GAME_STATE.ROUTE_SELECT:
+                // 路线选择状态，不需要重置数据
+                break;
         }
     }
     
@@ -216,6 +221,8 @@ class GameStateManager {
             isInvincible: false,
             invincibleTimer: 0,
             weaponSwitchCooldown: 0,
+            visitedRoomTypes: [],       // 已访问过的特殊房类型（防止重复）
+            routeSelectLocked: false,    // 路线选择是否已锁定（每局一次）
             selectedCharacter: savedCharacter,  // 恢复保存的角色
             difficulty: savedDifficulty || DIFFICULTY.DEFAULT,
             selectedDifficulty: savedSelectedDifficulty || DIFFICULTY.DEFAULT
@@ -244,7 +251,50 @@ class GameStateManager {
     setSelectedCharacter(character) {
         this.data.selectedCharacter = character;
     }
-    
+
+    /**
+     * 标记一个房间类型为已访问
+     * @param {string} roomType - 房间类型
+     */
+    markRoomVisited(roomType) {
+        if (!this.data.visitedRoomTypes.includes(roomType)) {
+            this.data.visitedRoomTypes.push(roomType);
+        }
+    }
+
+    /**
+     * 检查房间类型是否已访问过
+     * @param {string} roomType - 房间类型
+     * @returns {boolean}
+     */
+    isRoomVisited(roomType) {
+        return this.data.visitedRoomTypes.includes(roomType);
+    }
+
+    /**
+     * 获取未访问的特殊房类型列表
+     * @returns {Array} 未访问的房间类型数组
+     */
+    getAvailableRouteOptions() {
+        const allOptions = ROUTE_SELECT_CONFIG.OPTIONS;
+        return allOptions.filter(t => !this.data.visitedRoomTypes.includes(t));
+    }
+
+    /**
+     * 开始路线选择
+     */
+    startRouteSelect() {
+        this.setState(GAME_STATE.ROUTE_SELECT);
+    }
+
+    /**
+     * 选择路线并开始对应房间
+     * @param {string} selectedType - 选择的房间类型
+     */
+    confirmRoute(selectedType) {
+        this.setState(GAME_STATE.PLAYING);
+    }
+
     /**
      * 获取选中的角色
      * @returns {Character|null} - 角色对象

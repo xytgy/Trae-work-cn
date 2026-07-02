@@ -191,7 +191,7 @@ const BOSS = {
 
 // ==================== 关卡配置 ====================
 const LEVELS = {
-    COUNT: 5, ROOM_WIDTH: GAME_WIDTH, ROOM_HEIGHT: GAME_HEIGHT, WALL_THICKNESS: 40, DOOR_SIZE: 60,
+    COUNT: 7, ROOM_WIDTH: GAME_WIDTH, ROOM_HEIGHT: GAME_HEIGHT, WALL_THICKNESS: 40, DOOR_SIZE: 60,
     ENEMIES: [
         { slime: 2, bat: 0, ghost: 0 },
         { slime: 2, bat: 1, ghost: 0 },
@@ -366,6 +366,7 @@ const GAME_STATE = {
     DIFFICULTY_SELECT: 'difficulty_select',
     PLAYING: 'playing',
     PAUSED: 'paused',
+    ROUTE_SELECT: 'route_select',
     GAME_OVER: 'game_over',
     VICTORY: 'victory',
     SAVE_SELECT: 'save_select',
@@ -897,13 +898,20 @@ const ROOM_TYPES = {
 
 // 房间出现概率配置
 const ROOM_SPAWN_CONFIG = {
-    BATTLE: 0.40,
+    BATTLE: 0.50,
     CHEST: 0.10,
     SHOP: 0.10,
     TRAP: 0.10,
-    ELITE: 0.15,
+    ELITE: 0.10,
     REST: 0.10,
-    BOSS: 0.15
+    BOSS: 0.10
+};
+
+// 路线选择配置（分支房间，每局每种出现一次）
+const ROUTE_SELECT_CONFIG = {
+    OPTIONS: ['elite', 'shop', 'rest'],
+    OPTION_COUNT: 3,
+    PORTAL_DELAY: 2000
 };
 
 // 关卡房间布局配置

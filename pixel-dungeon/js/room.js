@@ -811,7 +811,7 @@ class Room {
         
         // 更新回血喷泉
         if (this.healingFountain && player) {
-            this.healingFountain.update(deltaTime, player, gameLogic);
+            this.healingFountain.update(deltaTime, gameLogic);
         }
     }
     
