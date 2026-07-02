@@ -11,6 +11,9 @@ class SaveManager {
         // 当前选中的存档槽
         this.selectedSlot = 0;
         
+        // 存档版本号
+        this.SAVE_VERSION = '1.0';
+        
         // 全局统计数据（跨存档）
         this.globalStats = {
             totalKills: 0,
@@ -25,7 +28,11 @@ class SaveManager {
         };
         
         // 初始化
-        this.init();
+        try {
+            this.init();
+        } catch (error) {
+            console.error('[SAVE] 存档系统初始化失败:', error);
+        }
     }
     
     /**
@@ -34,6 +41,54 @@ class SaveManager {
     init() {
         this.loadAllSaves();
         this.loadGlobalStats();
+    }
+    
+    /**
+     * 检查 localStorage 是否可用
+     * @returns {boolean}
+     */
+    checkStorageAvailable() {
+        try {
+            const testKey = '__pixel_dungeon_storage_test__';
+            localStorage.setItem(testKey, '1');
+            localStorage.removeItem(testKey);
+            return true;
+        } catch (e) {
+            console.warn('[SAVE] localStorage 不可用:', e);
+            return false;
+        }
+    }
+    
+    /**
+     * 迁移存档数据版本
+     * @param {Object} saveData - 原始存档数据
+     * @returns {Object|null} 迁移后的存档数据
+     */
+    migrateSaveData(saveData) {
+        if (!saveData) return null;
+        
+        const version = saveData.version || '0.0';
+        
+        if (version === this.SAVE_VERSION) {
+            return saveData;
+        }
+        
+        console.log(`[SAVE] 迁移存档数据: ${version} -> ${this.SAVE_VERSION}`);
+        
+        if (version === '0.0') {
+            saveData.version = '1.0';
+            if (!saveData.characterName) {
+                saveData.characterName = '未知';
+            }
+            if (!saveData.isVictory) {
+                saveData.isVictory = false;
+            }
+            if (!saveData.playerHealth) {
+                saveData.playerHealth = PLAYER.MAX_HEALTH;
+            }
+        }
+        
+        return saveData;
     }
     
     /**
@@ -59,7 +114,8 @@ class SaveManager {
             const data = localStorage.getItem(key);
             
             if (data) {
-                return JSON.parse(data);
+                const saveData = JSON.parse(data);
+                return this.migrateSaveData(saveData);
             }
         } catch (e) {
             console.warn(`加载存档槽 ${slotIndex} 失败:`, e);
@@ -77,7 +133,7 @@ class SaveManager {
     saveToSlot(slotIndex, gameData) {
         try {
             const saveData = {
-                version: SAVE.VERSION,
+                version: this.SAVE_VERSION,
                 timestamp: Date.now(),
                 characterId: gameData.selectedCharacter?.id || 1,
                 characterName: gameData.selectedCharacter?.name || '未知',
@@ -117,7 +173,7 @@ class SaveManager {
     autoSave(gameData) {
         try {
             const saveData = {
-                version: SAVE.VERSION,
+                version: this.SAVE_VERSION,
                 timestamp: Date.now(),
                 characterId: gameData.selectedCharacter?.id || 1,
                 characterName: gameData.selectedCharacter?.name || '未知',
@@ -149,7 +205,8 @@ class SaveManager {
         try {
             const data = localStorage.getItem(SAVE.AUTO_SAVE_KEY);
             if (data) {
-                return JSON.parse(data);
+                const saveData = JSON.parse(data);
+                return this.migrateSaveData(saveData);
             }
         } catch (e) {
             console.warn('加载自动存档失败:', e);
@@ -290,7 +347,7 @@ class SaveManager {
      */
     exportAllSaves() {
         const exportData = {
-            version: SAVE.VERSION,
+            version: this.SAVE_VERSION,
             exportTime: Date.now(),
             slots: this.saveSlots,
             globalStats: this.globalStats

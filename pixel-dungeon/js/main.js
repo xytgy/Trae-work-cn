@@ -142,6 +142,12 @@ class Game {
                 return;
             }
 
+            if (e.code === 'KeyF') {
+                this.gameLogic.toggleAimAssist();
+                e.preventDefault();
+                return;
+            }
+
             if (e.code >= 'Digit1' && e.code <= 'Digit8') {
                 const slotIndex = parseInt(e.code.replace('Digit', '')) - 1;
 
@@ -488,14 +494,23 @@ class Game {
         this.running = false;
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
+        
+        // 停止菜单循环
+        this.stopMenuLoop();
+        
+        // 清理游戏逻辑
+        if (this.gameLogic) {
+            this.gameLogic.cleanup();
         }
         
         // 重新初始化游戏逻辑
         this.gameLogic.init();
-
-        // 重新绑定UI事件（重启后需要重新绑定键盘监听器）
+        
+        // 重新绑定UI事件
         this.bindUIEvents();
-
+        
         // 开始新游戏
         this.start();
     }
@@ -510,6 +525,15 @@ class Game {
         this.running = false;
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
+        
+        // 停止菜单循环
+        this.stopMenuLoop();
+        
+        // 清理游戏逻辑
+        if (this.gameLogic) {
+            this.gameLogic.cleanup();
         }
         
         // 重置游戏状态
@@ -692,8 +716,11 @@ class Game {
     confirmRoute(roomType) {
         console.log('选择路线:', roomType);
 
-        // 跳转到对应房间（使用gameLogic的initRoom）
-        this.gameLogic._pendingRoomType = ROOM_TYPES[roomType.toUpperCase()] || ROOM_TYPES.CHEST;
+        // 标记路线选择已锁定（每局只触发一次）
+        this.gameLogic.state.getData().routeSelectLocked = true;
+
+        // 跳转到对应房间
+        this.gameLogic._pendingRoomType = roomType;
         this.gameLogic.state.getData().currentLevel++;
         this.gameLogic.initRoom();
         this.gameLogic.portal = null;
@@ -705,6 +732,28 @@ class Game {
         // 播放选择音效
         if (typeof soundManager !== 'undefined' && soundManager.initialized) {
             soundManager.play(SOUND_EFFECTS.CLICK);
+        }
+    }
+
+    /**
+     * 取消路线选择（返回游戏继续）
+     */
+    cancelRouteSelect() {
+        console.log('取消路线选择');
+
+        // 标记路线选择已锁定（每局只触发一次）
+        this.gameLogic.state.getData().routeSelectLocked = true;
+
+        // 切回游戏状态
+        gameState.setState(GAME_STATE.PLAYING);
+
+        // 生成传送门让玩家正常进入下一关
+        if (this.gameLogic.currentRoom && !this.gameLogic.portal) {
+            setTimeout(() => {
+                if (this.gameLogic.currentRoom) {
+                    this.gameLogic.currentRoom.spawnPortal();
+                }
+            }, PORTAL.SPAWN_DELAY);
         }
     }
 
@@ -747,18 +796,16 @@ class Game {
         // 限制delta time
         const clampedDelta = Math.min(deltaTime, DELTA_TIME_MAX);
         
-        // 渲染游戏背景（仅房间背景）
+        // 渲染游戏背景和UI
         try {
             if (this.gameLogic) {
                 this.gameLogic.render();
             }
-        } catch (e) {
-            // 渲染错误不影响菜单循环
+            uiManager.update(clampedDelta);
+            uiManager.render();
+        } catch (error) {
+            console.error('[MENU LOOP ERROR]', error);
         }
-        
-        // 更新并渲染UI
-        uiManager.update(clampedDelta);
-        uiManager.render();
         
         // 继续下一帧
         this.menuAnimationFrameId = requestAnimationFrame(this.menuLoop.bind(this));
@@ -783,36 +830,45 @@ class Game {
         
         // 如果游戏正在运行且未暂停，更新游戏逻辑
         if (gameState.isPlaying()) {
-            this.gameLogic.update(clampedDelta);
-            
-            // 更新全局粒子系统
-            if (particleSystem) {
-                particleSystem.update(clampedDelta);
+            try {
+                this.gameLogic.update(clampedDelta);
+                
+                // 更新全局粒子系统
+                if (particleSystem) {
+                    particleSystem.update(clampedDelta);
+                }
+                
+                // 更新新手引导
+                if (typeof tutorialManager !== 'undefined' && tutorialManager.active) {
+                    tutorialManager.update(clampedDelta);
+                }
+                
+                // 检查传送门碰撞
+                this.checkPortalCollision();
+                
+                // 检查游戏结束
+                this.checkGameEnd();
+            } catch (error) {
+                console.error('[GAME LOOP ERROR]', error);
+                this.handleGameError(error);
             }
-            
-            // 更新新手引导
-            if (typeof tutorialManager !== 'undefined' && tutorialManager.active) {
-                tutorialManager.update(clampedDelta);
-            }
-            
-            // 检查传送门碰撞
-            this.checkPortalCollision();
-            
-            // 检查游戏结束
-            this.checkGameEnd();
         }
         
         // 渲染游戏画面
-        this.gameLogic.render();
-        
-        // 渲染全局粒子系统效果（在游戏元素之上，UI之下）
-        if (particleSystem && gameState.isPlaying()) {
-            particleSystem.render(renderer.ctx);
+        try {
+            this.gameLogic.render();
+            
+            // 渲染全局粒子系统效果（在游戏元素之上，UI之下）
+            if (particleSystem && gameState.isPlaying()) {
+                particleSystem.render(renderer.ctx);
+            }
+            
+            // 更新并渲染UI（使用Canvas绘制）
+            uiManager.update(clampedDelta);
+            uiManager.render();
+        } catch (error) {
+            console.error('[RENDER ERROR]', error);
         }
-        
-        // 更新并渲染UI（使用Canvas绘制）
-        uiManager.update(clampedDelta);
-        uiManager.render();
         
         // 继续下一帧
         this.animationFrameId = requestAnimationFrame(this.gameLoop.bind(this));
@@ -831,6 +887,23 @@ class Game {
         if (this.gameLogic.currentRoom.checkPortalCollision(player)) {
             console.log('玩家进入传送门，进入下一房间');
             this.gameLogic.nextRoom();
+        }
+    }
+    
+    /**
+     * 处理游戏运行时错误
+     * @param {Error} error - 错误对象
+     */
+    handleGameError(error) {
+        console.error('[GAME ERROR] 游戏运行时发生错误:', error);
+        console.error('错误堆栈:', error.stack);
+        
+        if (gameState.isState(GAME_STATE.PLAYING)) {
+            if (confirm('游戏运行时出现错误，是否继续游戏？')) {
+                return;
+            } else {
+                this.returnToMenu();
+            }
         }
     }
     
@@ -1068,13 +1141,13 @@ window.addEventListener('keydown', (e) => {
     // 处理路线选择界面的键盘输入
     if (gameState.isState(GAME_STATE.ROUTE_SELECT)) {
         if (e.code === 'Digit1') {
-            game.confirmRoute('chest');
+            game.confirmRoute(ROOM_TYPES.ELITE);
         } else if (e.code === 'Digit2') {
-            game.confirmRoute('shop');
+            game.confirmRoute(ROOM_TYPES.SHOP);
         } else if (e.code === 'Digit3') {
-            game.confirmRoute('rest');
+            game.confirmRoute(ROOM_TYPES.REST);
         } else if (e.code === 'Escape') {
-            game.returnToMenu();
+            game.cancelRouteSelect();
         }
         e.preventDefault();
         return;

@@ -108,40 +108,48 @@ class AchievementManager {
         this.tookDamage = false;
         this.usedPotion = false;
         
-        this.initAchievements();
+        try {
+            this.initAchievements();
+        } catch (error) {
+            console.error('[ACHIEVEMENT] 初始化成就失败:', error);
+        }
     }
     
     /**
      * 初始化所有成就
      */
     initAchievements() {
-        const achievementList = ACHIEVEMENTS.LIST || [];
-        
-        for (const config of achievementList) {
-            const achievementConfig = this.convertConfig(config);
-            this.achievements[achievementConfig.id] = new Achievement(achievementConfig);
-            this.totalCount++;
-        }
-        
-        const extraAchievements = [
-            { id: 'hundred_kills', name: '百人斩', icon: '💀', description: '累计击杀100个敌人', condition: 'kills', target: 100, reward: { gold: 500 } },
-            { id: 'dungeon_conqueror', name: '地牢征服者', icon: '👑', description: '通关游戏', condition: 'victories', target: 1, reward: { gold: 1000, gems: 5 } },
-            { id: 'lightning_fast', name: '闪电快枪手', icon: '⚡', description: '单局击杀30个敌人', condition: 'kills_single', target: 30, reward: { gold: 200 } },
-            { id: 'rich', name: '小富翁', icon: '💰', description: '单局获得500金币', condition: 'gold_single', target: 500, reward: { gems: 3 } },
-            { id: 'gem_hunter', name: '宝石猎人', icon: '💎', description: '累计获得10颗宝石', condition: 'gems_total', target: 10, reward: { gold: 500 } },
-            { id: 'survivor', name: '幸存者', icon: '❤️', description: '剩余1血时击杀Boss', condition: 'low_hp_boss_kill', target: 1, reward: { gems: 5 } },
-            { id: 'all_rounder', name: '全能选手', icon: '🎪', description: '单局使用5种不同武器', condition: 'weapons_used_single', target: 5, reward: { gold: 200 } },
-            { id: 'berserker', name: '狂战士', icon: '⚔️', description: '单局承受10次伤害仍存活', condition: 'damage_taken_single', target: 10, reward: { gold: 150 } },
-            { id: 'speed_run_2min', name: '速度之星', icon: '🚀', description: '2分钟内通关', condition: 'speed_run_2min', target: 1, reward: { gems: 8 } },
-            { id: 'collector', name: '收藏家', icon: '📚', description: '收集10种不同道具', condition: 'items_collected', target: 10, reward: { gold: 300 } },
-            { id: 'lucky', name: '幸运儿', icon: '🎁', description: '获得传说物品', condition: 'legendary_drop', target: 1, reward: { gems: 5 } }
-        ];
-        
-        for (const config of extraAchievements) {
-            if (!this.achievements[config.id]) {
-                this.achievements[config.id] = new Achievement(config);
+        try {
+            const achievementList = ACHIEVEMENTS.LIST || [];
+            
+            for (const config of achievementList) {
+                const achievementConfig = this.convertConfig(config);
+                this.achievements[achievementConfig.id] = new Achievement(achievementConfig);
                 this.totalCount++;
             }
+            
+            const extraAchievements = [
+                { id: 'hundred_kills', name: '百人斩', icon: '💀', description: '累计击杀100个敌人', condition: 'kills', target: 100, reward: { gold: 500 } },
+                { id: 'dungeon_conqueror', name: '地牢征服者', icon: '👑', description: '通关游戏', condition: 'victories', target: 1, reward: { gold: 1000, gems: 5 } },
+                { id: 'lightning_fast', name: '闪电快枪手', icon: '⚡', description: '单局击杀30个敌人', condition: 'kills_single', target: 30, reward: { gold: 200 } },
+                { id: 'rich', name: '小富翁', icon: '💰', description: '单局获得500金币', condition: 'gold_single', target: 500, reward: { gems: 3 } },
+                { id: 'gem_hunter', name: '宝石猎人', icon: '💎', description: '累计获得10颗宝石', condition: 'gems_total', target: 10, reward: { gold: 500 } },
+                { id: 'survivor', name: '幸存者', icon: '❤️', description: '剩余1血时击杀Boss', condition: 'low_hp_boss_kill', target: 1, reward: { gems: 5 } },
+                { id: 'all_rounder', name: '全能选手', icon: '🎪', description: '单局使用5种不同武器', condition: 'weapons_used_single', target: 5, reward: { gold: 200 } },
+                { id: 'berserker', name: '狂战士', icon: '⚔️', description: '单局承受10次伤害仍存活', condition: 'damage_taken_single', target: 10, reward: { gold: 150 } },
+                { id: 'speed_run_2min', name: '速度之星', icon: '🚀', description: '2分钟内通关', condition: 'speed_run_2min', target: 1, reward: { gems: 8 } },
+                { id: 'collector', name: '收藏家', icon: '📚', description: '收集10种不同道具', condition: 'items_collected', target: 10, reward: { gold: 300 } },
+                { id: 'lucky', name: '幸运儿', icon: '🎁', description: '获得传说物品', condition: 'legendary_drop', target: 1, reward: { gems: 5 } }
+            ];
+            
+            for (const config of extraAchievements) {
+                if (!this.achievements[config.id]) {
+                    this.achievements[config.id] = new Achievement(config);
+                    this.totalCount++;
+                }
+            }
+        } catch (error) {
+            console.error('[ACHIEVEMENT] 初始化成就列表失败:', error);
         }
     }
     
@@ -348,14 +356,19 @@ class AchievementManager {
      * @param {number} value - 当前值
      */
     checkAchievement(condition, value) {
-        for (const id in this.achievements) {
-            const achievement = this.achievements[id];
-            if (achievement.unlocked) continue;
-            if (achievement.condition === condition) {
-                if (achievement.updateProgress(value)) {
-                    this.onAchievementUnlocked(achievement);
+        try {
+            for (const id in this.achievements) {
+                const achievement = this.achievements[id];
+                if (!achievement) continue;
+                if (achievement.unlocked) continue;
+                if (achievement.condition === condition) {
+                    if (achievement.updateProgress(value)) {
+                        this.onAchievementUnlocked(achievement);
+                    }
                 }
             }
+        } catch (error) {
+            console.error('[ACHIEVEMENT] 检查成就条件失败:', error);
         }
     }
     
@@ -376,8 +389,16 @@ class AchievementManager {
      * @param {Achievement} achievement
      */
     onAchievementUnlocked(achievement) {
-        this.unlockedCount++;
-        this.newAchievements.push(achievement);
+        try {
+            this.unlockedCount++;
+            this.newAchievements.push(achievement);
+            
+            if (typeof saveManager !== 'undefined') {
+                saveManager.unlockAchievement(achievement.id);
+            }
+        } catch (error) {
+            console.error('[ACHIEVEMENT] 成就解锁处理失败:', error);
+        }
     }
     
     /**

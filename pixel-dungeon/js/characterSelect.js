@@ -57,6 +57,7 @@ class CharacterSelectManager {
                 icon: '⚔️',
                 color: '#ff6666',
                 description: '平衡型角色，适合新手',
+                bodyShape: { build: 'muscular', head: 'helmet', weapon: 'sword', decor: 'none', pattern: 'solid' },
                 stats: { survivability: 3, offensive: 3, skillPower: 3 },
                 skills: [
                     { name: '冲刺', key: 'Shift', cooldown: 2000, description: '向移动方向快速冲刺' },
@@ -70,6 +71,7 @@ class CharacterSelectManager {
                 icon: '🛡️',
                 color: '#ff8844',
                 description: '高生存能力，攻守兼备',
+                bodyShape: { build: 'muscular', head: 'helmet', weapon: 'sword', decor: 'cape', pattern: 'solid' },
                 stats: { survivability: 5, offensive: 2, skillPower: 3 },
                 skills: [
                     { name: '护盾', key: 'Shift', cooldown: 5000, description: '生成护盾吸收伤害' },
@@ -83,6 +85,7 @@ class CharacterSelectManager {
                 icon: '⚔️',
                 color: '#ff4444',
                 description: '高攻击低防御，风险与收益并存',
+                bodyShape: { build: 'muscular', head: 'square', weapon: 'sword', decor: 'none', pattern: 'stripes' },
                 stats: { survivability: 2, offensive: 5, skillPower: 2 },
                 skills: [
                     { name: '狂暴', key: 'Shift', cooldown: 8000, description: '攻击力提升100%' },
@@ -98,6 +101,7 @@ class CharacterSelectManager {
                 icon: '🗡️',
                 color: '#66ff66',
                 description: '高机动性，擅长暗杀',
+                bodyShape: { build: 'slim', head: 'mask', weapon: 'dagger', decor: 'bandana', pattern: 'solid' },
                 stats: { survivability: 2, offensive: 4, skillPower: 3 },
                 skills: [
                     { name: '影遁', key: 'Shift', cooldown: 3000, description: '短暂消失并移至敌人身后' },
@@ -111,6 +115,7 @@ class CharacterSelectManager {
                 icon: '💀',
                 color: '#44ff44',
                 description: '高爆发，一击必杀',
+                bodyShape: { build: 'slim', head: 'mask', weapon: 'dagger', decor: 'bandana', pattern: 'solid' },
                 stats: { survivability: 1, offensive: 5, skillPower: 3 },
                 skills: [
                     { name: '背刺', key: 'Shift', cooldown: 2000, description: '背后攻击伤害翻倍' },
@@ -126,6 +131,7 @@ class CharacterSelectManager {
                 icon: '🔮',
                 color: '#6666ff',
                 description: '元素魔法，攻守自如',
+                bodyShape: { build: 'normal', head: 'pointed', weapon: 'staff', decor: 'none', pattern: 'gradient' },
                 stats: { survivability: 3, offensive: 4, skillPower: 4 },
                 skills: [
                     { name: '火球', key: 'Shift', cooldown: 1500, description: '发射火球攻击' },
@@ -139,6 +145,7 @@ class CharacterSelectManager {
                 icon: '💀',
                 color: '#9966ff',
                 description: '召唤亡灵，群体作战',
+                bodyShape: { build: 'slim', head: 'pointed', weapon: 'staff', decor: 'none', pattern: 'solid' },
                 stats: { survivability: 2, offensive: 3, skillPower: 5 },
                 skills: [
                     { name: '召唤骷髅', key: 'Shift', cooldown: 8000, description: '召唤骷髅战士' },
@@ -154,6 +161,7 @@ class CharacterSelectManager {
                 icon: '✨',
                 color: '#ffff66',
                 description: '治疗与辅助，团队核心',
+                bodyShape: { build: 'normal', head: 'oval', weapon: 'staff', decor: 'cape', pattern: 'solid' },
                 stats: { survivability: 3, offensive: 2, skillPower: 4 },
                 skills: [
                     { name: '治疗', key: 'Shift', cooldown: 5000, description: '恢复生命值' },
@@ -167,6 +175,7 @@ class CharacterSelectManager {
                 icon: '🎵',
                 color: '#ffcc00',
                 description: '增益与控制，战场指挥官',
+                bodyShape: { build: 'normal', head: 'round', weapon: 'staff', decor: 'none', pattern: 'stripes' },
                 stats: { survivability: 2, offensive: 3, skillPower: 4 },
                 skills: [
                     { name: '战斗乐章', key: 'Shift', cooldown: 6000, description: '提升全队攻击力' },
@@ -182,6 +191,7 @@ class CharacterSelectManager {
                 icon: '🏹',
                 color: '#66ffff',
                 description: '远程攻击，精准打击',
+                bodyShape: { build: 'normal', head: 'pointed', weapon: 'bow', decor: 'none', pattern: 'solid' },
                 stats: { survivability: 2, offensive: 4, skillPower: 3 },
                 skills: [
                     { name: '多重射击', key: 'Shift', cooldown: 3000, description: '同时发射三支箭' },
@@ -195,6 +205,7 @@ class CharacterSelectManager {
                 icon: '🎯',
                 color: '#00ffff',
                 description: '超远距离，一击必中',
+                bodyShape: { build: 'slim', head: 'helmet', weapon: 'bow', decor: 'none', pattern: 'solid' },
                 stats: { survivability: 1, offensive: 5, skillPower: 3 },
                 skills: [
                     { name: '狙击', key: 'Shift', cooldown: 10000, description: '超远距离高伤害' },
@@ -210,6 +221,7 @@ class CharacterSelectManager {
                 icon: '🔧',
                 color: '#ff66ff',
                 description: '放置系单位，布局策略',
+                bodyShape: { build: 'normal', head: 'helmet', weapon: 'gun', decor: 'none', pattern: 'solid' },
                 stats: { survivability: 3, offensive: 3, skillPower: 4 },
                 skills: [
                     { name: '放置炮台', key: 'Shift', cooldown: 8000, description: '放置自动炮台' },
@@ -223,6 +235,7 @@ class CharacterSelectManager {
                 icon: '🤖',
                 color: '#ff44ff',
                 description: '召唤机械单位作战',
+                bodyShape: { build: 'bulky', head: 'helmet', weapon: 'gun', decor: 'none', pattern: 'stripes' },
                 stats: { survivability: 2, offensive: 4, skillPower: 4 },
                 skills: [
                     { name: '召唤机器人', key: 'Shift', cooldown: 10000, description: '召唤机器人助战' },
@@ -238,6 +251,7 @@ class CharacterSelectManager {
                 icon: '🔮',
                 color: '#ff9966',
                 description: '召唤异界生物，协同作战',
+                bodyShape: { build: 'normal', head: 'oval', weapon: 'staff', decor: 'wings', pattern: 'gradient' },
                 stats: { survivability: 2, offensive: 3, skillPower: 5 },
                 skills: [
                     { name: '召唤使魔', key: 'Shift', cooldown: 7000, description: '召唤强力使魔' },
@@ -251,6 +265,7 @@ class CharacterSelectManager {
                 icon: '🌿',
                 color: '#88ff44',
                 description: '召唤自然生物，恢复能力强',
+                bodyShape: { build: 'normal', head: 'round', weapon: 'staff', decor: 'horns', pattern: 'solid' },
                 stats: { survivability: 4, offensive: 2, skillPower: 4 },
                 skills: [
                     { name: '召唤狼', key: 'Shift', cooldown: 5000, description: '召唤狼协助战斗' },
@@ -266,6 +281,7 @@ class CharacterSelectManager {
                 icon: '🎰',
                 color: '#ffffff',
                 description: '高风险高回报，一切看脸',
+                bodyShape: { build: 'normal', head: 'round', weapon: 'fist', decor: 'none', pattern: 'dots' },
                 stats: { survivability: 2, offensive: 5, skillPower: 2 },
                 skills: [
                     { name: '幸运翻转', key: 'Shift', cooldown: 8000, description: '50%伤害翻倍或减半' },
@@ -279,6 +295,7 @@ class CharacterSelectManager {
                 icon: '⏰',
                 color: '#aaaaaa',
                 description: '操控时间，扭曲现实',
+                bodyShape: { build: 'slim', head: 'pointed', weapon: 'staff', decor: 'none', pattern: 'gradient' },
                 stats: { survivability: 3, offensive: 3, skillPower: 5 },
                 skills: [
                     { name: '时间暂停', key: 'Shift', cooldown: 15000, description: '暂停时间3秒' },
@@ -292,6 +309,7 @@ class CharacterSelectManager {
                 icon: '🌙',
                 color: '#9966cc',
                 description: '操控梦境，现实与虚幻交织',
+                bodyShape: { build: 'slim', head: 'mask', weapon: 'dagger', decor: 'wings', pattern: 'zigzag' },
                 stats: { survivability: 3, offensive: 4, skillPower: 4 },
                 skills: [
                     { name: '梦魇入侵', key: 'Shift', cooldown: 6000, description: '使敌人沉睡' },
@@ -307,6 +325,7 @@ class CharacterSelectManager {
                 icon: '🐉',
                 color: '#ff0000',
                 description: '龙族血脉，火焰之力',
+                bodyShape: { build: 'muscular', head: 'helmet', weapon: 'sword', decor: 'horns', pattern: 'gradient' },
                 stats: { survivability: 4, offensive: 5, skillPower: 3 },
                 skills: [
                     { name: '龙息', key: 'Shift', cooldown: 5000, description: '喷吐火焰' },
@@ -320,6 +339,7 @@ class CharacterSelectManager {
                 icon: '🏹',
                 color: '#00ff88',
                 description: '精准射击，自然之力',
+                bodyShape: { build: 'slim', head: 'pointed', weapon: 'bow', decor: 'none', pattern: 'solid' },
                 stats: { survivability: 3, offensive: 4, skillPower: 3 },
                 skills: [
                     { name: '穿云箭', key: 'Shift', cooldown: 4000, description: '穿透性射击' },
@@ -333,6 +353,7 @@ class CharacterSelectManager {
                 icon: '🌑',
                 color: '#220033',
                 description: '暗影中潜行，一击脱离',
+                bodyShape: { build: 'slim', head: 'mask', weapon: 'dagger', decor: 'bandana', pattern: 'solid' },
                 stats: { survivability: 2, offensive: 5, skillPower: 3 },
                 skills: [
                     { name: '暗影步', key: 'Shift', cooldown: 4000, description: '融入暗影快速移动' },
@@ -346,6 +367,7 @@ class CharacterSelectManager {
                 icon: '❄️',
                 color: '#00ccff',
                 description: '冰系魔法，控制战场',
+                bodyShape: { build: 'slim', head: 'pointed', weapon: 'staff', decor: 'none', pattern: 'gradient' },
                 stats: { survivability: 3, offensive: 4, skillPower: 4 },
                 skills: [
                     { name: '冰封', key: 'Shift', cooldown: 7000, description: '冻结敌人' },
@@ -359,6 +381,7 @@ class CharacterSelectManager {
                 icon: '⚗️',
                 color: '#88ff00',
                 description: '药水与爆炸，科学的力量',
+                bodyShape: { build: 'normal', head: 'round', weapon: 'gun', decor: 'none', pattern: 'dots' },
                 stats: { survivability: 3, offensive: 4, skillPower: 3 },
                 skills: [
                     { name: '投掷药水', key: 'Shift', cooldown: 3000, description: '投掷各种药水' },
@@ -372,6 +395,7 @@ class CharacterSelectManager {
                 icon: '🥋',
                 color: '#ffcc66',
                 description: '拳脚功夫，气功大师',
+                bodyShape: { build: 'muscular', head: 'oval', weapon: 'fist', decor: 'none', pattern: 'solid' },
                 stats: { survivability: 4, offensive: 4, skillPower: 3 },
                 skills: [
                     { name: '气功波', key: 'Shift', cooldown: 3000, description: '发射气功远程攻击' },
@@ -600,20 +624,17 @@ class CharacterSelectManager {
      * @param {number} time - 当前时间
      */
     renderCharacterIcon(ctx, character, x, y, size, isSelected, time) {
-        // 选中时上下浮动
         let offsetY = 0;
         if (isSelected) {
             offsetY = Math.sin(time / 300) * 3;
         }
         
-        // 发光效果
         if (isSelected) {
             ctx.save();
             ctx.shadowColor = character.color;
             ctx.shadowBlur = 15;
         }
         
-        // 绘制图标背景圆
         if (isSelected) {
             const gradient = ctx.createRadialGradient(x, y + offsetY, 0, x, y + offsetY, size);
             gradient.addColorStop(0, character.color + '60');
@@ -624,17 +645,35 @@ class CharacterSelectManager {
             ctx.fill();
         }
         
-        // 绘制图标
-        ctx.font = `${size}px serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(character.icon, x, y + offsetY);
+        if (character.bodyShape) {
+            ctx.save();
+            ctx.translate(x, y + offsetY);
+            
+            const breathScale = 1 + Math.sin(time / 500) * 0.05;
+            ctx.scale(1, breathScale);
+            
+            const drawSize = size * 1.5;
+            const bodyColor = character.color;
+            const accentColor = character.color;
+            
+            drawCharacterDecor(ctx, character.bodyShape.decor, accentColor, 0, -drawSize * 0.3, drawSize);
+            drawCharacterBody(ctx, character.bodyShape.build, bodyColor, 0, 0, drawSize);
+            drawCharacterPattern(ctx, character.bodyShape.pattern, accentColor, 0, 0, drawSize);
+            drawCharacterHead(ctx, character.bodyShape.head, bodyColor, 0, -drawSize * 0.7, drawSize);
+            drawCharacterWeapon(ctx, character.bodyShape.weapon, accentColor, drawSize * 0.4, 0, drawSize, Math.PI / 4);
+            
+            ctx.restore();
+        } else {
+            ctx.font = `${size}px serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(character.icon, x, y + offsetY);
+        }
         
         if (isSelected) {
             ctx.restore();
         }
         
-        // 粒子效果（法师）
         if (character.category === '法师' && isSelected) {
             this.renderMagicParticles(ctx, x, y + offsetY, time);
         } else if (character.category === '战士' && isSelected) {
@@ -853,7 +892,6 @@ class CharacterSelectManager {
      * @param {number} time - 当前时间
      */
     renderCharacterPreview(ctx, character, x, y, size, time) {
-        // 背景光晕
         const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
         gradient.addColorStop(0, character.color + '40');
         gradient.addColorStop(1, 'transparent');
@@ -862,13 +900,34 @@ class CharacterSelectManager {
         ctx.arc(x, y, size, 0, Math.PI * 2);
         ctx.fill();
         
-        // 角色图标
-        ctx.font = `${size}px serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(character.icon, x, y);
+        if (character.bodyShape) {
+            ctx.save();
+            ctx.translate(x, y);
+            
+            const breathScale = 1 + Math.sin(time / 500) * 0.05;
+            ctx.scale(1, breathScale);
+            
+            const floatOffset = Math.sin(time / 800) * 3;
+            ctx.translate(0, floatOffset);
+            
+            const drawSize = size * 2;
+            const bodyColor = character.color;
+            const accentColor = character.color;
+            
+            drawCharacterDecor(ctx, character.bodyShape.decor, accentColor, 0, -drawSize * 0.3, drawSize);
+            drawCharacterBody(ctx, character.bodyShape.build, bodyColor, 0, 0, drawSize);
+            drawCharacterPattern(ctx, character.bodyShape.pattern, accentColor, 0, 0, drawSize);
+            drawCharacterHead(ctx, character.bodyShape.head, bodyColor, 0, -drawSize * 0.7, drawSize);
+            drawCharacterWeapon(ctx, character.bodyShape.weapon, accentColor, drawSize * 0.4, 0, drawSize, Math.PI / 4);
+            
+            ctx.restore();
+        } else {
+            ctx.font = `${size}px serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(character.icon, x, y);
+        }
         
-        // 粒子效果
         if (character.category === '法师') {
             this.renderMagicParticles(ctx, x, y, time);
         } else if (character.category === '战士') {

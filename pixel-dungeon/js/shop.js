@@ -236,11 +236,8 @@ class ShopManager {
      * @returns {boolean} 是否生成
      */
     spawnMerchant(x, y) {
-        if (Math.random() < SHOP_CONFIG.SPAWN_CHANCE) {
-            this.merchant = new Merchant(x, y);
-            return true;
-        }
-        return false;
+        this.merchant = new Merchant(x, y);
+        return true;
     }
     
     /**

@@ -66,6 +66,7 @@ class ActiveSkill {
      * @param {number} deltaTime - 距离上一帧的时间（毫秒）
      */
     update(deltaTime) {
+        if (typeof deltaTime !== 'number') deltaTime = 0;
         // 更新冷却时间
         if (this.currentCooldown > 0) {
             this.currentCooldown -= deltaTime;
@@ -195,6 +196,17 @@ class ActiveSkill {
      */
     isInvincible() {
         return false;
+    }
+    
+    /**
+     * 检查技能是否可以执行
+     * @returns {boolean} 是否可以执行
+     */
+    canExecute() {
+        if (!this.owner) return false;
+        if (this.currentCooldown > 0) return false;
+        if (this.isCasting) return false;
+        return true;
     }
     
     /**

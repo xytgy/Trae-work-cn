@@ -241,6 +241,9 @@ class Room {
         this.doorColor = COLORS.DUNGEON.DOOR;
         this.floorColor = COLORS.DUNGEON.FLOOR;
         
+        // 根据房间类型设置不同的视觉风格
+        this.setRoomVisualStyle();
+        
         // 地砖数组
         this.floorTiles = [];
         
@@ -303,6 +306,11 @@ class Room {
         // 墙壁晃动阴影
         this.shadowOffset = 0;
         
+        // 精英房间火焰粒子
+        this.flameParticles = [];
+        this.flameParticleTimer = 0;
+        this.flameParticleInterval = 100;
+        
         // 计算房间难度
         this.calculateRoomDifficulty();
         
@@ -332,6 +340,52 @@ class Room {
      */
     getDifficultyMultiplier() {
         return this.difficultyMultiplier;
+    }
+    
+    /**
+     * 根据房间类型设置不同的视觉风格
+     */
+    setRoomVisualStyle() {
+        switch (this.roomType) {
+            case ROOM_TYPES.ELITE:
+                this.backgroundColor = '#2d1010';
+                this.wallColor = '#5a2020';
+                this.doorColor = '#ff4444';
+                this.floorColor = '#1a0a0a';
+                break;
+            case ROOM_TYPES.BOSS:
+                this.backgroundColor = '#1a0a2e';
+                this.wallColor = '#3a1a4e';
+                this.doorColor = '#9c27b0';
+                this.floorColor = '#0f051a';
+                break;
+            case ROOM_TYPES.CHEST:
+                this.backgroundColor = '#1a1a0a';
+                this.wallColor = '#3a3a1a';
+                this.doorColor = '#ffd700';
+                this.floorColor = '#101005';
+                break;
+            case ROOM_TYPES.SHOP:
+                this.backgroundColor = '#0a1a2a';
+                this.wallColor = '#1a3a4a';
+                this.doorColor = '#2196f3';
+                this.floorColor = '#05101a';
+                break;
+            case ROOM_TYPES.REST:
+                this.backgroundColor = '#0a2a1a';
+                this.wallColor = '#1a4a2a';
+                this.doorColor = '#4caf50';
+                this.floorColor = '#051a10';
+                break;
+            case ROOM_TYPES.TRAP:
+                this.backgroundColor = '#1a1a1a';
+                this.wallColor = '#3a3a3a';
+                this.doorColor = '#888888';
+                this.floorColor = '#101010';
+                break;
+            default:
+                break;
+        }
     }
     
     /**
@@ -791,6 +845,9 @@ class Room {
             this.updateFogParticles(deltaTime);
         }
         
+        // 更新精英房间火焰粒子
+        this.updateFlameParticles(deltaTime);
+        
         // 更新装饰物动画
         for (const decoration of this.decorations) {
             decoration.update(deltaTime);
@@ -939,6 +996,57 @@ class Room {
             // 循环
             if (particle.x < -particle.size) particle.x = this.width + particle.size;
             if (particle.x > this.width + particle.size) particle.x = -particle.size;
+        }
+    }
+    
+    /**
+     * 创建火焰粒子
+     */
+    createFlameParticle() {
+        const playableArea = this.getPlayableArea();
+        return {
+            x: playableArea.x + Math.random() * playableArea.width,
+            y: playableArea.y + playableArea.height + 20,
+            size: 4 + Math.random() * 6,
+            speedX: (Math.random() - 0.5) * 0.5,
+            speedY: -0.3 - Math.random() * 0.5,
+            alpha: 0.8 + Math.random() * 0.2,
+            phase: Math.random() * Math.PI * 2,
+            flickerSpeed: 0.02 + Math.random() * 0.02,
+            color: Math.random() < 0.3 ? '#ffff00' : (Math.random() < 0.5 ? '#ff6600' : '#ff3300')
+        };
+    }
+    
+    /**
+     * 更新火焰粒子（精英房间）
+     * @param {number} deltaTime - 时间增量
+     */
+    updateFlameParticles(deltaTime) {
+        if (this.roomType !== ROOM_TYPES.ELITE) return;
+        
+        // 生成新粒子
+        this.flameParticleTimer += deltaTime;
+        if (this.flameParticleTimer >= this.flameParticleInterval) {
+            this.flameParticleTimer = 0;
+            if (this.flameParticles.length < 30) {
+                this.flameParticles.push(this.createFlameParticle());
+            }
+        }
+        
+        // 更新粒子
+        for (let i = this.flameParticles.length - 1; i >= 0; i--) {
+            const particle = this.flameParticles[i];
+            
+            particle.phase += deltaTime * particle.flickerSpeed;
+            particle.x += particle.speedX * deltaTime + Math.sin(particle.phase) * 0.5;
+            particle.y += particle.speedY * deltaTime;
+            particle.size *= 0.995;
+            particle.alpha -= deltaTime * 0.001;
+            
+            // 移除死亡粒子
+            if (particle.y < this.wallThickness || particle.alpha <= 0 || particle.size <= 0.5) {
+                this.flameParticles.splice(i, 1);
+            }
         }
     }
     
@@ -1095,6 +1203,45 @@ class Room {
                 ctx.fill();
             }
         }
+        
+        // 渲染精英房间火焰粒子
+        this.renderFlameParticles(renderer);
+    }
+    
+    /**
+     * 渲染火焰粒子（精英房间）
+     * @param {Renderer} renderer - 渲染器引用
+     */
+    renderFlameParticles(renderer) {
+        if (this.roomType !== ROOM_TYPES.ELITE) return;
+        
+        const ctx = renderer.ctx;
+        
+        for (const particle of this.flameParticles) {
+            const flicker = Math.sin(particle.phase) * 0.3 + 0.7;
+            const currentAlpha = particle.alpha * flicker;
+            const currentSize = particle.size * flicker;
+            
+            // 外焰
+            const outerGradient = ctx.createRadialGradient(
+                particle.x, particle.y, 0,
+                particle.x, particle.y, currentSize * 1.5
+            );
+            outerGradient.addColorStop(0, particle.color);
+            outerGradient.addColorStop(0.5, `rgba(255, 100, 0, ${currentAlpha * 0.5})`);
+            outerGradient.addColorStop(1, 'transparent');
+            
+            ctx.fillStyle = outerGradient;
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, currentSize * 1.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 内核
+            ctx.fillStyle = `rgba(255, 255, 200, ${currentAlpha})`;
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, currentSize * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
     
     /**
@@ -1222,6 +1369,55 @@ class Room {
         if (this.backgroundCanvas) {
             renderer.ctx.drawImage(this.backgroundCanvas, 0, 0);
         }
+        
+        // 添加精英房间特殊视觉效果
+        this.renderEliteRoomEffects(renderer);
+    }
+    
+    /**
+     * 渲染精英房间特殊效果
+     * @param {Renderer} renderer - 渲染器引用
+     */
+    renderEliteRoomEffects(renderer) {
+        if (this.roomType !== ROOM_TYPES.ELITE) return;
+        
+        const ctx = renderer.ctx;
+        const time = Date.now() / 1000;
+        
+        // 红色光环效果（从中心向外扩散的脉冲）
+        const centerX = this.width / 2;
+        const centerY = this.height / 2;
+        const pulseRadius = 100 + Math.sin(time * 2) * 20;
+        const pulseAlpha = 0.1 + Math.sin(time * 3) * 0.05;
+        
+        // 绘制多层光环
+        for (let i = 0; i < 3; i++) {
+            const radius = pulseRadius + i * 50;
+            const alpha = pulseAlpha * (1 - i * 0.3);
+            
+            const gradient = ctx.createRadialGradient(
+                centerX, centerY, radius * 0.8,
+                centerX, centerY, radius
+            );
+            gradient.addColorStop(0, `rgba(255, 50, 50, 0)`);
+            gradient.addColorStop(0.8, `rgba(255, 50, 50, ${alpha})`);
+            gradient.addColorStop(1, `rgba(255, 20, 20, ${alpha * 0.5})`);
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, this.width, this.height);
+        }
+        
+        // 地面红光反射
+        const groundGradient = ctx.createLinearGradient(
+            0, this.height * 0.6,
+            0, this.height
+        );
+        groundGradient.addColorStop(0, 'transparent');
+        groundGradient.addColorStop(0.5, `rgba(255, 50, 50, ${pulseAlpha * 0.3})`);
+        groundGradient.addColorStop(1, `rgba(255, 20, 20, ${pulseAlpha * 0.5})`);
+        
+        ctx.fillStyle = groundGradient;
+        ctx.fillRect(0, this.height * 0.6, this.width, this.height * 0.4);
     }
     
     /**

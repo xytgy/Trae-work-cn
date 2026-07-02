@@ -170,6 +170,69 @@ class UIManager {
     }
     
     /**
+     * 绘制统一风格的按钮
+     * @param {CanvasRenderingContext2D} ctx - 画布上下文
+     * @param {number} x - X坐标
+     * @param {number} y - Y坐标
+     * @param {number} width - 宽度
+     * @param {number} height - 高度
+     * @param {string} text - 按钮文字
+     * @param {boolean} isHovered - 是否悬停
+     * @param {number} scale - 缩放比例（用于悬停动画）
+     * @param {Object} options - 可选配置
+     */
+    drawButton(ctx, x, y, width, height, text, isHovered = false, scale = 1, options = {}) {
+        const config = {
+            borderRadius: options.borderRadius || 8,
+            bgColor: options.bgColor || (isHovered ? UI_COLORS.MENU_BUTTON_HOVER_START : UI_COLORS.MENU_BUTTON_GRADIENT_START),
+            bgColorEnd: options.bgColorEnd || (isHovered ? UI_COLORS.MENU_BUTTON_HOVER_END : UI_COLORS.MENU_BUTTON_GRADIENT_END),
+            borderColor: options.borderColor || (isHovered ? UI_COLORS.MENU_BUTTON_HOVER_BORDER : UI_COLORS.MENU_BUTTON_BORDER),
+            textColor: options.textColor || '#ffffff',
+            glowColor: options.glowColor || UI_COLORS.MENU_TITLE_GLOW,
+            fontSize: options.fontSize || 20,
+            ...options
+        };
+        
+        ctx.save();
+        
+        const centerX = x + width / 2;
+        const centerY = y + height / 2;
+        const scaledWidth = width * scale;
+        const scaledHeight = height * scale;
+        const scaledX = centerX - scaledWidth / 2;
+        const scaledY = centerY - scaledHeight / 2;
+        
+        // 悬停发光效果
+        if (isHovered && scale > 1.01) {
+            const glowIntensity = (scale - 1) / 0.05;
+            ctx.shadowColor = config.glowColor;
+            ctx.shadowBlur = 15 * glowIntensity;
+        }
+        
+        // 按钮背景渐变
+        const gradient = ctx.createLinearGradient(scaledX, scaledY, scaledX, scaledY + scaledHeight);
+        gradient.addColorStop(0, config.bgColor);
+        gradient.addColorStop(1, config.bgColorEnd);
+        
+        this.drawRoundedRect(ctx, scaledX, scaledY, scaledWidth, scaledHeight, config.borderRadius, gradient);
+        
+        // 按钮边框
+        ctx.strokeStyle = config.borderColor;
+        ctx.lineWidth = 2 * scale;
+        this.drawRoundedRect(ctx, scaledX, scaledY, scaledWidth, scaledHeight, config.borderRadius, null, config.borderColor, 2 * scale);
+        
+        // 按钮文字
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = config.textColor;
+        ctx.font = `bold ${Math.floor(config.fontSize * scale)}px "Microsoft YaHei", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, centerX, centerY);
+        
+        ctx.restore();
+    }
+    
+    /**
      * 初始化按钮配置
      */
     initButtons() {
@@ -904,7 +967,7 @@ class UIManager {
         ctx.shadowColor = UI_COLORS.MENU_TITLE_GLOW;
         ctx.shadowBlur = 20;
         
-        ctx.font = 'bold 48px Arial';
+        ctx.font = 'bold 48px "Microsoft YaHei", sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = UI_COLORS.MENU_TITLE_FILL;
@@ -919,7 +982,7 @@ class UIManager {
         
         // 副标题
         ctx.fillStyle = '#aaaaaa';
-        ctx.font = '18px Arial';
+        ctx.font = '18px "Microsoft YaHei", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('枪战冒险', width / 2, titleY + 35 + titleBob);
         
@@ -944,7 +1007,7 @@ class UIManager {
         
         // 版本号
         ctx.fillStyle = '#666666';
-        ctx.font = '12px Arial';
+        ctx.font = '12px "Microsoft YaHei", sans-serif';
         ctx.textAlign = 'right';
         ctx.fillText('v1.0.0', width - 10, height - 10);
     }
@@ -987,7 +1050,7 @@ class UIManager {
     }
     
     /**
-     * 渲染菜单按钮（渐变+悬停效果）
+     * 渲染菜单按钮（使用统一按钮绘制方法）
      * @param {CanvasRenderingContext2D} ctx - 画布上下文
      * @param {Object} button - 按钮配置
      * @param {number} y - Y坐标
@@ -1001,43 +1064,13 @@ class UIManager {
         const mouseY = inputManager.mouse.y || 0;
         const isHover = this.isPointInButton(mouseX, mouseY, { ...button, x: bx, y: y });
         
-        // 获取按钮缩放状态
         const buttonId = button.text;
         if (!this.buttonHoverStates[buttonId]) {
             this.buttonHoverStates[buttonId] = { scale: 1 };
         }
         const scale = this.buttonHoverStates[buttonId].scale;
         
-        ctx.save();
-        ctx.translate(GAME_WIDTH / 2, y + buttonHeight / 2);
-        ctx.scale(scale, scale);
-        
-        // 按钮背景渐变
-        const gradient = ctx.createLinearGradient(-buttonWidth / 2, 0, buttonWidth / 2, 0);
-        if (isHover) {
-            gradient.addColorStop(0, UI_COLORS.MENU_BUTTON_HOVER_START);
-            gradient.addColorStop(1, UI_COLORS.MENU_BUTTON_HOVER_END);
-        } else {
-            gradient.addColorStop(0, UI_COLORS.MENU_BUTTON_GRADIENT_START);
-            gradient.addColorStop(1, UI_COLORS.MENU_BUTTON_GRADIENT_END);
-        }
-        
-        ctx.fillStyle = gradient;
-        ctx.fillRect(-buttonWidth / 2, -buttonHeight / 2, buttonWidth, buttonHeight);
-        
-        // 按钮边框
-        ctx.strokeStyle = isHover ? UI_COLORS.MENU_BUTTON_HOVER_BORDER : UI_COLORS.MENU_BUTTON_BORDER;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(-buttonWidth / 2, -buttonHeight / 2, buttonWidth, buttonHeight);
-        
-        // 按钮文字
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 20px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(button.text, 0, 0);
-        
-        ctx.restore();
+        this.drawButton(ctx, bx, y, buttonWidth, buttonHeight, button.text, isHover, scale);
     }
     
     /**
@@ -1553,70 +1586,23 @@ class UIManager {
     }
     
     /**
-     * 渲染按钮
+     * 渲染按钮（使用统一按钮绘制方法）
      * @param {Object} button - 按钮配置
      */
     renderButton(button) {
         const ctx = renderer.ctx;
-        const config = MENU_ANIMATION.BUTTON_HOVER;
         
-        // 获取按钮的缩放状态
         const buttonId = button.text;
         if (!this.buttonHoverStates[buttonId]) {
             this.buttonHoverStates[buttonId] = { scale: 1 };
         }
         const scale = this.buttonHoverStates[buttonId].scale;
         
-        // 检测鼠标是否在按钮上
         const mouseX = inputManager.mouse.x || 0;
         const mouseY = inputManager.mouse.y || 0;
         const isHovered = this.isPointInButton(mouseX, mouseY, button);
         
-        // 计算缩放后的位置和尺寸
-        const centerX = button.x + button.width / 2;
-        const centerY = button.y + button.height / 2;
-        const scaledWidth = button.width * scale;
-        const scaledHeight = button.height * scale;
-        const scaledX = centerX - scaledWidth / 2;
-        const scaledY = centerY - scaledHeight / 2;
-        
-        // 按钮颜色
-        const bgColor = isHovered ? COLORS.DUNGEON.DOOR : COLORS.DUNGEON.WALL;
-        const textColor = isHovered ? '#ffffff' : '#cccccc';
-        const borderColor = isHovered ? '#ffffff' : '#666666';
-        
-        // 绘制发光效果（仅在悬停时）
-        if (isHovered || scale > 1.01) {
-            const glowIntensity = (scale - 1) / (config.SCALE - 1);
-            const glowSize = config.GLOW_SIZE * glowIntensity;
-            
-            ctx.save();
-            ctx.shadowColor = config.GLOW_COLOR;
-            ctx.shadowBlur = glowSize;
-            
-            // 发光按钮背景
-            ctx.fillStyle = bgColor;
-            ctx.fillRect(scaledX, scaledY, scaledWidth, scaledHeight);
-            
-            ctx.restore();
-        }
-        
-        // 绘制按钮背景
-        ctx.fillStyle = bgColor;
-        ctx.fillRect(scaledX, scaledY, scaledWidth, scaledHeight);
-        
-        // 绘制按钮边框（更亮）
-        ctx.strokeStyle = borderColor;
-        ctx.lineWidth = 2 * scale;
-        ctx.strokeRect(scaledX, scaledY, scaledWidth, scaledHeight);
-        
-        // 绘制按钮文字（随按钮放大）
-        const fontSize = Math.floor(20 * scale);
-        ctx.font = `${fontSize}px "Courier New", monospace`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = textColor;
-        ctx.fillText(button.text, centerX, centerY);
+        this.drawButton(ctx, button.x, button.y, button.width, button.height, button.text, isHovered, scale);
     }
     
     /**
@@ -2010,23 +1996,21 @@ class UIManager {
     }
     
     /**
-     * 渲染小按钮
+     * 渲染小按钮（使用统一按钮绘制方法）
      */
     renderSmallButton(button) {
         const ctx = renderer.ctx;
+        const mouseX = inputManager.mouse.x || 0;
+        const mouseY = inputManager.mouse.y || 0;
+        const isHovered = this.isPointInRect(mouseX, mouseY, button);
         
-        ctx.fillStyle = '#0f3460';
-        ctx.fillRect(button.x, button.y, button.width, button.height);
-        
-        ctx.strokeStyle = '#666666';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(button.x, button.y, button.width, button.height);
-        
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '14px "Courier New", monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(button.text, button.x + button.width / 2, button.y + button.height / 2);
+        this.drawButton(ctx, button.x, button.y, button.width, button.height, button.text, isHovered, 1, {
+            borderRadius: 6,
+            fontSize: 14,
+            bgColor: isHovered ? '#1a4a7a' : '#0f3460',
+            bgColorEnd: isHovered ? '#2a5a8a' : '#0a2450',
+            borderColor: isHovered ? '#4fc3f7' : '#666666'
+        });
     }
     
     /**
@@ -2259,82 +2243,75 @@ class UIManager {
      * 渲染成就界面
      */
     renderAchievementsScreen() {
+        if (!renderer || !renderer.ctx) return;
+        
         const ctx = renderer.ctx;
         
-        // 背景
-        ctx.fillStyle = '#1a1a2e';
-        ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-        
-        // 标题
-        ctx.fillStyle = '#ffcc00';
-        ctx.font = 'bold 32px "Courier New", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('🏅 成就', GAME_WIDTH / 2, 50);
-        
-        // 返回按钮
-        this.achievementsBackButton = { x: 30, y: 20, width: 80, height: 35, text: '返回' };
-        this.renderSmallButton(this.achievementsBackButton);
-        
-        // 统计
-        const allAchievements = ACHIEVEMENTS.LIST;
-        const unlockedCount = allAchievements.filter(a => 
-            typeof saveManager !== 'undefined' && saveManager.isAchievementUnlocked(a.id)
-        ).length;
-        
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '16px "Courier New", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(`已解锁: ${unlockedCount} / ${allAchievements.length}`, GAME_WIDTH / 2, 85);
-        
-        // 成就列表
-        this.renderAchievementsList();
+        try {
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+            
+            this.achievementsBackButton = { x: 30, y: 20, width: 80, height: 35, text: '返回' };
+            this.renderSmallButton(this.achievementsBackButton);
+            
+            const allAchievements = typeof ACHIEVEMENTS !== 'undefined' && ACHIEVEMENTS.LIST ? ACHIEVEMENTS.LIST : [];
+            const unlockedCount = allAchievements.filter(a => 
+                typeof saveManager !== 'undefined' && saveManager.isAchievementUnlocked(a.id)
+            ).length;
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 24px "Courier New", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(`🏅 成就 (${unlockedCount}/${allAchievements.length})`, GAME_WIDTH / 2, 70);
+            
+            this.renderAchievementsList();
+        } catch (error) {
+            console.error('[UI] 渲染成就界面失败:', error);
+        }
     }
     
     /**
      * 渲染成就列表
      */
     renderAchievementsList() {
+        if (!renderer || !renderer.ctx) return;
+        
         const ctx = renderer.ctx;
-        const achievements = ACHIEVEMENTS.LIST;
+        const achievements = typeof ACHIEVEMENTS !== 'undefined' && ACHIEVEMENTS.LIST ? ACHIEVEMENTS.LIST : [];
         const startY = 110;
         const rowHeight = 55;
         const colWidth = (GAME_WIDTH - 100) / 2;
         
-        achievements.forEach((achievement, index) => {
-            const col = index % 2;
-            const row = Math.floor(index / 2);
-            const x = 50 + col * colWidth;
-            const y = startY + row * rowHeight;
-            
-            const isUnlocked = typeof saveManager !== 'undefined' && saveManager.isAchievementUnlocked(achievement.id);
-            
-            // 背景
-            ctx.fillStyle = isUnlocked ? 'rgba(255, 204, 0, 0.1)' : 'rgba(255, 255, 255, 0.03)';
-            ctx.fillRect(x + 5, y, colWidth - 10, rowHeight - 5);
-            
-            // 边框
-            ctx.strokeStyle = isUnlocked ? '#ffcc00' : '#333333';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x + 5, y, colWidth - 10, rowHeight - 5);
-            
-            // 图标
-            ctx.globalAlpha = isUnlocked ? 1 : 0.3;
-            ctx.font = '24px Arial';
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'top';
-            ctx.fillText(achievement.icon, x + 15, y + 10);
-            ctx.globalAlpha = 1;
-            
-            // 名称
-            ctx.fillStyle = isUnlocked ? '#ffcc00' : '#888888';
-            ctx.font = 'bold 14px "Courier New", monospace';
-            ctx.fillText(achievement.name, x + 50, y + 8);
-            
-            // 描述
-            ctx.fillStyle = isUnlocked ? '#ffffff' : '#666666';
-            ctx.font = '11px "Courier New", monospace';
-            ctx.fillText(achievement.description, x + 50, y + 28);
-        });
+        try {
+            achievements.forEach((achievement, index) => {
+                if (!achievement) return;
+                
+                const col = index % 2;
+                const row = Math.floor(index / 2);
+                const x = 50 + col * colWidth;
+                const y = startY + row * rowHeight;
+                
+                const isUnlocked = typeof saveManager !== 'undefined' && saveManager.isAchievementUnlocked(achievement.id);
+                
+                ctx.fillStyle = isUnlocked ? 'rgba(255, 204, 0, 0.1)' : 'rgba(255, 255, 255, 0.03)';
+                ctx.fillRect(x + 5, y, colWidth - 10, rowHeight - 5);
+                
+                ctx.globalAlpha = isUnlocked ? 1 : 0.3;
+                ctx.font = '24px "Microsoft YaHei", sans-serif';
+                ctx.fillText(achievement.icon, x + 15, y + 10);
+                ctx.globalAlpha = 1;
+                
+                ctx.fillStyle = isUnlocked ? '#ffcc00' : '#888888';
+                ctx.font = 'bold 14px "Courier New", monospace';
+                ctx.fillText(achievement.name || '未知', x + 50, y + 8);
+                
+                ctx.fillStyle = isUnlocked ? '#ffffff' : '#666666';
+                ctx.font = '11px "Courier New", monospace';
+                ctx.fillText(achievement.description || '', x + 50, y + 28);
+            });
+        } catch (error) {
+            console.error('[UI] 渲染成就列表失败:', error);
+        }
     }
     
     /**
@@ -2456,35 +2433,33 @@ class UIManager {
 
         // 标题
         ctx.fillStyle = '#ffcc00';
-        ctx.font = 'bold 28px Arial';
+        ctx.font = 'bold 28px "Microsoft YaHei", sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('选择下一片区域', GAME_WIDTH / 2, 80);
 
-        const options = this.state ? this.state.getAvailableRouteOptions() : [];
+        const options = gameState ? gameState.getAvailableRouteOptions() : [];
 
         if (options.length === 0) {
             ctx.fillStyle = '#888888';
-            ctx.font = '16px Arial';
+            ctx.font = '16px "Microsoft YaHei", sans-serif';
             ctx.fillText('没有可选的路线', GAME_WIDTH / 2, GAME_HEIGHT / 2);
             return;
         }
 
-        // 选项配置（图标、名称、描述）
         const optionConfigs = {
-            'elite': { icon: '🏆', name: '精英房', desc: '强力敌人，高额奖励', color: '#ff4444' },
-            'shop': { icon: '🛒', name: '商店房', desc: '使用金币购买道具', color: '#ffd700' },
-            'rest': { icon: '💤', name: '休息房', desc: '恢复生命值', color: '#4caf50' }
+            'elite': { icon: '🏆', name: '精英房', desc: '强力敌人，高额奖励', color: '#ff4444', detail: '击败后获得稀有武器或遗物' },
+            'shop': { icon: '🛒', name: '商店房', desc: '使用金币购买道具', color: '#ffd700', detail: '武器、药水、遗物应有尽有' },
+            'rest': { icon: '💤', name: '休息房', desc: '恢复生命值', color: '#4caf50', detail: '喷泉恢复2点生命值' }
         };
 
         const cardWidth = 180;
-        const cardHeight = 200;
+        const cardHeight = 220;
         const gap = 30;
         const totalWidth = options.length * cardWidth + (options.length - 1) * gap;
         const startX = GAME_WIDTH / 2 - totalWidth / 2;
         const cardY = GAME_HEIGHT / 2 - cardHeight / 2 + 30;
 
-        // 保存卡片信息用于点击检测
         this.routeSelectCards = [];
 
         options.forEach((optionType, index) => {
@@ -2492,9 +2467,20 @@ class UIManager {
             if (!config) return;
 
             const cx = startX + index * (cardWidth + gap);
-
-            // 卡片背景
             const isHovered = this._routeSelectHoverIndex === index;
+            const scale = isHovered ? 1.05 : 1;
+            const hoverOffsetY = isHovered ? -5 : 0;
+
+            ctx.save();
+            ctx.translate(cx + cardWidth / 2, cardY + cardHeight / 2 + hoverOffsetY);
+            ctx.scale(scale, scale);
+            ctx.translate(-(cx + cardWidth / 2), -(cardY + cardHeight / 2 + hoverOffsetY));
+
+            if (isHovered) {
+                ctx.shadowColor = config.color;
+                ctx.shadowBlur = 20;
+            }
+
             const bgColor = isHovered ? 'rgba(60, 50, 80, 0.95)' : 'rgba(40, 35, 55, 0.9)';
             const borderColor = isHovered ? config.color : '#555555';
 
@@ -2505,39 +2491,49 @@ class UIManager {
             ctx.lineWidth = isHovered ? 3 : 2;
             this.drawRoundedRect(ctx, cx, cardY, cardWidth, cardHeight, 12, null, borderColor, isHovered ? 3 : 2);
 
-            // 图标
-            ctx.font = '48px Arial';
+            ctx.shadowBlur = 0;
+
+            const iconSize = isHovered ? 56 : 48;
+            ctx.font = `${iconSize}px "Microsoft YaHei", sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(config.icon, cx + cardWidth / 2, cardY + 60);
 
-            // 名称
             ctx.fillStyle = config.color;
-            ctx.font = 'bold 20px Arial';
+            ctx.font = `bold ${isHovered ? 22 : 20}px "Microsoft YaHei", sans-serif`;
             ctx.fillText(config.name, cx + cardWidth / 2, cardY + 115);
 
-            // 描述
             ctx.fillStyle = '#aaaaaa';
-            ctx.font = '14px Arial';
+            ctx.font = '14px "Microsoft YaHei", sans-serif';
             ctx.fillText(config.desc, cx + cardWidth / 2, cardY + 145);
 
-            // 数字键提示
-            ctx.fillStyle = '#666666';
-            ctx.font = '12px Arial';
+            ctx.fillStyle = '#888888';
+            ctx.font = '12px "Microsoft YaHei", sans-serif';
+            ctx.fillText(config.detail, cx + cardWidth / 2, cardY + 170);
+
+            ctx.fillStyle = isHovered ? config.color : '#666666';
+            ctx.font = 'bold 14px "Microsoft YaHei", sans-serif';
             ctx.fillText(`[ ${index + 1} ]`, cx + cardWidth / 2, cardY + cardHeight - 15);
 
-            // 保存点击区域
+            ctx.restore();
+
             this.routeSelectCards.push({
-                x: cx, y: cardY, width: cardWidth, height: cardHeight,
+                x: cx - (cardWidth * (scale - 1)) / 2,
+                y: cardY + hoverOffsetY - (cardHeight * (scale - 1)) / 2,
+                width: cardWidth * scale,
+                height: cardHeight * scale,
                 type: optionType, index: index
             });
         });
 
-        // 底部提示
         ctx.fillStyle = '#666666';
-        ctx.font = '14px Arial';
+        ctx.font = '14px "Microsoft YaHei", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('点击选择 或 按数字键 1/2/3', GAME_WIDTH / 2, GAME_HEIGHT - 60);
+
+        ctx.fillStyle = '#555555';
+        ctx.font = '12px "Microsoft YaHei", sans-serif';
+        ctx.fillText('按 ESC 取消选择，继续游戏', GAME_WIDTH / 2, GAME_HEIGHT - 35);
     }
 
     /**
@@ -2680,7 +2676,7 @@ class UIManager {
         
         // 文字
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 11px Arial';
+        ctx.font = 'bold 11px "Microsoft YaHei", sans-serif';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillText(`怒气: ${Math.floor(rage.currentRage)}/${rage.maxRage}`, barX + 5, barY + barHeight / 2);
@@ -2725,7 +2721,7 @@ class UIManager {
         
         // 技能图标
         const icon = SKILL_ICONS[skill.name] || '✨';
-        ctx.font = '24px Arial';
+        ctx.font = '24px "Microsoft YaHei", sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(icon, iconX + iconSize / 2, barY + iconSize / 2);
@@ -2749,12 +2745,12 @@ class UIManager {
         // 快捷键提示
         const keyText = skill.key === ' ' ? '空格' : (skill.key || '?').toUpperCase();
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 12px Arial';
+        ctx.font = 'bold 12px "Microsoft YaHei", sans-serif';
         ctx.fillText(`[${keyText}]`, iconX + iconSize / 2, barY + iconSize + 15);
         
         // 技能名称
         ctx.fillStyle = '#aaaaaa';
-        ctx.font = '10px Arial';
+        ctx.font = '10px "Microsoft YaHei", sans-serif';
         ctx.fillText(skill.name || '无技能', iconX + iconSize / 2, barY - 8);
     }
     
@@ -2797,7 +2793,7 @@ class UIManager {
             
             // 蓄力文字
             ctx.fillStyle = '#ffff00';
-            ctx.font = 'bold 10px Arial';
+            ctx.font = 'bold 10px "Microsoft YaHei", sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('蓄力', x, y);
@@ -2811,7 +2807,7 @@ class UIManager {
             
             // 冷却时间
             ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 14px Arial';
+            ctx.font = 'bold 14px "Microsoft YaHei", sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             const cdRemaining = skill.getCooldownRemaining ? skill.getCooldownRemaining() : 0;
@@ -2850,29 +2846,29 @@ class UIManager {
         const name = player.character?.name || '玩家';
         const title = player.character?.title || '';
         
-        ctx.font = '24px Arial';
+        ctx.font = '24px "Microsoft YaHei", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(icon, infoX + boxWidth / 2, infoY + 30);
         
         // 角色名称
-        ctx.font = '12px Arial';
+        ctx.font = '12px "Microsoft YaHei", sans-serif';
         ctx.fillStyle = UI_COLORS.INFO_NAME;
         ctx.fillText(name, infoX + boxWidth / 2, infoY + 50);
         
         // 角色称号
-        ctx.font = '10px Arial';
+        ctx.font = '10px "Microsoft YaHei", sans-serif';
         ctx.fillStyle = UI_COLORS.INFO_TITLE;
         ctx.fillText(title, infoX + boxWidth / 2, infoY + 65);
         
         // 被动技能图标
         if (player.passiveSkill) {
             ctx.fillStyle = UI_COLORS.INFO_PASSIVE;
-            ctx.font = '14px Arial';
+            ctx.font = '14px "Microsoft YaHei", sans-serif';
             ctx.textAlign = 'left';
             ctx.fillText('◆', infoX + 5, infoY + 75);
             
             ctx.fillStyle = UI_COLORS.SKILL_TEXT;
-            ctx.font = '9px Arial';
+            ctx.font = '9px "Microsoft YaHei", sans-serif';
             ctx.fillText(player.passiveSkill.name || '被动', infoX + 18, infoY + 75);
         }
     }
@@ -2898,7 +2894,7 @@ class UIManager {
                              buff.name === '防御' ? UI_COLORS.BUFF_DEFENSE : UI_COLORS.BUFF_DEFAULT;
                 
                 ctx.fillStyle = color;
-                ctx.font = '12px Arial';
+                ctx.font = '12px "Microsoft YaHei", sans-serif';
                 ctx.textAlign = 'right';
                 ctx.fillText(
                     `▲ ${buff.name}: ${Math.ceil(buff.timer / 1000)}s`,
@@ -2913,7 +2909,7 @@ class UIManager {
         // 如果有召唤物（骷髅）
         if (passive.activeSkeletons && passive.activeSkeletons.length > 0) {
             ctx.fillStyle = '#888888';
-            ctx.font = '12px Arial';
+            ctx.font = '12px "Microsoft YaHei", sans-serif';
             ctx.textAlign = 'right';
             ctx.fillText(
                 `骷髅: ${passive.activeSkeletons.length}`,
@@ -2925,7 +2921,7 @@ class UIManager {
         // 如果有飞龙
         if (passive.dragon && passive.dragon.active) {
             ctx.fillStyle = '#ff4444';
-            ctx.font = '12px Arial';
+            ctx.font = '12px "Microsoft YaHei", sans-serif';
             ctx.textAlign = 'right';
             ctx.fillText(
                 '飞龙: 活跃',
@@ -2950,7 +2946,7 @@ class UIManager {
         const x = 10;
         
         ctx.textAlign = 'left';
-        ctx.font = '12px Arial';
+        ctx.font = '12px "Microsoft YaHei", sans-serif';
         
         for (const buff of buffs) {
             const remaining = Math.ceil(buff.remaining / 1000);
@@ -2998,7 +2994,7 @@ class UIManager {
         
         // 标题
         ctx.fillStyle = '#ffd700';
-        ctx.font = 'bold 18px Arial';
+        ctx.font = 'bold 18px "Microsoft YaHei", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('背包 [I键关闭]', GAME_WIDTH / 2, panelY + 30);
         
@@ -3025,21 +3021,21 @@ class UIManager {
             
             // 数字键提示
             ctx.fillStyle = '#888';
-            ctx.font = '10px Arial';
+            ctx.font = '10px "Microsoft YaHei", sans-serif';
             ctx.textAlign = 'left';
             ctx.fillText(`${i + 1}`, slotX + 3, slotY + 12);
             
             // 道具图标
             const item = inventory.getItem(i);
             if (item) {
-                ctx.font = '20px Arial';
+                ctx.font = '20px "Microsoft YaHei", sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillStyle = '#fff';
                 ctx.fillText(item.icon, slotX + slotSize / 2, slotY + slotSize / 2 + 7);
                 
                 // 数量
                 if (item.stackable && item.count > 1) {
-                    ctx.font = 'bold 10px Arial';
+                    ctx.font = 'bold 10px "Microsoft YaHei", sans-serif';
                     ctx.fillStyle = '#ffd700';
                     ctx.textAlign = 'right';
                     ctx.fillText(`x${item.count}`, slotX + slotSize - 3, slotY + slotSize - 3);
@@ -3049,7 +3045,7 @@ class UIManager {
         
         // 金币和宝石
         ctx.fillStyle = '#ffd700';
-        ctx.font = 'bold 14px Arial';
+        ctx.font = 'bold 14px "Microsoft YaHei", sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText(`金币: 💰${inventory.gold}`, startX, panelY + panelHeight - 20);
         
@@ -3084,7 +3080,7 @@ class UIManager {
         
         // 标题
         ctx.fillStyle = '#ffd700';
-        ctx.font = 'bold 20px Arial';
+        ctx.font = 'bold 20px "Microsoft YaHei", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('【神秘商人】', GAME_WIDTH / 2, panelY + 35);
         
@@ -3103,7 +3099,7 @@ class UIManager {
                 ctx.fillRect(panelX + 20, y, panelWidth - 40, itemHeight - 5);
                 
                 // 道具图标和名称
-                ctx.font = '16px Arial';
+                ctx.font = '16px "Microsoft YaHei", sans-serif';
                 ctx.textAlign = 'left';
                 ctx.fillStyle = '#fff';
                 ctx.fillText(`${item.icon} ${item.name}`, panelX + 30, y + 22);
@@ -3120,7 +3116,7 @@ class UIManager {
                 
                 // 数字键提示
                 ctx.fillStyle = '#888';
-                ctx.font = '12px Arial';
+                ctx.font = '12px "Microsoft YaHei", sans-serif';
                 ctx.textAlign = 'left';
                 ctx.fillText(`[${i + 1}]`, panelX + 4, y + 22);
             }
@@ -3128,7 +3124,7 @@ class UIManager {
         
         // 玩家金币和宝石
         ctx.fillStyle = '#ffd700';
-        ctx.font = 'bold 14px Arial';
+        ctx.font = 'bold 14px "Microsoft YaHei", sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText(`你的金币: 💰${inventory.gold}`, panelX + 20, panelY + panelHeight - 40);
         
@@ -3138,7 +3134,7 @@ class UIManager {
         
         // 操作提示
         ctx.fillStyle = '#888';
-        ctx.font = '12px Arial';
+        ctx.font = '12px "Microsoft YaHei", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('按数字键1-5购买  |  按E/ESC关闭', GAME_WIDTH / 2, panelY + panelHeight - 15);
     }
@@ -3173,25 +3169,25 @@ class UIManager {
             ctx.strokeRect(panelX, panelY, panelWidth, panelHeight);
             
             // 图标
-            ctx.font = '28px Arial';
+            ctx.font = '28px "Microsoft YaHei", sans-serif';
             ctx.textAlign = 'left';
             ctx.fillStyle = '#fff';
             ctx.fillText(achievement.icon, panelX + 10, panelY + 38);
             
             // 标题
             ctx.fillStyle = '#ffd700';
-            ctx.font = 'bold 14px Arial';
+            ctx.font = 'bold 14px "Microsoft YaHei", sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText('成就解锁!', GAME_WIDTH / 2, panelY + 18);
             
             // 成就名称
             ctx.fillStyle = '#fff';
-            ctx.font = '12px Arial';
+            ctx.font = '12px "Microsoft YaHei", sans-serif';
             ctx.fillText(achievement.name, GAME_WIDTH / 2, panelY + 38);
             
             // 描述
             ctx.fillStyle = '#aaa';
-            ctx.font = '10px Arial';
+            ctx.font = '10px "Microsoft YaHei", sans-serif';
             ctx.fillText(achievement.description, GAME_WIDTH / 2, panelY + 52);
         }
     }
@@ -3210,7 +3206,7 @@ class UIManager {
         ctx.strokeRect(GAME_WIDTH / 2 - 80, GAME_HEIGHT - 120, 160, 30);
         
         ctx.fillStyle = '#ffd700';
-        ctx.font = '12px Arial';
+        ctx.font = '12px "Microsoft YaHei", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('按 E 与商人交易', GAME_WIDTH / 2, GAME_HEIGHT - 100);
     }

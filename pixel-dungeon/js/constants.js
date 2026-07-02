@@ -65,7 +65,43 @@ const COLORS = {
         TEXT_PRIMARY: '#ffffff',   // 主文字（别名）
         TEXT_SECONDARY: '#aaaaaa', // 副文字
         TEXT_SHADOW: '#000000',   // 文字阴影
-        OVERLAY: 'rgba(0, 0, 0, 0.7)' // 遮罩
+        OVERLAY: 'rgba(0, 0, 0, 0.7)', // 遮罩
+        
+        // 按钮颜色
+        BUTTON_BG: '#ff6600',
+        BUTTON_BG_HOVER: '#ff8833',
+        BUTTON_BORDER: '#ff9900',
+        BUTTON_BORDER_HOVER: '#ffcc00',
+        
+        // 标题颜色
+        TITLE_FILL: '#ffcc00',
+        TITLE_STROKE: '#ff6600',
+        TITLE_GLOW: '#ff6600',
+        
+        // 菜单背景
+        MENU_BG_TOP: '#1a1030',
+        MENU_BG_BOTTOM: '#0a0520',
+        
+        // 怒气条
+        RAGE_FULL: '#ffcc00',
+        RAGE_EMPTY: '#333333',
+        
+        // 技能
+        SKILL_READY: '#00ff00',
+        SKILL_COOLDOWN: '#666666',
+        
+        // 伤害类型
+        DAMAGE_CRIT: '#ffff00',
+        DAMAGE_FIRE: '#ff6600',
+        DAMAGE_FROST: '#00ccff',
+        DAMAGE_POISON: '#33ff33',
+        DAMAGE_LIGHTNING: '#ffff33',
+        
+        // Buff效果
+        BUFF_SPEED: '#00ff00',
+        BUFF_DAMAGE: '#ff0000',
+        BUFF_DEFENSE: '#0000ff',
+        BUFF_DEFAULT: '#ffff00'
     },
     // 粒子
     PARTICLE: {
@@ -93,26 +129,26 @@ const PLAYER = {
     SPEED: 4,                   // 基础移动速度（像素/帧）
     MAX_HEALTH: 3,              // 最大生命值（心数）
     INVINCIBLE_TIME: 1000,      // 无敌时间（毫秒）
-    FLASH_INTERVAL: 100,        // 闪烁间隔（毫秒）
+    FLASH_INTERVAL: 80,         // 闪烁间隔（毫秒）- 调快让无敌帧更明显
     MAX_WEAPONS: 2,             // 最大携带武器数
-    WEAPON_SWITCH_COOLDOWN: 300, // 武器切换冷却时间（毫秒）
+    WEAPON_SWITCH_COOLDOWN: 150, // 武器切换冷却时间（毫秒）- 缩短提升手感
     
     // 移动系统参数（优化后）
-    MAX_SPEED: 4.8,             // 最大速度（像素/帧）
-    ACCELERATION: 1.5,          // 加速度（像素/帧²）- 提高后响应更快
-    DECELERATION: 2.0,          // 减速度（像素/帧²，松开按键时）
-    FRICTION: 0.85,             // 摩擦系数（无输入时每帧乘以摩擦系数）
+    MAX_SPEED: 5.2,             // 最大速度（像素/帧）- 略微提升最高速度
+    ACCELERATION: 2.2,          // 加速度（像素/帧²）- 提升后响应更快更灵敏
+    DECELERATION: 2.8,          // 减速度（像素/帧²，松开按键时）- 更快停止
+    FRICTION: 0.82,             // 摩擦系数（无输入时每帧乘以摩擦系数）- 更快减速
     AIR_RESISTANCE: 0.99,       // 空气阻力（移动时的微小阻力）
     
     // 插值参数
-    INTERPOLATION_FACTOR: 0.25, // 位置插值系数（每帧向目标靠近的比例）- 跟随更紧
+    INTERPOLATION_FACTOR: 0.3,  // 位置插值系数（每帧向目标靠近的比例）- 跟随更紧更流畅
     
     // 新增移动参数
-    TURN_SENSITIVITY: 0.8,      // 转向灵敏度（0-1，越高转向越快）
-    DIAGONAL_CORRECTION: 0.95,  // 对角线移动修正系数
-    BURST_SPEED: 1.3,           // 起步爆发速度倍率
-    BURST_DURATION: 150,        // 起步爆发持续时间（毫秒）
-    WALL_SLIDE_FACTOR: 0.7,     // 靠墙滑行速度衰减系数
+    TURN_SENSITIVITY: 0.9,      // 转向灵敏度（0-1，越高转向越快）- 提升转向响应
+    DIAGONAL_CORRECTION: 0.97,  // 对角线移动修正系数 - 略微提升对角线速度
+    BURST_SPEED: 1.6,           // 起步爆发速度倍率 - 更强的起步爆发力
+    BURST_DURATION: 200,        // 起步爆发持续时间（毫秒）- 延长爆发时间
+    WALL_SLIDE_FACTOR: 0.75,    // 靠墙滑行速度衰减系数 - 优化靠墙移动
     
     // 走路动画参数
     WALK_BOB_AMOUNT: 2,         // 走路摆动幅度（像素）
@@ -689,31 +725,48 @@ const ENEMY_HEALTH_BAR = {
 };
 
 // ==================== UI颜色配置 ====================
+// 与COLORS.UI保持一致，提供完整的UI颜色定义
 const UI_COLORS = {
+    // 基础文字颜色（与COLORS.UI一致）
+    TEXT: COLORS.UI.TEXT,
+    TEXT_PRIMARY: COLORS.UI.TEXT_PRIMARY,
+    TEXT_SECONDARY: COLORS.UI.TEXT_SECONDARY,
+    TEXT_SHADOW: COLORS.UI.TEXT_SHADOW,
+    
     // 怒气条
-    RAGE_EMPTY: '#333333',
-    RAGE_FULL: '#ffcc00',
+    RAGE_EMPTY: COLORS.UI.RAGE_EMPTY,
+    RAGE_FULL: COLORS.UI.RAGE_FULL,
     RAGE_FULL_EFFECT: '#ffffff',
     RAGE_GRADIENT_START: '#ff0000',
     RAGE_GRADIENT_MID: '#ff6600',
-    RAGE_GRADIENT_END: '#ffcc00',
+    RAGE_GRADIENT_END: COLORS.UI.RAGE_FULL,
     
     // 技能栏
-    SKILL_READY: '#00ff00',
-    SKILL_COOLDOWN: '#666666',
+    SKILL_READY: COLORS.UI.SKILL_READY,
+    SKILL_COOLDOWN: COLORS.UI.SKILL_COOLDOWN,
     SKILL_BAR_BG: 'rgba(0, 0, 0, 0.7)',
     SKILL_TEXT: '#ffffff',
     SKILL_CD_TEXT: '#ff6666',
     
     // 伤害数字
     DAMAGE_NORMAL: '#ffffff',
-    DAMAGE_CRIT: '#ffff00',
+    DAMAGE_CRIT: COLORS.UI.DAMAGE_CRIT,
     
-    // 被动技能buff颜色
-    BUFF_SPEED: '#00ff00',
-    BUFF_DAMAGE: '#ff0000',
-    BUFF_DEFENSE: '#0000ff',
-    BUFF_DEFAULT: '#ffff00',
+    // 伤害类型颜色（与COLORS.UI一致）
+    DAMAGE_FIRE: COLORS.UI.DAMAGE_FIRE,
+    DAMAGE_FROST: COLORS.UI.DAMAGE_FROST,
+    DAMAGE_POISON: COLORS.UI.DAMAGE_POISON,
+    DAMAGE_LIGHTNING: COLORS.UI.DAMAGE_LIGHTNING,
+    DAMAGE_DARK: '#9933ff',
+    DAMAGE_HEAL: '#00ff00',
+    HEALTH_GREEN: '#00ff00',
+    DAMAGE_SKILL: '#00ccff',
+    
+    // 被动技能buff颜色（与COLORS.UI一致）
+    BUFF_SPEED: COLORS.UI.BUFF_SPEED,
+    BUFF_DAMAGE: COLORS.UI.BUFF_DAMAGE,
+    BUFF_DEFENSE: COLORS.UI.BUFF_DEFENSE,
+    BUFF_DEFAULT: COLORS.UI.BUFF_DEFAULT,
     
     // 角色信息框
     INFO_BG: 'rgba(0, 0, 0, 0.7)',
@@ -722,29 +775,31 @@ const UI_COLORS = {
     INFO_TITLE: '#aaaaaa',
     INFO_PASSIVE: '#ffcc00',
     
-    // 伤害数字新颜色
-    DAMAGE_HEAL: '#00ff00',
-    HEALTH_GREEN: '#00ff00',
-    DAMAGE_SKILL: '#00ccff',
-    
-    // 主菜单UI颜色
-    MENU_TITLE_GLOW: '#ff6600',
-    MENU_TITLE_FILL: '#ffcc00',
-    MENU_TITLE_STROKE: '#ff6600',
-    MENU_BUTTON_GRADIENT_START: '#ff6600',
+    // 主菜单UI颜色（与COLORS.UI一致）
+    MENU_TITLE_GLOW: COLORS.UI.TITLE_GLOW,
+    MENU_TITLE_FILL: COLORS.UI.TITLE_FILL,
+    MENU_TITLE_STROKE: COLORS.UI.TITLE_STROKE,
+    MENU_BUTTON_GRADIENT_START: COLORS.UI.BUTTON_BG,
     MENU_BUTTON_GRADIENT_END: '#cc3300',
-    MENU_BUTTON_HOVER_START: '#ff8833',
-    MENU_BUTTON_HOVER_END: '#ff6600',
-    MENU_BUTTON_BORDER: '#ff9900',
-    MENU_BUTTON_HOVER_BORDER: '#ffcc00',
-    MENU_BG_GRADIENT_TOP: '#1a1030',
-    MENU_BG_GRADIENT_BOTTOM: '#0a0520',
+    MENU_BUTTON_HOVER_START: COLORS.UI.BUTTON_BG_HOVER,
+    MENU_BUTTON_HOVER_END: COLORS.UI.BUTTON_BG,
+    MENU_BUTTON_BORDER: COLORS.UI.BUTTON_BORDER,
+    MENU_BUTTON_HOVER_BORDER: COLORS.UI.BUTTON_BORDER_HOVER,
+    MENU_BG_GRADIENT_TOP: COLORS.UI.MENU_BG_TOP,
+    MENU_BG_GRADIENT_BOTTOM: COLORS.UI.MENU_BG_BOTTOM,
     
     // 技能图标UI
     SKILL_ICON_BG: 'rgba(0, 0, 0, 0.7)',
     SKILL_ICON_RING_BG: 'rgba(0, 0, 0, 0.5)',
     SKILL_ICON_RING_FG: 'rgba(255, 255, 255, 0.8)',
-    SKILL_ICON_READY_GLOW: 'rgba(0, 255, 100, 0.7)'
+    SKILL_ICON_READY_GLOW: 'rgba(0, 255, 100, 0.7)',
+    
+    // 遮罩
+    OVERLAY: COLORS.UI.OVERLAY,
+    
+    // 生命值
+    HEALTH_FULL: COLORS.UI.HEALTH_FULL,
+    HEALTH_EMPTY: COLORS.UI.HEALTH_EMPTY
 };
 
 // ==================== 主菜单动画配置 ====================
@@ -1043,7 +1098,22 @@ const NEW_ENEMIES = {
 const ELITE_ROOM_CONFIG = {
     ELITE_COUNT: 1,
     MINION_COUNT: 2,
-    REWARD_CHEST_TYPE: CHEST_TYPES.GOLDEN
+    REWARD_CHEST_TYPE: CHEST_TYPES.GOLDEN,
+    
+    ELITE_STATS_MULTIPLIER: {
+        health: 1.5,
+        damage: 1.2,
+        speed: 1.1
+    },
+    
+    MINION_TYPES: ['slime', 'bat', 'skeleton'],
+    
+    REWARD_CONFIG: {
+        guaranteedDrop: true,
+        dropQuality: 'elite',
+        goldMultiplier: 2.0,
+        relicDropChance: 0.5
+    }
 };
 
 // ==================== 新Boss配置 - 骷髅王 ====================
@@ -1095,22 +1165,74 @@ const AIM_ASSIST = {
         MEDIUM: 0.4,
         HIGH: 0.6
     },
-    DEFAULT_STRENGTH: 'medium',
+    DEFAULT_STRENGTH: 'low',
     
     // 吸附范围（像素）
     ASSIST_RANGE: 150,
     
     // 吸附角度范围（弧度）
-    ASSIST_ANGLE: Math.PI / 6,  // 30度
+    ASSIST_ANGLE: Math.PI / 12,  // 15度
     
     // 轻度吸附（准星靠近敌人时轻微吸附）
-    SNAP_STRENGTH: 0.3,
+    SNAP_STRENGTH: 0.15,
     
     // 弹道修正（子弹略微向最近敌人弯曲）
     BULLET_CURVE_STRENGTH: 0.15,
     
     // 自动瞄准选项
-    AUTO_AIM: false
+    AUTO_AIM: false,
+    
+    // 各武器独立瞄准参数配置
+    WEAPON_SETTINGS: {
+        PISTOL: {
+            assistRange: 150,
+            assistAngle: Math.PI / 6,
+            snapStrength: 0.4,
+            bulletCurveStrength: 0.1
+        },
+        LIGHTNING: {
+            assistRange: 250,
+            assistAngle: Math.PI / 4,
+            snapStrength: 0.2,
+            bulletCurveStrength: 0
+        },
+        GRENADE: {
+            assistRange: 100,
+            assistAngle: Math.PI / 4,
+            snapStrength: 0.2,
+            bulletCurveStrength: 0.6
+        },
+        FLAME: {
+            assistRange: 100,
+            assistAngle: Math.PI / 4,
+            snapStrength: 0.6,
+            bulletCurveStrength: 0.3
+        },
+        BOOMERANG: {
+            assistRange: 150,
+            assistAngle: Math.PI / 6,
+            snapStrength: 0.4,
+            bulletCurveStrength: 0.1
+        },
+        FREEZE: {
+            assistRange: 150,
+            assistAngle: Math.PI / 4,
+            snapStrength: 0.6,
+            bulletCurveStrength: 0.3
+        },
+        SHOTGUN: {
+            assistRange: 80,
+            assistAngle: Math.PI / 3,
+            snapStrength: 0.15,
+            bulletCurveStrength: 0
+        },
+        HOMING: {
+            assistRange: 300,
+            assistAngle: Math.PI / 3,
+            snapStrength: 0.7,
+            bulletCurveStrength: 0.8
+        }
+    }
 };
 
 // ==================== 输入缓冲配置 ====================
@@ -1417,6 +1539,20 @@ const PARTICLE_EFFECTS = {
         alphaEnd: 0,
         interval: 50,
         sizeScale: 0.95
+    },
+    WEAPON_SWITCH: {
+        particleCount: 12,
+        colors: ['#ffd54f', '#ffffff', '#ff9800', '#ffeb3b'],
+        sizeMin: 3,
+        sizeMax: 6,
+        speedMin: 2,
+        speedMax: 5,
+        lifetime: 400,
+        spreadAngle: Math.PI,
+        ringCount: 2,
+        ringColor: 'rgba(255, 215, 0, 0.5)',
+        ringExpandSpeed: 1.2,
+        ringLifetime: 300
     }
 };
 

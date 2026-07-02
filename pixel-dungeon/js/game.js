@@ -277,6 +277,9 @@ class GameLogic {
         // 伤害数字列表
         this.damageNumbers = [];
         
+        // 拾取文字列表
+        this.pickupTexts = [];
+        
         // 时间管理器
         this.timeManager = new TimeManager();
         
@@ -285,6 +288,9 @@ class GameLogic {
             enabled: AIM_ASSIST.ENABLED,
             lastTargetEnemy: null
         };
+        
+        // 目标指示器计时器（用于脉冲动画）
+        this.targetIndicatorTimer = 0;
         
         // 背包系统
         this.inventory = new Inventory();
@@ -500,6 +506,23 @@ class GameLogic {
     }
     
     /**
+     * 清理游戏逻辑
+     */
+    cleanup() {
+        if (this.boss) {
+            this.boss.alive = false;
+            this.boss = null;
+        }
+        
+        this.enemies = [];
+        this.bullets = [];
+        this._clearParticles();
+        this.portal = null;
+        this.currentRoom = null;
+        this.allEnemiesCleared = false;
+    }
+    
+    /**
      * 初始化当前房间
      */
     initRoom() {
@@ -565,12 +588,14 @@ class GameLogic {
                 this.initBattleRoom(roomIndex); // 宝箱房也有守卫
                 break;
             case ROOM_TYPES.SHOP:
-                this.initBattleRoom(roomIndex); // 商店房也有守卫
+                this.initShopRoom(roomIndex);
                 break;
             case ROOM_TYPES.TRAP:
                 this.initBattleRoom(roomIndex); // 陷阱房也有守卫
                 break;
             case ROOM_TYPES.REST:
+                this.initRestRoom(roomIndex);
+                break;
             default:
                 break;
         }
@@ -664,9 +689,11 @@ class GameLogic {
         
         const difficultyConfig = this.state.getDifficultyConfig();
         const roomProgressMult = this.state.getRoomDifficultyMultiplier(roomIndex, false);
-        const healthMult = (difficultyConfig?.enemy?.healthMultiplier || 1) * roomProgressMult;
-        const damageMult = (difficultyConfig?.enemy?.damageMultiplier || 1) * roomProgressMult;
-        const speedMult = difficultyConfig?.enemy?.speedMultiplier || 1;
+        
+        const eliteStatMult = ELITE_ROOM_CONFIG.ELITE_STATS_MULTIPLIER || { health: 1.5, damage: 1.2, speed: 1.1 };
+        const healthMult = (difficultyConfig?.enemy?.healthMultiplier || 1) * roomProgressMult * eliteStatMult.health;
+        const damageMult = (difficultyConfig?.enemy?.damageMultiplier || 1) * roomProgressMult * eliteStatMult.damage;
+        const speedMult = (difficultyConfig?.enemy?.speedMultiplier || 1) * eliteStatMult.speed;
         const aiLevel = difficultyConfig?.enemy?.aiLevel || 1;
         
         const elite = new EliteEnemy(centerX, centerY, { eventBus: this.eventBus });
@@ -678,7 +705,7 @@ class GameLogic {
             minionCount = Math.floor(minionCount * 1.5);
         }
         
-        const enemyTypes = ['slime', 'bat', 'skeleton'];
+        const enemyTypes = ELITE_ROOM_CONFIG.MINION_TYPES || ['slime', 'bat', 'skeleton'];
         
         for (let i = 0; i < minionCount; i++) {
             const angle = (i / minionCount) * Math.PI * 2;
@@ -692,6 +719,63 @@ class GameLogic {
                 this.enemies.push(enemy);
             }
         }
+        
+        // 添加精英房间特殊灯光效果
+        this.setupEliteRoomLighting();
+    }
+    
+    /**
+     * 设置精英房间特殊灯光效果
+     */
+    setupEliteRoomLighting() {
+        if (!renderer || !renderer.lightingSystem) return;
+        
+        const centerX = GAME_WIDTH / 2;
+        const centerY = GAME_HEIGHT / 2;
+        
+        // 清空之前的光源
+        renderer.lightingSystem.clearLights();
+        
+        // 添加玩家光源（保持正常）
+        renderer.lightingSystem.addLight(
+            centerX, centerY,
+            LIGHTING.PLAYER_LIGHT.RADIUS,
+            LIGHTING.PLAYER_LIGHT.COLOR,
+            LIGHTING.PLAYER_LIGHT.INTENSITY
+        );
+        
+        // 添加精英房间红色光环光源（中心区域）
+        renderer.lightingSystem.addLight(
+            centerX, centerY,
+            200,
+            'rgba(255, 50, 50, 1)',
+            0.6,
+            false
+        );
+        
+        // 添加多个红色点光源（模拟火焰光芒）
+        const lightPositions = [
+            { x: 100, y: 100 },
+            { x: GAME_WIDTH - 100, y: 100 },
+            { x: 100, y: GAME_HEIGHT - 100 },
+            { x: GAME_WIDTH - 100, y: GAME_HEIGHT - 100 },
+            { x: centerX, y: 80 },
+            { x: centerX, y: GAME_HEIGHT - 80 }
+        ];
+        
+        for (const pos of lightPositions) {
+            renderer.lightingSystem.addLight(
+                pos.x, pos.y,
+                80,
+                'rgba(255, 100, 50, 1)',
+                0.4,
+                true
+            );
+        }
+        
+        // 调整环境暗度，增加压抑感
+        renderer.lightingSystem.ambientColor = 'rgba(30, 5, 5, 0.5)';
+        renderer.lightingSystem.vignetteStrength = 0.5;
     }
     
     /**
@@ -721,6 +805,35 @@ class GameLogic {
         if (this.eventBus) {
             this.eventBus.publish('BOSS_SPAWN', { boss: this.boss });
         }
+    }
+    
+    /**
+     * 初始化商店房间
+     * 商店房间是安全区域，没有敌人，有商人
+     * @param {number} roomIndex - 房间索引
+     */
+    initShopRoom(roomIndex) {
+        this.enemies = [];
+        this.boss = null;
+        
+        const centerX = GAME_WIDTH / 2;
+        const centerY = GAME_HEIGHT / 2;
+        
+        this.shopManager.spawnMerchant(centerX, centerY);
+        
+        this.currentRoom.roomType = ROOM_TYPES.SHOP;
+    }
+    
+    /**
+     * 初始化休息房间
+     * 休息房间是安全区域，没有敌人，有回血喷泉
+     * @param {number} roomIndex - 房间索引
+     */
+    initRestRoom(roomIndex) {
+        this.enemies = [];
+        this.boss = null;
+        
+        this.currentRoom.roomType = ROOM_TYPES.REST;
     }
     
     /**
@@ -900,6 +1013,9 @@ class GameLogic {
         
         // 更新伤害数字
         this.updateDamageNumbers(scaledDelta);
+        
+        // 更新拾取文字
+        this.updatePickupTexts(scaledDelta);
         
         // 更新掉落物
         this.dropManager.update(scaledDelta);
@@ -1934,19 +2050,28 @@ class GameLogic {
         // 触发屏幕震动
         camera.shake(FEEDBACK.SCREEN_SHAKE.ENEMY_KILLED.intensity, FEEDBACK.SCREEN_SHAKE.ENEMY_KILLED.duration);
         
-        // 30%概率掉落武器
-        if (Math.random() < 0.3) {
-            this.spawnWeaponDrop(enemy.x, enemy.y);
+        // 检查是否为精英敌人（拥有掉落品质提升）
+        const isElite = enemy.dropQualityBoost === true;
+        
+        // 武器掉落
+        if (isElite) {
+            // 精英敌人100%掉落稀有武器
+            this.spawnWeaponDrop(enemy.x, enemy.y, true);
+        } else {
+            // 普通敌人30%概率掉落武器
+            if (Math.random() < 0.3) {
+                this.spawnWeaponDrop(enemy.x, enemy.y);
+            }
         }
         
         // 道具掉落
-        let dropChance = 0.4;
+        let dropChance = isElite ? 1.0 : 0.4;
         if (this.player.dropRateBonus) {
             dropChance *= (1 + this.player.dropRateBonus);
         }
         
         if (Math.random() < dropChance) {
-            this.spawnItemDrop(enemy.x, enemy.y);
+            this.spawnItemDrop(enemy.x, enemy.y, isElite ? 'elite' : 'normal');
         }
         
         // 成就追踪
@@ -2110,28 +2235,49 @@ class GameLogic {
      * 生成道具掉落
      * @param {number} x - X坐标
      * @param {number} y - Y坐标
+     * @param {string} quality - 品质等级：'normal' | 'elite'
      */
-    spawnItemDrop(x, y) {
+    spawnItemDrop(x, y, quality = 'normal') {
         const rand = Math.random();
         let item;
         
-        if (rand < 0.4) {
-            const goldAmount = 5 + Math.floor(Math.random() * 15);
-            item = ItemFactory.createGold(goldAmount);
-        } else if (rand < 0.6) {
-            item = PotionFactory.createHealthPotion(1);
-        } else if (rand < 0.75) {
-            item = ItemFactory.createBomb(1);
-        } else if (rand < 0.85) {
-            item = ItemFactory.createFood(1);
-        } else if (rand < 0.92) {
-            item = PotionFactory.createRandomPotion('uncommon');
-        } else if (rand < 0.97) {
-            item = ItemFactory.createKey(1);
+        if (quality === 'elite') {
+            if (rand < 0.2) {
+                const goldAmount = 20 + Math.floor(Math.random() * 30);
+                item = ItemFactory.createGold(goldAmount);
+            } else if (rand < 0.35) {
+                item = PotionFactory.createHealthPotion(2);
+            } else if (rand < 0.45) {
+                item = ItemFactory.createBomb(2);
+            } else if (rand < 0.55) {
+                item = PotionFactory.createRandomPotion('rare');
+            } else if (rand < 0.75) {
+                item = RelicFactory.createRandomRelic('rare');
+            } else {
+                item = RelicFactory.createRandomRelic('epic');
+                if (item.rarity === 'legendary') {
+                    this.achievementManager.onLegendaryDrop();
+                }
+            }
         } else {
-            item = RelicFactory.createRandomRelic('rare');
-            if (item.rarity === 'legendary') {
-                this.achievementManager.onLegendaryDrop();
+            if (rand < 0.4) {
+                const goldAmount = 5 + Math.floor(Math.random() * 15);
+                item = ItemFactory.createGold(goldAmount);
+            } else if (rand < 0.6) {
+                item = PotionFactory.createHealthPotion(1);
+            } else if (rand < 0.75) {
+                item = ItemFactory.createBomb(1);
+            } else if (rand < 0.85) {
+                item = ItemFactory.createFood(1);
+            } else if (rand < 0.92) {
+                item = PotionFactory.createRandomPotion('uncommon');
+            } else if (rand < 0.97) {
+                item = ItemFactory.createKey(1);
+            } else {
+                item = RelicFactory.createRandomRelic('rare');
+                if (item.rarity === 'legendary') {
+                    this.achievementManager.onLegendaryDrop();
+                }
             }
         }
         
@@ -2167,10 +2313,14 @@ class GameLogic {
                     goldAmount = Math.floor(goldAmount * (1 + this.player.goldGainBonus));
                 }
                 this.achievementManager.onGoldEarned(goldAmount);
-            }
-            
-            if (item.id === 'gem') {
+                this.showPickupText(this.player.x, this.player.y - 30, `金币 +${goldAmount}`, 'gold');
+            } else if (item.id === 'gem') {
                 this.achievementManager.onGemsEarned(item.count);
+                this.showPickupText(this.player.x, this.player.y - 30, `宝石 +${item.count}`, 'gem');
+            } else {
+                const text = item.rarity === 'legendary' ? `传说物品!` : `拾取 ${item.name}`;
+                const type = item.rarity === 'legendary' ? 'legendary' : 'item';
+                this.showPickupText(this.player.x, this.player.y - 30, text, type);
             }
         });
     }
@@ -2294,8 +2444,13 @@ class GameLogic {
                 return;
             }
 
+            // 房间清除时自动存档
+            if (typeof saveManager !== 'undefined') {
+                saveManager.autoSave(this.state.getData());
+            }
+
             // 第2间房（level=2）清空后触发路线选择
-            if (level === 2) {
+            if (level === 2 && !this.state.getData().routeSelectLocked) {
                 setTimeout(() => {
                     this.state.startRouteSelect();
                 }, 1000);
@@ -2337,16 +2492,17 @@ class GameLogic {
      * @param {number} strength - 辅助强度 (0-1)
      * @returns {Object} 修正后的目标坐标 {x, y}
      */
-    calculateAimAssist(playerX, playerY, targetX, targetY, strength) {
+    calculateAimAssist(playerX, playerY, targetX, targetY, strength, weaponType = 'PISTOL') {
         if (!this.aimAssist.enabled || strength <= 0) {
             return { x: targetX, y: targetY };
         }
         
-        // 计算原始角度
+        const weaponSettings = AIM_ASSIST.WEAPON_SETTINGS[weaponType] || AIM_ASSIST.WEAPON_SETTINGS.PISTOL;
+        const { assistRange, assistAngle, snapStrength, bulletCurveStrength } = weaponSettings;
+        
         const baseAngle = Math.atan2(targetY - playerY, targetX - playerX);
         const baseDistance = Math.sqrt((targetX - playerX) ** 2 + (targetY - playerY) ** 2);
         
-        // 收集所有敌人（包括Boss）
         const allEnemies = [];
         for (const enemy of this.enemies) {
             if (enemy.alive) {
@@ -2357,25 +2513,20 @@ class GameLogic {
             allEnemies.push(this.boss);
         }
         
-        // 找到最近的、在辅助角度范围内的敌人
         let nearestEnemy = null;
         let nearestAngleDiff = Infinity;
         
         for (const enemy of allEnemies) {
-            // 计算敌人相对于玩家的角度
             const angle = Math.atan2(enemy.y - playerY, enemy.x - playerX);
             
-            // 计算角度差
             let angleDiff = Math.abs(angle - baseAngle);
             if (angleDiff > Math.PI) {
                 angleDiff = Math.PI * 2 - angleDiff;
             }
             
-            // 计算距离
             const dist = Math.sqrt((enemy.x - playerX) ** 2 + (enemy.y - playerY) ** 2);
             
-            // 如果在角度和距离范围内，并且角度差更小
-            if (angleDiff < AIM_ASSIST.ASSIST_ANGLE && dist < AIM_ASSIST.ASSIST_RANGE) {
+            if (angleDiff < assistAngle && dist < assistRange) {
                 if (angleDiff < nearestAngleDiff) {
                     nearestAngleDiff = angleDiff;
                     nearestEnemy = enemy;
@@ -2383,22 +2534,22 @@ class GameLogic {
             }
         }
         
-        // 如果找到目标敌人，进行角度修正
         if (nearestEnemy) {
+            this.aimAssist.lastTargetEnemy = nearestEnemy;
+            
             const targetAngle = Math.atan2(nearestEnemy.y - playerY, nearestEnemy.x - playerX);
             
-            // 计算辅助强度（距离越近、角度差越小，辅助越强）
-            const angleFactor = 1 - nearestAngleDiff / AIM_ASSIST.ASSIST_ANGLE;
-            const assistAmount = angleFactor * strength;
+            const angleFactor = 1 - nearestAngleDiff / assistAngle;
+            const assistAmount = angleFactor * strength * snapStrength;
             
-            // 混合原始角度和目标角度
             const finalAngle = this.lerpAngle(baseAngle, targetAngle, assistAmount);
             
-            // 计算修正后的目标坐标
             return {
                 x: playerX + Math.cos(finalAngle) * baseDistance,
                 y: playerY + Math.sin(finalAngle) * baseDistance
             };
+        } else {
+            this.aimAssist.lastTargetEnemy = null;
         }
         
         return { x: targetX, y: targetY };
@@ -2460,17 +2611,29 @@ class GameLogic {
             return;
         }
         
-        // 获取原始瞄准目标
         const mousePos = inputManager.getMouseWorldPosition();
         
-        // 计算辅助瞄准
         const aimAssistStrength = this.getAimAssistStrength();
+        
+        const WEAPON_ID_TO_TYPE = {
+            1: 'PISTOL',
+            2: 'LIGHTNING',
+            3: 'GRENADE',
+            4: 'FLAME',
+            5: 'BOOMERANG',
+            6: 'FREEZE',
+            7: 'SHOTGUN',
+            8: 'HOMING'
+        };
+        const weaponType = WEAPON_ID_TO_TYPE[weapon.ID] || 'PISTOL';
+        
         const assistedTarget = this.calculateAimAssist(
             this.player.x,
             this.player.y,
             mousePos.x,
             mousePos.y,
-            aimAssistStrength
+            aimAssistStrength,
+            weaponType
         );
         
         // 计算射击方向
@@ -2505,6 +2668,65 @@ class GameLogic {
         if (feedback && camera) {
             camera.shake(feedback.intensity, feedback.duration);
         }
+        
+        this.spawnMuzzleFlash(weapon, direction);
+        
+        this.applyRecoil(direction, weapon.RECOIL);
+    }
+    
+    spawnMuzzleFlash(weapon, direction) {
+        const muzzleX = this.player.x + direction.x * 15;
+        const muzzleY = this.player.y + direction.y * 15;
+        
+        const mainGlow = new Particle(
+            muzzleX, muzzleY,
+            direction.x * 2, direction.y * 2,
+            '#ffffff',
+            15,
+            80
+        );
+        mainGlow.setKind(PARTICLES.KIND.CIRCLE);
+        mainGlow.disableGravity();
+        mainGlow.setFriction(0.9);
+        this.particles.push(mainGlow);
+        
+        const outerGlow = new Particle(
+            muzzleX, muzzleY,
+            direction.x * 1.5, direction.y * 1.5,
+            weapon.COLOR,
+            25,
+            60
+        );
+        outerGlow.setKind(PARTICLES.KIND.CIRCLE);
+        outerGlow.disableGravity();
+        outerGlow.setFriction(0.85);
+        this.particles.push(outerGlow);
+        
+        const sparkCount = 8;
+        for (let i = 0; i < sparkCount; i++) {
+            const angle = Math.atan2(direction.y, direction.x) + (Math.random() - 0.5) * 0.5;
+            const speed = 2 + Math.random() * 4;
+            
+            const spark = new Particle(
+                muzzleX, muzzleY,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed,
+                '#ffff00',
+                2 + Math.random() * 2,
+                100 + Math.random() * 100
+            );
+            spark.setKind(PARTICLES.KIND.SQUARE);
+            spark.setFriction(0.92);
+            this.particles.push(spark);
+        }
+    }
+    
+    applyRecoil(direction, recoil) {
+        if (!this.player) return;
+        
+        const recoilForce = recoil * 0.3;
+        this.player.velocityX -= direction.x * recoilForce;
+        this.player.velocityY -= direction.y * recoilForce;
     }
     
     /**
@@ -2699,10 +2921,13 @@ class GameLogic {
      * 生成武器掉落
      * @param {number} x - X坐标
      * @param {number} y - Y坐标
+     * @param {boolean} isElite - 是否为精英掉落
      */
-    spawnWeaponDrop(x, y) {
-        // 随机选择一种武器（除了手枪）
-        const weaponTypes = [WEAPONS.LIGHTNING, WEAPONS.GRENADE, WEAPONS.FLAME, WEAPONS.BOOMERANG];
+    spawnWeaponDrop(x, y, isElite = false) {
+        // 精英敌人掉落更高级的武器
+        const weaponTypes = isElite 
+            ? [WEAPONS.SHOTGUN, WEAPONS.HOMING, WEAPONS.FREEZE, WEAPONS.BOOMERANG]
+            : [WEAPONS.LIGHTNING, WEAPONS.GRENADE, WEAPONS.FLAME, WEAPONS.BOOMERANG];
         const weapon = weaponTypes[Math.floor(Math.random() * weaponTypes.length)];
         
         // 检查玩家是否已有此武器
@@ -2770,6 +2995,9 @@ class GameLogic {
                     
                     // 触发时间停止效果（强力武器拾取仪式感）
                     this.timeManager.startTimeStop(FEEDBACK.TIME_STOP.POWER_WEAPON);
+                    
+                    // 显示拾取文字
+                    this.showPickupText(drop.x, drop.y - 20, `武器: ${drop.weapon.NAME}`, 'weapon');
                     
                     return false; // 移除掉落
                 }
@@ -2840,38 +3068,39 @@ class GameLogic {
      * @param {number} x - X坐标
      * @param {number} y - Y坐标
      * @param {string} color - 颜色
+     * @param {boolean} isCritKill - 是否暴击击杀
      */
-    spawnDeathParticles(x, y, color) {
-        // 主要爆炸粒子（圆形）
-        for (let i = 0; i < 15; i++) {
-            const angle = (i / 15) * Math.PI * 2 + Math.random() * 0.3;
-            const speed = 2 + Math.random() * 4;
+    spawnDeathParticles(x, y, color, isCritKill = false) {
+        // 主要爆炸粒子（圆形）- 增加数量
+        for (let i = 0; i < 25; i++) {
+            const angle = (i / 25) * Math.PI * 2 + Math.random() * 0.3;
+            const speed = 2 + Math.random() * 5;
             
             const particle = new Particle(
                 x, y,
                 Math.cos(angle) * speed,
                 Math.sin(angle) * speed,
                 color,
-                4 + Math.random() * 4,
-                500 + Math.random() * 300
+                4 + Math.random() * 6,
+                600 + Math.random() * 400
             );
             particle.setKind(PARTICLES.KIND.CIRCLE);
             particle.setGravity(0.15);
             this.particles.push(particle);
         }
         
-        // 小碎片（方形）
-        for (let i = 0; i < 10; i++) {
+        // 小碎片（方形）- 增加数量
+        for (let i = 0; i < 20; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const speed = 1 + Math.random() * 3;
+            const speed = 1 + Math.random() * 4;
             
             const particle = new Particle(
                 x, y,
                 Math.cos(angle) * speed,
                 Math.sin(angle) * speed - 2,
                 '#ffffff',
-                2 + Math.random() * 2,
-                300 + Math.random() * 200
+                2 + Math.random() * 3,
+                400 + Math.random() * 300
             );
             particle.setKind(PARTICLES.KIND.SQUARE);
             particle.setGravity(0.2);
@@ -2879,33 +3108,133 @@ class GameLogic {
             this.particles.push(particle);
         }
         
-        // 冲击波（环形粒子）
-        for (let i = 0; i < 8; i++) {
-            const angle = (i / 8) * Math.PI * 2;
+        // 冲击波（环形粒子）- 增加数量
+        for (let i = 0; i < 12; i++) {
+            const angle = (i / 12) * Math.PI * 2;
             const particle = new Particle(
                 x, y,
-                Math.cos(angle) * 6,
-                Math.sin(angle) * 6,
+                Math.cos(angle) * 7,
+                Math.sin(angle) * 7,
                 color,
-                6,
-                200
+                8,
+                250
             );
             particle.setKind(PARTICLES.KIND.CIRCLE);
             particle.setGravity(0);
             this.particles.push(particle);
         }
         
-        // 中心闪光
+        // 中心闪光 - 增大尺寸
         const flash = new Particle(
             x, y,
             0, 0,
             '#ffffff',
-            20,
-            100
+            30,
+            150
         );
         flash.disableShrink();
         flash.disableFade();
         this.particles.push(flash);
+        
+        // 添加星形粒子
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            const speed = 3 + Math.random() * 3;
+            
+            const particle = new Particle(
+                x, y,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed,
+                '#ffff88',
+                6 + Math.random() * 4,
+                400 + Math.random() * 200
+            );
+            particle.setKind(PARTICLES.KIND.STAR);
+            particle.setGravity(0.1);
+            this.particles.push(particle);
+        }
+        
+        // 添加螺旋粒子
+        for (let i = 0; i < 15; i++) {
+            const angle = (i / 15) * Math.PI * 2;
+            const speed = 1.5 + Math.random() * 2;
+            
+            const particle = new Particle(
+                x, y,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed,
+                '#ff88ff',
+                3 + Math.random() * 2,
+                500 + Math.random() * 300
+            );
+            particle.setKind(PARTICLES.KIND.CIRCLE);
+            particle.setGravity(0.08);
+            particle.setRotationSpeed((Math.random() - 0.5) * 0.2);
+            this.particles.push(particle);
+        }
+        
+        // 添加击杀文字提示
+        this.showKillText(x, y, isCritKill);
+        
+        // 添加金币获取动画
+        this.spawnGoldParticles(x, y);
+    }
+    
+    /**
+     * 显示击杀文字
+     * @param {number} x - X坐标
+     * @param {number} y - Y坐标
+     * @param {boolean} isCrit - 是否暴击击杀
+     */
+    showKillText(x, y, isCrit = false) {
+        const text = isCrit ? '暴击击杀!' : '击杀!';
+        
+        this.damageNumbers.push({
+            x: x,
+            y: y - 30,
+            damage: text,
+            timer: 1200,
+            duration: 1200,
+            isCrit: isCrit,
+            type: 'kill',
+            vy: -3,
+            vx: (Math.random() - 0.5) * 1,
+            alpha: 1,
+            scale: isCrit ? 1.5 : 1.2,
+            shakeOffsetX: 0,
+            shakeOffsetY: 0
+        });
+    }
+    
+    /**
+     * 生成金币获取动画粒子
+     * @param {number} x - X坐标
+     * @param {number} y - Y坐标
+     */
+    spawnGoldParticles(x, y) {
+        const goldCount = 5 + Math.floor(Math.random() * 5);
+        
+        for (let i = 0; i < goldCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 2 + Math.random() * 3;
+            
+            const particle = new Particle(
+                x, y,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed - 3,
+                '#ffcc00',
+                6,
+                800 + Math.random() * 400
+            );
+            particle.setKind(PARTICLES.KIND.CIRCLE);
+            particle.setGravity(0.12);
+            particle.enableFlicker(0.1);
+            this.particles.push(particle);
+        }
+        
+        // 显示金币数值浮动
+        const goldAmount = 5 + Math.floor(Math.random() * 15);
+        this.showDamage(x, y + 20, `+${goldAmount}`, false, 'heal');
     }
     
     /**
@@ -3105,6 +3434,9 @@ class GameLogic {
         // 渲染Boss
         this.renderBoss();
         
+        // 渲染目标指示器
+        this.renderTargetIndicator(ctx);
+        
         // 渲染子弹
         this.renderBullets();
         
@@ -3122,6 +3454,9 @@ class GameLogic {
         
         // 渲染伤害数字（不受相机影响）
         this.renderDamageNumbers(renderer.ctx);
+        
+        // 渲染拾取文字（不受相机影响）
+        this.renderPickupTexts(renderer.ctx);
         
         // 渲染调试信息
         renderer.drawDebugInfo({
@@ -3174,12 +3509,35 @@ class GameLogic {
      * @param {number} deltaTime - 距离上一帧的时间（毫秒）
      */
     updateDamageNumbers(deltaTime) {
+        const fadeInDuration = 200;
+        const fadeOutDuration = 300;
+        
         for (let i = this.damageNumbers.length - 1; i >= 0; i--) {
             const dn = this.damageNumbers[i];
             
             dn.y += dn.vy;
             dn.x += dn.vx || 0;
             dn.timer -= deltaTime;
+            
+            const elapsed = dn.duration - dn.timer;
+            
+            if (elapsed < fadeInDuration) {
+                dn.alpha = elapsed / fadeInDuration;
+            } else if (dn.timer < fadeOutDuration) {
+                dn.alpha = dn.timer / fadeOutDuration;
+            } else {
+                dn.alpha = 1;
+            }
+            
+            if (dn.isCrit) {
+                dn.shakeOffsetX = Math.sin(elapsed * 0.05) * 3;
+                dn.shakeOffsetY = Math.cos(elapsed * 0.07) * 3;
+                dn.scale = 1.3 + Math.sin(elapsed * 0.03) * 0.3;
+            } else {
+                dn.shakeOffsetX = 0;
+                dn.shakeOffsetY = 0;
+                dn.scale = 1;
+            }
             
             if (dn.timer <= 0) {
                 this.damageNumbers.splice(i, 1);
@@ -3222,11 +3580,13 @@ class GameLogic {
         for (let i = this.damageNumbers.length - 1; i >= 0; i--) {
             const dn = this.damageNumbers[i];
             
-            const alpha = dn.timer / dn.duration;
-            const scale = dn.isCrit ? (1.2 + Math.sin(dn.timer / 50) * 0.2) : 1;
+            const alpha = dn.alpha !== undefined ? dn.alpha : (dn.timer / dn.duration);
+            const scale = dn.scale !== undefined ? dn.scale : (dn.isCrit ? (1.2 + Math.sin(dn.timer / 50) * 0.2) : 1);
+            const shakeX = dn.shakeOffsetX || 0;
+            const shakeY = dn.shakeOffsetY || 0;
             
             ctx.save();
-            ctx.translate(dn.x, dn.y);
+            ctx.translate(dn.x + shakeX, dn.y + shakeY);
             ctx.scale(scale, scale);
             ctx.globalAlpha = alpha;
             
@@ -3243,9 +3603,37 @@ class GameLogic {
             if (dn.type === 'crit') color = UI_COLORS.DAMAGE_CRIT;
             if (dn.type === 'heal') color = UI_COLORS.DAMAGE_HEAL;
             if (dn.type === 'skill') color = UI_COLORS.DAMAGE_SKILL;
+            if (dn.type === 'fire') color = UI_COLORS.DAMAGE_FIRE;
+            if (dn.type === 'frost') color = UI_COLORS.DAMAGE_FROST;
+            if (dn.type === 'poison') color = UI_COLORS.DAMAGE_POISON;
+            if (dn.type === 'lightning') color = UI_COLORS.DAMAGE_LIGHTNING;
+            if (dn.type === 'dark') color = UI_COLORS.DAMAGE_DARK;
             
             ctx.fillStyle = color;
             ctx.fillText(Math.floor(dn.damage), 0, 0);
+            
+            // 添加伤害类型后缀
+            if (dn.type === 'fire') {
+                ctx.font = 'bold 10px Arial';
+                ctx.fillStyle = '#ff3300';
+                ctx.fillText('🔥', 20, 5);
+            } else if (dn.type === 'frost') {
+                ctx.font = 'bold 10px Arial';
+                ctx.fillStyle = '#00ccff';
+                ctx.fillText('❄', 20, 5);
+            } else if (dn.type === 'poison') {
+                ctx.font = 'bold 10px Arial';
+                ctx.fillStyle = '#33ff33';
+                ctx.fillText('☠', 20, 5);
+            } else if (dn.type === 'lightning') {
+                ctx.font = 'bold 10px Arial';
+                ctx.fillStyle = '#ffff33';
+                ctx.fillText('⚡', 20, 5);
+            } else if (dn.type === 'dark') {
+                ctx.font = 'bold 10px Arial';
+                ctx.fillStyle = '#9933ff';
+                ctx.fillText('💀', 20, 5);
+            }
             
             // 暴击文字
             if (dn.isCrit) {
@@ -3253,6 +3641,100 @@ class GameLogic {
                 ctx.fillStyle = '#ff0000';
                 ctx.fillText('暴击!', 0, -18);
             }
+            
+            ctx.restore();
+        }
+    }
+    
+    /**
+     * 显示拾取文字
+     * @param {number} x - X坐标
+     * @param {number} y - Y坐标
+     * @param {string} text - 拾取文字内容
+     * @param {string} type - 类型（weapon/gold/gem/item）
+     */
+    showPickupText(x, y, text, type = 'item') {
+        const colors = {
+            weapon: '#ffcc00',
+            gold: '#ffd700',
+            gem: '#00ffcc',
+            item: '#ffffff',
+            legendary: '#ff00ff'
+        };
+        
+        this.pickupTexts.push({
+            x: x,
+            y: y,
+            text: text,
+            type: type,
+            timer: 1500,
+            duration: 1500,
+            vy: -3,
+            vx: (Math.random() - 0.5) * 2,
+            color: colors[type] || colors.item,
+            alpha: 1,
+            scale: 1
+        });
+    }
+    
+    /**
+     * 更新拾取文字
+     * @param {number} deltaTime - 距离上一帧的时间（毫秒）
+     */
+    updatePickupTexts(deltaTime) {
+        const fadeInDuration = 200;
+        const fadeOutDuration = 400;
+        
+        for (let i = this.pickupTexts.length - 1; i >= 0; i--) {
+            const pt = this.pickupTexts[i];
+            
+            pt.y += pt.vy;
+            pt.x += pt.vx || 0;
+            pt.timer -= deltaTime;
+            
+            const elapsed = pt.duration - pt.timer;
+            
+            if (elapsed < fadeInDuration) {
+                pt.alpha = elapsed / fadeInDuration;
+                pt.scale = 0.5 + (elapsed / fadeInDuration) * 0.5;
+            } else if (pt.timer < fadeOutDuration) {
+                pt.alpha = pt.timer / fadeOutDuration;
+                pt.scale = 1 - ((fadeOutDuration - pt.timer) / fadeOutDuration) * 0.3;
+            } else {
+                pt.alpha = 1;
+                pt.scale = 1;
+            }
+            
+            if (pt.timer <= 0) {
+                this.pickupTexts.splice(i, 1);
+            }
+        }
+    }
+    
+    /**
+     * 渲染拾取文字
+     * @param {CanvasRenderingContext2D} ctx - 画布上下文
+     */
+    renderPickupTexts(ctx) {
+        for (let i = this.pickupTexts.length - 1; i >= 0; i--) {
+            const pt = this.pickupTexts[i];
+            
+            ctx.save();
+            ctx.translate(pt.x, pt.y);
+            ctx.scale(pt.scale, pt.scale);
+            ctx.globalAlpha = pt.alpha;
+            
+            // 描边
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 3;
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.strokeText(pt.text, 0, 0);
+            
+            // 填充
+            ctx.fillStyle = pt.color;
+            ctx.fillText(pt.text, 0, 0);
             
             ctx.restore();
         }
@@ -4175,6 +4657,67 @@ class GameLogic {
     }
     
     /**
+     * 渲染目标指示器
+     * @param {CanvasRenderingContext2D} ctx - 画布上下文
+     */
+    renderTargetIndicator(ctx) {
+        if (!this.aimAssist.enabled) return;
+        if (!this.aimAssist.lastTargetEnemy) return;
+        
+        const enemy = this.aimAssist.lastTargetEnemy;
+        if (!enemy.alive) return;
+        
+        this.targetIndicatorTimer += 16;
+        
+        const dx = enemy.x - this.player.x;
+        const dy = enemy.y - this.player.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        const baseSize = 12;
+        const maxDistance = 500;
+        const distanceFactor = Math.max(0.4, Math.min(1.0, 1 - distance / maxDistance));
+        const size = baseSize * distanceFactor;
+        
+        const pulseSpeed = 0.02;
+        const pulseOffset = Math.sin(this.targetIndicatorTimer * pulseSpeed) * 0.2 + 0.8;
+        const finalSize = size * pulseOffset;
+        
+        const indicatorY = enemy.y - enemy.size / 2 - 15;
+        
+        ctx.save();
+        
+        ctx.shadowColor = '#ff0000';
+        ctx.shadowBlur = 15 * pulseOffset;
+        
+        ctx.fillStyle = '#ff0000';
+        ctx.beginPath();
+        ctx.moveTo(enemy.x, indicatorY - finalSize);
+        ctx.lineTo(enemy.x - finalSize * 0.866, indicatorY + finalSize * 0.5);
+        ctx.lineTo(enemy.x + finalSize * 0.866, indicatorY + finalSize * 0.5);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(enemy.x, indicatorY - finalSize * 0.6);
+        ctx.lineTo(enemy.x - finalSize * 0.5, indicatorY + finalSize * 0.3);
+        ctx.lineTo(enemy.x + finalSize * 0.5, indicatorY + finalSize * 0.3);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.shadowBlur = 0;
+        
+        const ringSize = finalSize * 2.5 + Math.sin(this.targetIndicatorTimer * pulseSpeed * 1.5) * 3;
+        ctx.strokeStyle = `rgba(255, 0, 0, ${0.3 + Math.sin(this.targetIndicatorTimer * pulseSpeed) * 0.2})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(enemy.x, indicatorY, ringSize, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        ctx.restore();
+    }
+    
+    /**
      * 绘制玩家阴影
      * @param {number} x - 玩家X坐标
      */
@@ -4216,6 +4759,11 @@ class GameLogic {
      * 进入下一房间
      */
     nextRoom() {
+        // 进入下一房间前自动存档
+        if (typeof saveManager !== 'undefined') {
+            saveManager.autoSave(this.state.getData());
+        }
+        
         if (this.state.nextLevel()) {
             this.initRoom();
         }

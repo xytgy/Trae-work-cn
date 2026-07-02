@@ -37,10 +37,17 @@ class DashSkill extends ActiveSkill {
      * 执行冲刺
      */
     execute() {
-        // 计算冲刺方向（朝向鼠标位置）
-        const mousePos = inputManager.getMouseWorldPosition();
+        if (!this.canExecute()) return;
+        
+        const mousePos = inputManager && inputManager.getMouseWorldPosition();
+        if (!mousePos) return;
+        
         const mouseX = mousePos.x;
         const mouseY = mousePos.y;
+        
+        if (typeof mouseX !== 'number' || typeof mouseY !== 'number') return;
+        if (typeof this.owner.x !== 'number' || typeof this.owner.y !== 'number') return;
+        
         const dx = mouseX - this.owner.x;
         const dy = mouseY - this.owner.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -50,8 +57,6 @@ class DashSkill extends ActiveSkill {
             this.dashDirection.y = dy / dist;
             this.isDashing = true;
             this.dashTimer = this.dashDuration;
-            
-            // 生成冲刺特效
             this.spawnDashEffect();
         }
     }
@@ -83,7 +88,7 @@ class DashSkill extends ActiveSkill {
      * 生成冲刺起始特效
      */
     spawnDashEffect() {
-        // 在冲刺起点生成光效
+        if (!particleSystem || !this.owner) return;
         for (let i = 0; i < 10; i++) {
             const particle = particleSystem.createParticle(
                 this.owner.x,
@@ -105,7 +110,7 @@ class DashSkill extends ActiveSkill {
      * 生成冲刺轨迹粒子
      */
     spawnDashTrail() {
-        // 冲刺过程中生成轨迹
+        if (!particleSystem || !this.owner) return;
         for (let i = 0; i < 3; i++) {
             const particle = particleSystem.createParticle(
                 this.owner.x + (Math.random() - 0.5) * 10,
@@ -157,6 +162,9 @@ class LightningChainSkill extends ActiveSkill {
      * 执行闪电链
      */
     execute() {
+        if (!this.canExecute()) return;
+        
+        if (!gameLogic || !gameLogic.enemies) return;
         const enemies = gameLogic.enemies;
         const playerX = this.owner.x;
         const playerY = this.owner.y;
@@ -233,7 +241,7 @@ class LightningChainSkill extends ActiveSkill {
      * @param {Object} to - 目标
      */
     spawnLightningEffect(from, to) {
-        // 创建闪电线条粒子
+        if (!particleSystem || !this.owner) return;
         const startX = from ? from.x : this.owner.x;
         const startY = from ? from.y : this.owner.y;
         const dx = to.x - startX;
@@ -292,7 +300,9 @@ class MineSkill extends ActiveSkill {
      * 执行放置地雷
      */
     execute() {
-        // 在玩家脚下放置地雷
+        if (!this.canExecute()) return;
+        if (!this.owner) return;
+        
         const mine = {
             x: this.owner.x,
             y: this.owner.y,
@@ -334,8 +344,8 @@ class MineSkill extends ActiveSkill {
      */
     update(deltaTime) {
         super.update(deltaTime);
+        if (!gameLogic || !gameLogic.enemies) return;
         
-        // 检查地雷触发
         for (const mine of this.activeMines) {
             if (!mine.active || !mine.armed) continue;
             
@@ -394,6 +404,7 @@ class MineSkill extends ActiveSkill {
      * @param {Object} mine - 地雷
      */
     spawnPlaceEffect(mine) {
+        if (!particleSystem || !mine) return;
         for (let i = 0; i < 8; i++) {
             const angle = (i / 8) * Math.PI * 2;
             const particle = particleSystem.createParticle(
@@ -416,6 +427,7 @@ class MineSkill extends ActiveSkill {
      * @param {Object} mine - 地雷
      */
     spawnArmEffect(mine) {
+        if (!particleSystem || !mine) return;
         for (let i = 0; i < 5; i++) {
             const particle = particleSystem.createParticle(
                 mine.x,
@@ -437,7 +449,7 @@ class MineSkill extends ActiveSkill {
      * @param {Object} mine - 地雷
      */
     spawnExplosionEffect(mine) {
-        // 爆炸粒子
+        if (!particleSystem || !mine) return;
         for (let i = 0; i < 20; i++) {
             const angle = Math.random() * Math.PI * 2;
             const speed = 2 + Math.random() * 5;
@@ -517,10 +529,10 @@ class ShieldSkill extends ActiveSkill {
      * 执行护盾
      */
     execute() {
+        if (!this.canExecute()) return;
+        
         this.isActive = true;
         this.shieldTimer = this.shieldDuration;
-        
-        // 护盾激活特效
         this.spawnActivateEffect();
     }
     
@@ -530,11 +542,11 @@ class ShieldSkill extends ActiveSkill {
      */
     update(deltaTime) {
         super.update(deltaTime);
+        if (!this.owner || !particleSystem) return;
         
         if (this.isActive) {
             this.shieldTimer -= deltaTime;
             
-            // 生成护盾粒子效果
             if (Math.random() < 0.3) {
                 const angle = Math.random() * Math.PI * 2;
                 const x = this.owner.x + Math.cos(angle) * this.shieldRadius;
@@ -572,6 +584,7 @@ class ShieldSkill extends ActiveSkill {
      * 生成激活特效
      */
     spawnActivateEffect() {
+        if (!particleSystem || !this.owner) return;
         for (let i = 0; i < 15; i++) {
             const angle = (i / 15) * Math.PI * 2;
             const particle = particleSystem.createParticle(
@@ -626,14 +639,14 @@ class HealSkill extends ActiveSkill {
      * 执行治疗
      */
     execute() {
-        // 恢复生命
+        if (!this.canExecute()) return;
+        if (!this.owner) return;
+        
         if (this.owner.health < this.owner.maxHealth) {
             this.owner.health = Math.min(
                 this.owner.health + this.healAmount,
                 this.owner.maxHealth
             );
-            
-            // 治疗特效
             this.spawnHealEffect();
         }
     }
@@ -642,7 +655,7 @@ class HealSkill extends ActiveSkill {
      * 生成治疗特效
      */
     spawnHealEffect() {
-        // 向上飘的加号
+        if (!particleSystem || !this.owner) return;
         for (let i = 0; i < 5; i++) {
             const particle = particleSystem.createParticle(
                 this.owner.x + (Math.random() - 0.5) * 20,
@@ -659,7 +672,6 @@ class HealSkill extends ActiveSkill {
             }
         }
         
-        // 绿色光环
         for (let i = 0; i < 8; i++) {
             const angle = (i / 8) * Math.PI * 2;
             const particle = particleSystem.createParticle(
@@ -709,7 +721,9 @@ class TurretSkill extends ActiveSkill {
      * 执行放置炮台
      */
     execute() {
-        // 在玩家位置放置炮台
+        if (!this.canExecute()) return;
+        if (!this.owner) return;
+        
         const turret = {
             x: this.owner.x + (Math.random() - 0.5) * 50,
             y: this.owner.y + (Math.random() - 0.5) * 50,
@@ -740,6 +754,7 @@ class TurretSkill extends ActiveSkill {
      */
     update(deltaTime) {
         super.update(deltaTime);
+        if (!gameLogic || !gameLogic.enemies) return;
         
         for (const turret of this.activeTurrets) {
             if (!turret.active) continue;
@@ -826,6 +841,7 @@ class TurretSkill extends ActiveSkill {
      * @param {Object} turret - 炮台
      */
     spawnPlaceEffect(turret) {
+        if (!particleSystem || !turret) return;
         for (let i = 0; i < 10; i++) {
             const angle = (i / 10) * Math.PI * 2;
             const particle = particleSystem.createParticle(
@@ -896,6 +912,7 @@ class BerserkSkill extends ActiveSkill {
     }
     
     execute() {
+        if (!this.canExecute()) return;
         if (this.isActive) return;
         
         this.isActive = true;
@@ -952,6 +969,7 @@ class BladeStormSkill extends ActiveSkill {
         super('剑刃风暴', 'E', SKILL_COOLDOWN.BLADE_STORM, '释放剑刃风暴攻击周围敌人');
     }
     execute() {
+        if (!this.canExecute()) return;
         if (!this.owner) return;
         const radius = SKILL_EFFECT.BLADE_STORM_RADIUS;
         const damage = SKILL_EFFECT.BLADE_STORM_DAMAGE;
@@ -983,6 +1001,7 @@ class BlinkSkill extends ActiveSkill {
         super('瞬移', 'E', SKILL_COOLDOWN.BLINK, '瞬间移动到鼠标位置');
     }
     execute() {
+        if (!this.canExecute()) return;
         if (!this.owner) return;
         const mousePos = typeof inputManager !== 'undefined' ? inputManager.getMouseWorldPosition() : null;
         if (mousePos) {
@@ -1006,6 +1025,7 @@ class ShadowStrikeSkill extends ActiveSkill {
         super('暗影突袭', 'E', SKILL_COOLDOWN.SHADOW_STRIKE, '向敌人突袭造成伤害');
     }
     execute() {
+        if (!this.canExecute()) return;
         if (!this.owner) return;
         const dist = SKILL_EFFECT.SHADOW_STRIKE_DISTANCE;
         const damage = SKILL_EFFECT.SHADOW_STRIKE_DAMAGE;
@@ -1039,6 +1059,7 @@ class FreezeSkill extends ActiveSkill {
         super('冰封', 'E', SKILL_COOLDOWN.FREEZE_SKILL, '冻结周围敌人');
     }
     execute() {
+        if (!this.canExecute()) return;
         if (!this.owner) return;
         const radius = SKILL_EFFECT.FREEZE_RADIUS;
         if (typeof gameLogic !== 'undefined' && gameLogic.enemies) {
@@ -1108,6 +1129,7 @@ class SelfRepairSkill extends ActiveSkill {
         super('自我修复', 'E', SKILL_COOLDOWN.SELF_REPAIR, '持续恢复生命');
     }
     execute() {
+        if (!this.canExecute()) return;
         if (!this.owner) return;
         this.owner.health = Math.min(this.owner.maxHealth || 3, this.owner.health + SKILL_EFFECT.HEAL_AMOUNT);
     }

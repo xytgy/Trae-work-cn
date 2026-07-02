@@ -5,12 +5,9 @@
 
 class Boss {
     constructor(x, y, { eventBus } = {}) {
-        // 事件总线
-        this.eventBus = eventBus;
-        
-        // 位置
-        this.x = x;
-        this.y = y;
+        this.eventBus = eventBus || null;
+        this.x = typeof x === 'number' ? x : 0;
+        this.y = typeof y === 'number' ? y : 0;
         
         // 尺寸
         this.size = BOSS.SIZE;
@@ -141,7 +138,10 @@ class Boss {
      * @param {GameLogic} gameLogic - 游戏逻辑引用
      */
     update(deltaTime, player, gameLogic) {
-        // 死亡动画
+        if (!this.alive && !this.isDying) return;
+        if (typeof deltaTime !== 'number') deltaTime = 0;
+        if (!player || !gameLogic) return;
+        
         if (!this.alive) {
             if (this.isDying) {
                 this.updateDeath(deltaTime, gameLogic);
@@ -242,14 +242,10 @@ class Boss {
         
         const healthPercent = this.health / this.maxHealth;
         
-        if (healthPercent <= BOSS.PHASE2.HEALTH_THRESHOLD && this.phase === 1) {
-            this.startPhaseTransition(2);
-            console.log('Boss进入阶段2: 狂暴状态');
-        }
-        
         if (healthPercent <= BOSS.PHASE3.HEALTH_THRESHOLD && this.phase === 2) {
             this.startPhaseTransition(3);
-            console.log('Boss进入阶段3: 最终状态');
+        } else if (healthPercent <= BOSS.PHASE2.HEALTH_THRESHOLD && this.phase === 1) {
+            this.startPhaseTransition(2);
         }
     }
     
@@ -258,12 +254,21 @@ class Boss {
      * @param {number} newPhase - 新阶段
      */
     startPhaseTransition(newPhase) {
+        if (this.isPhaseTransitioning) return;
+        
         this.isPhaseTransitioning = true;
-        this.phaseTransitionTimer = 0;
         this.oldPhase = this.phase;
         this.phase = newPhase;
+        this.phaseTransitionTimer = this.phaseTransitionDuration;
         
-        // 触发粒子特效
+        if (this.eventBus) {
+            this.eventBus.publish('BOSS_PHASE_CHANGE', { 
+                boss: this, 
+                oldPhase: this.oldPhase, 
+                newPhase: this.phase 
+            });
+        }
+        
         if (typeof particleSystem !== 'undefined' && particleSystem.createPhaseTransition) {
             particleSystem.createPhaseTransition(this.x, this.y, newPhase);
         }
@@ -655,11 +660,10 @@ class Boss {
                 cancelToken: cancelToken
             });
             
-            // 延迟生成小怪（等特效出现后）
-            setTimeout(() => {
-                // 检查是否被取消
+            const summonTimeout = setTimeout(() => {
                 if (cancelToken.cancelled) return;
                 if (!this.alive) return;
+                if (!gameLogic || !gameLogic.enemies) return;
                 
                 const slime = new Slime(spawnX, spawnY);
                 slime.isSummoned = true;
@@ -668,6 +672,8 @@ class Boss {
                 
                 gameLogic.enemies.push(slime);
             }, BOSS.SUMMON_POSITION.EFFECT_DURATION);
+            
+            cancelToken.timeoutId = summonTimeout;
         }
         
         console.log(`Boss召唤了${count}个小怪`);
@@ -792,6 +798,7 @@ class Boss {
      */
     updateLaser(deltaTime, player, gameLogic) {
         if (!this.laserActive) return;
+        if (!player || !gameLogic) return;
         
         this.laserTimer -= deltaTime;
         
@@ -953,11 +960,14 @@ class Boss {
             this.deathTimer = 0;
             this.deathExplosionCount = 0;
             
-            // 打断所有未执行的召唤
             this.summonTokens.forEach(token => {
                 token.cancelled = true;
+                if (token.timeoutId) {
+                    clearTimeout(token.timeoutId);
+                }
             });
             this.summonTokens = [];
+            this.summonEffects = [];
             
             // 发布Boss死亡事件
             if (this.eventBus) {

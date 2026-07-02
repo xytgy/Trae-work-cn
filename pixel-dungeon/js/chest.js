@@ -573,10 +573,11 @@ class HealingFountain {
         this.x = x;
         this.y = y;
         this.size = REST_ROOM_CONFIG.FOUNTAIN_SIZE;
-        this.used = false;
-        this.healAmount = REST_ROOM_CONFIG.FOUNTAIN_HEAL_AMOUNT;
+        this.healAmount = REST_ROOM_CONFIG.FOUNTAIN_HEAL_AMOUNT || 1;
         this.animTimer = 0;
         this.interactDistance = 50;
+        this.healCooldown = 0;
+        this.healInterval = 1000;
     }
     
     /**
@@ -587,7 +588,7 @@ class HealingFountain {
     update(deltaTime, gameLogic) {
         this.animTimer += deltaTime;
         
-        if (!this.used && Math.random() < 0.2) {
+        if (Math.random() < 0.2) {
             gameLogic.particles.push(new Particle(
                 this.x + (Math.random() - 0.5) * 20,
                 this.y - 10,
@@ -598,50 +599,75 @@ class HealingFountain {
                 500 + Math.random() * 300
             ));
         }
-    }
-    
-    /**
-     * 检查是否可以交互
-     * @param {Player} player - 玩家引用
-     * @returns {boolean} 是否可以交互
-     */
-    canInteract(player) {
-        if (this.used) return false;
+        
+        if (this.healCooldown > 0) {
+            this.healCooldown -= deltaTime;
+        }
+        
+        const player = gameLogic.player;
+        if (!player) return;
+        
         const dx = player.x - this.x;
         const dy = player.y - this.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        return distance < this.interactDistance;
+        
+        if (distance < this.interactDistance && this.healCooldown <= 0) {
+            this.tryHeal(gameLogic);
+        }
     }
     
     /**
-     * 使用喷泉
+     * 尝试治疗玩家
      * @param {GameLogic} gameLogic - 游戏逻辑引用
      */
-    use(gameLogic) {
-        if (this.used) return false;
-        this.used = true;
+    tryHeal(gameLogic) {
+        if (!gameState) return;
         
-        if (gameState) {
-            const currentHealth = gameState.getData().playerHealth;
-            const maxHealth = PLAYER.MAX_HEALTH;
-            const newHealth = Math.min(currentHealth + this.healAmount, maxHealth);
-            gameState.setData('playerHealth', newHealth);
-        }
+        const data = gameState.getData();
+        if (data.playerHealth >= data.maxHealth) return;
         
-        for (let i = 0; i < 20; i++) {
+        this.healCooldown = this.healInterval;
+        
+        const newHealth = Math.min(data.playerHealth + this.healAmount, data.maxHealth);
+        gameState.setData('playerHealth', newHealth);
+        
+        this.spawnHealParticles(gameLogic);
+    }
+    
+    /**
+     * 生成治疗粒子效果
+     * @param {GameLogic} gameLogic - 游戏逻辑引用
+     */
+    spawnHealParticles(gameLogic) {
+        const player = gameLogic.player;
+        if (!player) return;
+        
+        for (let i = 0; i < 15; i++) {
             const angle = Math.random() * Math.PI * 2;
+            const speed = 1 + Math.random() * 2;
             gameLogic.particles.push(new Particle(
                 this.x,
                 this.y,
-                Math.cos(angle) * (1 + Math.random() * 2),
-                Math.sin(angle) * (1 + Math.random() * 2) - 1,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed - 1,
                 '#4caf50',
                 4 + Math.random() * 4,
                 600 + Math.random() * 400
             ));
         }
         
-        return true;
+        for (let i = 0; i < 8; i++) {
+            const angle = (Math.PI * 2 * i) / 8;
+            gameLogic.particles.push(new Particle(
+                this.x,
+                this.y - 15,
+                Math.cos(angle) * 2,
+                Math.sin(angle) * 2 - 1,
+                '#81c784',
+                3 + Math.random() * 2,
+                400 + Math.random() * 200
+            ));
+        }
     }
     
     /**

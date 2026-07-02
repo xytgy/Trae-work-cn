@@ -751,6 +751,50 @@ class Player {
         this.isWeaponSwitching = true;
         this.weaponSwitchTimer = 0;
         this.weaponSpinAngle = 0;
+        
+        this.emitWeaponSwitchParticles();
+    }
+    
+    /**
+     * 释放武器切换粒子效果
+     */
+    emitWeaponSwitchParticles() {
+        if (!this.eventBus) return;
+        
+        const config = PARTICLE_EFFECTS.WEAPON_SWITCH;
+        const particles = [];
+        
+        for (let i = 0; i < config.particleCount; i++) {
+            const angle = (Math.random() * config.spreadAngle) - (config.spreadAngle / 2);
+            const speed = config.speedMin + Math.random() * (config.speedMax - config.speedMin);
+            const size = config.sizeMin + Math.random() * (config.sizeMax - config.sizeMin);
+            const color = config.colors[Math.floor(Math.random() * config.colors.length)];
+            
+            particles.push({
+                x: this.x,
+                y: this.y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                size: size,
+                color: color,
+                lifetime: config.lifetime,
+                maxLifetime: config.lifetime,
+                alpha: 1
+            });
+        }
+        
+        this.eventBus.publish('PARTICLE_EMIT', {
+            type: 'weapon_switch',
+            particles: particles,
+            rings: {
+                count: config.ringCount,
+                x: this.x,
+                y: this.y,
+                color: config.ringColor,
+                expandSpeed: config.ringExpandSpeed,
+                lifetime: config.ringLifetime
+            }
+        });
     }
     
     /**
@@ -860,4 +904,576 @@ class Player {
             this.character.reset();
         }
     }
+    
+    /**
+     * 渲染玩家角色
+     * @param {CanvasRenderingContext2D} ctx - 渲染上下文
+     * @param {number} mouseX - 鼠标X坐标（用于朝向）
+     * @param {number} mouseY - 鼠标Y坐标（用于朝向）
+     * @param {boolean} isInvincible - 是否无敌
+     */
+    renderPlayer(ctx, mouseX, mouseY, isInvincible) {
+        const bodyColor = this.character ? this.character.color : '#4fc3f7';
+        const accentColor = this.character ? this.character.accentColor : '#81d4fa';
+        
+        const renderX = this.renderX;
+        const renderY = this.renderY;
+        
+        const walkBobOffset = this.getWalkBobOffset();
+        const breathOffset = this.getBreathOffset();
+        const floatOffset = this.getFloatOffset();
+        const skillCastOffset = this.getSkillCastOffset();
+        
+        let baseYOffset = walkBobOffset + breathOffset + floatOffset + skillCastOffset;
+        const drawY = renderY + baseYOffset;
+        
+        const angle = Math.atan2(mouseY - renderY, mouseX - renderX);
+        
+        const shouldDraw = !isInvincible || Math.floor(Date.now() / PLAYER.FLASH_INTERVAL) % 2 === 0;
+        if (!shouldDraw) return;
+        
+        ctx.save();
+        ctx.translate(renderX, drawY);
+        
+        const totalTilt = this.tiltAngle + this.hurtTiltAngle;
+        ctx.rotate(totalTilt);
+        
+        const breathScale = 1 + Math.sin(this.breathTimer) * 0.05;
+        ctx.scale(1, breathScale);
+        
+        const bodyShape = this.character ? this.character.bodyShape : null;
+        const drawSize = this.size;
+        
+        if (bodyShape) {
+            drawCharacterDecor(ctx, bodyShape.decor, accentColor, 0, -drawSize * 0.3, drawSize);
+            
+            drawCharacterBody(ctx, bodyShape.build, bodyColor, 0, 0, drawSize);
+            
+            drawCharacterPattern(ctx, bodyShape.pattern, accentColor, 0, 0, drawSize);
+            
+            drawCharacterHead(ctx, bodyShape.head, bodyColor, 0, -drawSize * 0.7, drawSize);
+            
+            drawCharacterWeapon(ctx, bodyShape.weapon, accentColor, drawSize * 0.4, 0, drawSize, angle - totalTilt);
+        } else {
+            ctx.fillStyle = bodyColor;
+            ctx.beginPath();
+            ctx.arc(0, 0, drawSize * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.beginPath();
+            ctx.arc(-drawSize * 0.15, -drawSize * 0.15, drawSize * 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            const eyeOffsetX = Math.cos(angle - totalTilt) * drawSize * 0.1;
+            const eyeOffsetY = Math.sin(angle - totalTilt) * drawSize * 0.1;
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(-drawSize * 0.15 + eyeOffsetX, -drawSize * 0.1 + eyeOffsetY, drawSize * 0.12, 0, Math.PI * 2);
+            ctx.arc(drawSize * 0.15 + eyeOffsetX, -drawSize * 0.1 + eyeOffsetY, drawSize * 0.12, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(-drawSize * 0.15 + eyeOffsetX * 1.5, -drawSize * 0.1 + eyeOffsetY * 1.5, drawSize * 0.06, 0, Math.PI * 2);
+            ctx.arc(drawSize * 0.15 + eyeOffsetX * 1.5, -drawSize * 0.1 + eyeOffsetY * 1.5, drawSize * 0.06, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        ctx.restore();
+    }
+}
+
+function drawCharacterBody(ctx, build, color, x, y, size) {
+    ctx.save();
+    ctx.translate(x, y);
+    
+    const halfSize = size / 2;
+    
+    switch (build) {
+        case 'slim':
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, halfSize * 0.6, halfSize * 0.9, 0, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+            
+        case 'normal':
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(0, 0, halfSize, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+            
+        case 'muscular':
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, halfSize * 1.2, halfSize * 0.85, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.fillRect(-halfSize * 0.8, -halfSize * 0.3, halfSize * 0.3, halfSize * 0.6);
+            ctx.fillRect(halfSize * 0.5, -halfSize * 0.3, halfSize * 0.3, halfSize * 0.6);
+            break;
+            
+        case 'bulky':
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(0, 0, halfSize * 1.3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.beginPath();
+            ctx.arc(0, halfSize * 0.2, halfSize * 0.8, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+            
+        case 'tiny':
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(0, 0, halfSize * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+            
+        default:
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(0, 0, halfSize, 0, Math.PI * 2);
+            ctx.fill();
+    }
+    
+    ctx.restore();
+}
+
+function drawCharacterHead(ctx, head, color, x, y, size) {
+    ctx.save();
+    ctx.translate(x, y);
+    
+    const halfSize = size / 2;
+    const headSize = halfSize * 0.6;
+    
+    switch (head) {
+        case 'round':
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(0, 0, headSize, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+            
+        case 'oval':
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, headSize * 0.8, headSize * 1.1, 0, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+            
+        case 'square':
+            ctx.fillStyle = color;
+            const sq = headSize * 0.8;
+            ctx.beginPath();
+            ctx.roundRect(-sq, -sq, sq * 2, sq * 2, 4);
+            ctx.fill();
+            break;
+            
+        case 'pointed':
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(0, -headSize * 1.5);
+            ctx.lineTo(-headSize * 0.8, headSize * 0.6);
+            ctx.lineTo(headSize * 0.8, headSize * 0.6);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.beginPath();
+            ctx.moveTo(0, -headSize * 1.3);
+            ctx.lineTo(-headSize * 0.3, -headSize * 0.2);
+            ctx.lineTo(headSize * 0.3, -headSize * 0.2);
+            ctx.closePath();
+            ctx.fill();
+            break;
+            
+        case 'helmet':
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(0, 0, headSize, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#888888';
+            ctx.fillRect(-headSize * 0.9, -headSize * 0.3, headSize * 1.8, headSize * 0.3);
+            
+            ctx.fillStyle = '#666666';
+            ctx.fillRect(-headSize * 0.5, headSize * 0.2, headSize, headSize * 0.4);
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(-headSize * 0.25, headSize * 0.35, headSize * 0.15, 0, Math.PI * 2);
+            ctx.arc(headSize * 0.25, headSize * 0.35, headSize * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+            
+        case 'mask':
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(0, 0, headSize, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#333333';
+            ctx.beginPath();
+            ctx.ellipse(0, headSize * 0.2, headSize * 0.7, headSize * 0.4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(-headSize * 0.25, headSize * 0.1, headSize * 0.15, 0, Math.PI * 2);
+            ctx.arc(headSize * 0.25, headSize * 0.1, headSize * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(-headSize * 0.25, headSize * 0.1, headSize * 0.08, 0, Math.PI * 2);
+            ctx.arc(headSize * 0.25, headSize * 0.1, headSize * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+            
+        default:
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(0, 0, headSize, 0, Math.PI * 2);
+            ctx.fill();
+    }
+    
+    ctx.restore();
+}
+
+function drawCharacterWeapon(ctx, weapon, color, x, y, size, angle) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    
+    const halfSize = size / 2;
+    const weaponSize = halfSize * 0.8;
+    
+    switch (weapon) {
+        case 'sword':
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(-weaponSize * 0.3, -2, weaponSize * 0.5, 4);
+            
+            ctx.fillStyle = color || '#cccccc';
+            ctx.beginPath();
+            ctx.moveTo(weaponSize * 0.2, -weaponSize * 0.4);
+            ctx.lineTo(weaponSize * 1.5, 0);
+            ctx.lineTo(weaponSize * 0.2, weaponSize * 0.4);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = '#888888';
+            ctx.beginPath();
+            ctx.moveTo(weaponSize * 0.2, -weaponSize * 0.2);
+            ctx.lineTo(weaponSize * 1.2, 0);
+            ctx.lineTo(weaponSize * 0.2, weaponSize * 0.2);
+            ctx.closePath();
+            ctx.fill();
+            break;
+            
+        case 'dagger':
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(-weaponSize * 0.2, -1.5, weaponSize * 0.4, 3);
+            
+            ctx.fillStyle = color || '#aaaaaa';
+            ctx.beginPath();
+            ctx.moveTo(weaponSize * 0.2, -weaponSize * 0.25);
+            ctx.lineTo(weaponSize * 1.0, 0);
+            ctx.lineTo(weaponSize * 0.2, weaponSize * 0.25);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = '#ffcc00';
+            ctx.beginPath();
+            ctx.moveTo(weaponSize * 0.85, -weaponSize * 0.08);
+            ctx.lineTo(weaponSize * 1.1, 0);
+            ctx.lineTo(weaponSize * 0.85, weaponSize * 0.08);
+            ctx.closePath();
+            ctx.fill();
+            break;
+            
+        case 'staff':
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(-1, -weaponSize * 1.2, 2, weaponSize * 2.4);
+            
+            ctx.fillStyle = color || '#ff9800';
+            ctx.beginPath();
+            ctx.arc(0, -weaponSize * 1.3, weaponSize * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.beginPath();
+            ctx.arc(0, -weaponSize * 1.3, weaponSize * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+            
+        case 'bow':
+            ctx.fillStyle = '#8b4513';
+            ctx.beginPath();
+            ctx.arc(weaponSize * 0.5, 0, weaponSize * 0.6, Math.PI * 0.1, Math.PI * 0.9);
+            ctx.strokeStyle = '#8b4513';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            ctx.fillStyle = '#ffcc00';
+            ctx.beginPath();
+            ctx.moveTo(weaponSize * 0.2, weaponSize * 0.15);
+            ctx.lineTo(weaponSize * 0.8, -weaponSize * 0.3);
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            break;
+            
+        case 'gun':
+            ctx.fillStyle = '#555555';
+            ctx.fillRect(-weaponSize * 0.3, -3, weaponSize * 0.5, 6);
+            
+            ctx.fillStyle = '#333333';
+            ctx.fillRect(weaponSize * 0.2, -2, weaponSize * 0.8, 4);
+            
+            ctx.fillStyle = '#888888';
+            ctx.fillRect(weaponSize * 0.2, -2, weaponSize * 0.8, 1);
+            
+            ctx.fillStyle = color || '#ffd54f';
+            ctx.fillRect(weaponSize * 0.9, -1, 2, 2);
+            break;
+            
+        case 'fist':
+            ctx.fillStyle = color || '#ffcc80';
+            ctx.beginPath();
+            ctx.arc(weaponSize * 0.5, 0, weaponSize * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#cc9966';
+            ctx.fillRect(weaponSize * 0.2, -weaponSize * 0.3, 2, weaponSize * 0.3);
+            ctx.fillRect(weaponSize * 0.4, -weaponSize * 0.35, 2, weaponSize * 0.35);
+            ctx.fillRect(weaponSize * 0.6, -weaponSize * 0.35, 2, weaponSize * 0.35);
+            ctx.fillRect(weaponSize * 0.8, -weaponSize * 0.3, 2, weaponSize * 0.3);
+            break;
+            
+        default:
+            break;
+    }
+    
+    ctx.restore();
+}
+
+function drawCharacterDecor(ctx, decor, color, x, y, size) {
+    ctx.save();
+    ctx.translate(x, y);
+    
+    const halfSize = size / 2;
+    
+    switch (decor) {
+        case 'cape':
+            ctx.fillStyle = color || '#8b0000';
+            ctx.beginPath();
+            ctx.moveTo(-halfSize * 0.8, -halfSize * 0.3);
+            ctx.lineTo(0, -halfSize * 1.5);
+            ctx.lineTo(halfSize * 0.8, -halfSize * 0.3);
+            ctx.lineTo(halfSize * 0.4, halfSize * 0.8);
+            ctx.lineTo(-halfSize * 0.4, halfSize * 0.8);
+            ctx.closePath();
+            ctx.fill();
+            break;
+            
+        case 'wings':
+            ctx.fillStyle = color || '#ffcc80';
+            
+            ctx.beginPath();
+            ctx.moveTo(-halfSize * 0.5, -halfSize * 0.2);
+            ctx.quadraticCurveTo(-halfSize * 1.5, -halfSize * 1.2, -halfSize * 1.2, halfSize * 0.2);
+            ctx.quadraticCurveTo(-halfSize * 0.8, -halfSize * 0.1, -halfSize * 0.5, -halfSize * 0.2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.moveTo(halfSize * 0.5, -halfSize * 0.2);
+            ctx.quadraticCurveTo(halfSize * 1.5, -halfSize * 1.2, halfSize * 1.2, halfSize * 0.2);
+            ctx.quadraticCurveTo(halfSize * 0.8, -halfSize * 0.1, halfSize * 0.5, -halfSize * 0.2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#cc9966';
+            ctx.fillRect(-halfSize * 0.6, -halfSize * 0.3, 2, halfSize * 0.6);
+            ctx.fillRect(halfSize * 0.4, -halfSize * 0.3, 2, halfSize * 0.6);
+            break;
+            
+        case 'horns':
+            ctx.fillStyle = color || '#8b4513';
+            
+            ctx.beginPath();
+            ctx.moveTo(-halfSize * 0.3, -halfSize * 0.5);
+            ctx.lineTo(-halfSize * 0.6, -halfSize * 1.2);
+            ctx.lineTo(-halfSize * 0.1, -halfSize * 0.6);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.moveTo(halfSize * 0.3, -halfSize * 0.5);
+            ctx.lineTo(halfSize * 0.6, -halfSize * 1.2);
+            ctx.lineTo(halfSize * 0.1, -halfSize * 0.6);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = '#a0522d';
+            ctx.beginPath();
+            ctx.moveTo(-halfSize * 0.4, -halfSize * 1.1);
+            ctx.lineTo(-halfSize * 0.55, -halfSize * 1.3);
+            ctx.lineTo(-halfSize * 0.25, -halfSize * 1.05);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.moveTo(halfSize * 0.4, -halfSize * 1.1);
+            ctx.lineTo(halfSize * 0.55, -halfSize * 1.3);
+            ctx.lineTo(halfSize * 0.25, -halfSize * 1.05);
+            ctx.closePath();
+            ctx.fill();
+            break;
+            
+        case 'crown':
+            ctx.fillStyle = color || '#ffd700';
+            
+            ctx.fillRect(-halfSize * 0.5, -halfSize * 0.8, halfSize, 3);
+            
+            ctx.fillRect(-halfSize * 0.5, -halfSize * 1.2, 4, halfSize * 0.4);
+            ctx.fillRect(-halfSize * 0.15, -halfSize * 1.4, 4, halfSize * 0.5);
+            ctx.fillRect(halfSize * 0.2, -halfSize * 1.2, 4, halfSize * 0.4);
+            
+            ctx.fillStyle = '#ffaa00';
+            ctx.beginPath();
+            ctx.arc(0, -halfSize * 0.75, halfSize * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+            
+        case 'bandana':
+            ctx.fillStyle = color || '#ff0000';
+            ctx.beginPath();
+            ctx.ellipse(0, -halfSize * 0.3, halfSize * 0.7, halfSize * 0.4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#cc0000';
+            ctx.fillRect(-halfSize * 0.5, -halfSize * 0.5, halfSize, 2);
+            
+            ctx.beginPath();
+            ctx.moveTo(-halfSize * 0.7, -halfSize * 0.4);
+            ctx.lineTo(-halfSize * 1.0, -halfSize * 0.8);
+            ctx.lineTo(-halfSize * 0.5, -halfSize * 0.5);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.moveTo(halfSize * 0.7, -halfSize * 0.4);
+            ctx.lineTo(halfSize * 1.0, -halfSize * 0.8);
+            ctx.lineTo(halfSize * 0.5, -halfSize * 0.5);
+            ctx.closePath();
+            ctx.fill();
+            break;
+            
+        default:
+            break;
+    }
+    
+    ctx.restore();
+}
+
+function drawCharacterPattern(ctx, pattern, color, x, y, size) {
+    ctx.save();
+    ctx.translate(x, y);
+    
+    const halfSize = size / 2;
+    
+    switch (pattern) {
+        case 'stripes':
+            ctx.fillStyle = color;
+            ctx.globalAlpha = 0.3;
+            for (let i = -3; i <= 3; i++) {
+                ctx.fillRect(-halfSize, i * 4 - 1, size, 2);
+            }
+            ctx.globalAlpha = 1;
+            break;
+            
+        case 'dots':
+            ctx.fillStyle = color;
+            ctx.globalAlpha = 0.4;
+            for (let row = -2; row <= 2; row++) {
+                for (let col = -2; col <= 2; col++) {
+                    ctx.beginPath();
+                    ctx.arc(col * 6, row * 6, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            ctx.globalAlpha = 1;
+            break;
+            
+        case 'cross':
+            ctx.fillStyle = color;
+            ctx.globalAlpha = 0.3;
+            
+            ctx.fillRect(-2, -halfSize, 4, size);
+            ctx.fillRect(-halfSize, -2, size, 4);
+            
+            ctx.beginPath();
+            ctx.moveTo(-halfSize * 0.6, -halfSize * 0.6);
+            ctx.lineTo(halfSize * 0.6, halfSize * 0.6);
+            ctx.moveTo(halfSize * 0.6, -halfSize * 0.6);
+            ctx.lineTo(-halfSize * 0.6, halfSize * 0.6);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+            break;
+            
+        case 'zigzag':
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.3;
+            
+            ctx.beginPath();
+            let zx = -halfSize;
+            let zy = -halfSize * 0.5;
+            ctx.moveTo(zx, zy);
+            
+            while (zx < halfSize) {
+                zx += 6;
+                zy = zy < 0 ? halfSize * 0.5 : -halfSize * 0.5;
+                ctx.lineTo(zx, zy);
+            }
+            ctx.stroke();
+            
+            ctx.beginPath();
+            zx = -halfSize;
+            zy = halfSize * 0.3;
+            ctx.moveTo(zx, zy);
+            
+            while (zx < halfSize) {
+                zx += 6;
+                zy = zy > 0 ? -halfSize * 0.3 : halfSize * 0.3;
+                ctx.lineTo(zx, zy);
+            }
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+            break;
+            
+        case 'gradient':
+            const gradient = ctx.createRadialGradient(0, -halfSize * 0.3, 0, 0, 0, halfSize);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
+            gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.1)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0.2)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(0, 0, halfSize, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+            
+        default:
+            break;
+    }
+    
+    ctx.restore();
 }
