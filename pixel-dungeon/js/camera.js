@@ -50,6 +50,16 @@ class Camera {
     }
     
     /**
+     * 直接设置相机位置，硬切换无平滑过渡
+     * @param {number} x - 目标X坐标
+     * @param {number} y - 目标Y坐标
+     */
+    setPosition(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+    
+    /**
      * 更新相机
      * @param {number} deltaTime - 距离上一帧的时间（毫秒）
      */

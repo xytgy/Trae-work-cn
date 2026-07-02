@@ -254,6 +254,21 @@ class GameLogic {
         // 当前房间
         this.currentRoom = null;
         
+        // 当前房间节点（DungeonLevel驱动）
+        this.currentRoomNode = null;
+        
+        // DungeonLevel 实例
+        this.dungeonLevel = null;
+        
+        // DungeonGenerator 实例
+        this.dungeonGenerator = new DungeonGenerator();
+        
+        // DoorManager 实例
+        this.doorManager = new DoorManager();
+        
+        // Minimap 实例
+        this.minimap = new Minimap();
+        
         // 传送门
         this.portal = null;
         
@@ -492,7 +507,20 @@ class GameLogic {
         this.inventoryOpen = false;
         this.achievementNotifications = [];
         
-        // 初始化房间
+        // 生成地牢（基于当前act和stage）
+        const act = this.state.getData().currentAct || 1;
+        const stage = this.state.getData().currentStage || 1;
+        this.dungeonLevel = this.dungeonGenerator.generate(act, stage);
+        console.log(`地牢生成完成: Act ${act}, Stage ${stage}`);
+        console.log(this.dungeonLevel.toString());
+        
+        // 初始化门禁系统
+        this.doorManager.initDoors(this.dungeonLevel);
+        
+        // 初始化小地图
+        this.minimap.init();
+        
+        // 初始化房间（从地牢起始房间开始）
         this.initRoom();
         
         // 初始化UI
@@ -510,6 +538,7 @@ class GameLogic {
      */
     cleanup() {
         if (this.boss) {
+            this.boss.cleanup();
             this.boss.alive = false;
             this.boss = null;
         }
@@ -519,46 +548,90 @@ class GameLogic {
         this._clearParticles();
         this.portal = null;
         this.currentRoom = null;
+        this.currentRoomNode = null;
         this.allEnemiesCleared = false;
+        
+        // P1-1: 清理 Player 对象和数组
+        this.player = null;
+        this.damageNumbers = [];
+        this.pickupTexts = [];
+        this.weaponDrops = [];
+        
+        // P1-1: 清理 dungeonLevel
+        this.dungeonLevel = null;
+        
+        // P1-1: 调用各管理器的 reset() 方法
+        this.inventory.reset();
+        this.dropManager.reset();
+        this.buffManager.reset();
+        this.relicManager.reset();
+        this.shopManager.reset();
+        this.achievementManager.resetSingleRun();
+        
+        // P1-2: 清理 rageSystem 和 timeManager
+        this.rageSystem.reset();
+        this.timeManager.reset();
+        
+        // P1-2: 清理 bulletTrailPool
+        this.bulletTrailPool = [];
+        this._initBulletTrailPool();
+        
+        // P1-2: 清理其他状态
+        this.shootCooldown = 0;
+        this.targetIndicatorTimer = 0;
+        this.frameBulletTrails = 0;
+        this.inventoryOpen = false;
+        this.achievementNotifications = [];
+        
+        // P0-3-03: 清理 chests
+        this.chests = [];
+        
+        // P0-3-06: 清理事件总线
+        if (this.eventBus) {
+            this.eventBus.clearAll();
+        }
+        
+        // P0-3-04: 清理 aimAssist
+        if (this.aimAssist) {
+            this.aimAssist.lastTargetEnemy = null;
+        }
+        
+        // P0-3-05: 清理 _pendingRoomType
+        this._pendingRoomType = null;
+        
+        // P0-3-07: 清理 minimap 和 doorManager
+        this.minimap = null;
+        this.doorManager = null;
+        
+        // P0-3-08: 清理 dungeonGenerator
+        this.dungeonGenerator = null;
+        
+        // 清理胜利状态
+        this.isVictory = false;
     }
     
     /**
-     * 初始化当前房间
+     * 初始化当前房间（基于 DungeonLevel 的 RoomNode）
      */
-    initRoom() {
-        const level = this.state.getData().currentLevel;
-        const roomIndex = level - 1;
-
-        let roomType;
-        let isBossRoom = false;
-
-        if (roomIndex >= 6) {
-            // 第7间房 = Boss房
-            roomType = ROOM_TYPES.BOSS;
-            isBossRoom = true;
-        } else if (roomIndex === 0) {
-            // 第1间房 = 固定战斗房
-            roomType = ROOM_TYPES.BATTLE;
-        } else if (roomIndex === 1) {
-            // 第2间房 = 固定战斗房
-            roomType = ROOM_TYPES.BATTLE;
-        } else if (roomIndex === 4) {
-            // 第5间房 = 精英房（分支选择后的战斗房）
-            roomType = ROOM_TYPES.ELITE;
-        } else if (roomIndex === 2) {
-            // 第3间房（分支选择后落地）
-            roomType = ROOM_TYPES.BATTLE;
-        } else if (roomIndex === 3 || roomIndex === 5) {
-            roomType = ROOM_TYPES.BATTLE;
-        } else {
-            roomType = ROOM_TYPES.BATTLE;
+    initRoom(roomNode = null) {
+        if (!roomNode) {
+            if (this.dungeonLevel && this.dungeonLevel.startRoom) {
+                roomNode = this.dungeonLevel.startRoom;
+            } else {
+                console.warn('没有有效的房间节点，使用默认初始化');
+                return;
+            }
         }
 
-        // 如果是通过分支选择进来的，roomType在调用方已确定
-        if (this._pendingRoomType) {
-            roomType = this._pendingRoomType;
-            this._pendingRoomType = null;
-        }
+        this.currentRoomNode = roomNode;
+        roomNode.markEntered();
+        
+        this.doorManager.onPlayerEnterRoom(roomNode);
+        
+        const roomType = roomNode.roomType;
+        const currentStage = this.state.getData().currentStage || 1;
+        const roomIndex = Math.min(currentStage, 7);
+        const isBossRoom = roomType === ROOM_TYPES.BOSS;
 
         this.currentRoom = new Room(roomType, roomIndex, isBossRoom);
 
@@ -585,13 +658,13 @@ class GameLogic {
                 this.initBattleRoom(roomIndex);
                 break;
             case ROOM_TYPES.CHEST:
-                this.initBattleRoom(roomIndex); // 宝箱房也有守卫
+                this.initBattleRoom(roomIndex, true);
                 break;
             case ROOM_TYPES.SHOP:
                 this.initShopRoom(roomIndex);
                 break;
             case ROOM_TYPES.TRAP:
-                this.initBattleRoom(roomIndex); // 陷阱房也有守卫
+                this.initBattleRoom(roomIndex, true);
                 break;
             case ROOM_TYPES.REST:
                 this.initRestRoom(roomIndex);
@@ -600,7 +673,95 @@ class GameLogic {
                 break;
         }
 
-        console.log(`房间 ${level} 初始化完成 - 类型: ${this.currentRoom.getRoomTypeName()}, 敌人数量: ${this.enemies.length}, Boss: ${!!this.boss}`);
+        // 更新小地图玩家位置
+        this.minimap.setPlayerRoom(roomNode);
+
+        console.log(`房间 [${roomNode.gridX},${roomNode.gridY}] 初始化完成 - 类型: ${roomNode.getRoomTypeName()}, 敌人数量: ${this.enemies.length}, Boss: ${!!this.boss}`);
+    }
+
+    /**
+     * 切换到下一个房间
+     * @param {RoomNode} nextRoomNode - 目标房间节点
+     */
+    changeRoom(nextRoomNode) {
+        if (!nextRoomNode || !this.dungeonLevel) return;
+
+        const currentNode = this.currentRoomNode;
+        if (currentNode) {
+            const roomType = currentNode.roomType;
+            const requiresClear = roomType === ROOM_TYPES.BATTLE || 
+                                  roomType === ROOM_TYPES.ELITE || 
+                                  roomType === ROOM_TYPES.BOSS;
+            
+            if (requiresClear && !currentNode.cleared) {
+                console.log(`当前房间 [${currentNode.gridX},${currentNode.gridY}] 未清空，无法切换`);
+                return;
+            }
+        }
+
+        this.currentRoomNode = nextRoomNode;
+        nextRoomNode.markEntered();
+
+        const roomType = nextRoomNode.roomType;
+
+        if (roomType === ROOM_TYPES.BOSS) {
+            this.state.data.currentLevel = 7;
+        }
+
+        this.initRoom(nextRoomNode);
+
+        this.player.x = GAME_WIDTH / 2;
+        this.player.y = GAME_HEIGHT / 2;
+
+        camera.setPosition(0, 0);
+        camera.setFollowTarget(null);
+
+        this.eventBus.publish('ROOM_CHANGED', {
+            fromRoom: currentNode,
+            toRoom: nextRoomNode,
+            roomType: roomType
+        });
+
+        console.log(`切换到房间 [${nextRoomNode.gridX},${nextRoomNode.gridY}] - 类型: ${nextRoomNode.getRoomTypeName()}`);
+    }
+
+    /**
+     * 检测玩家与门的碰撞，触发房间切换
+     */
+    checkDoorCollision() {
+        if (!this.player || !this.currentRoomNode || !this.dungeonLevel) return;
+
+        const playerX = this.player.x;
+        const playerY = this.player.y;
+        const DOOR_THRESHOLD = 60;
+
+        let nextRoomNode = null;
+
+        if (playerX < DOOR_THRESHOLD && this.currentRoomNode.hasDoor(DOOR.LEFT)) {
+            const neighbor = this.dungeonLevel.getRoomAt(this.currentRoomNode.gridX - 1, this.currentRoomNode.gridY);
+            if (neighbor && this.doorManager.isDoorOpen(this.currentRoomNode, DOOR.LEFT)) {
+                nextRoomNode = neighbor;
+            }
+        } else if (playerX > GAME_WIDTH - DOOR_THRESHOLD && this.currentRoomNode.hasDoor(DOOR.RIGHT)) {
+            const neighbor = this.dungeonLevel.getRoomAt(this.currentRoomNode.gridX + 1, this.currentRoomNode.gridY);
+            if (neighbor && this.doorManager.isDoorOpen(this.currentRoomNode, DOOR.RIGHT)) {
+                nextRoomNode = neighbor;
+            }
+        } else if (playerY < DOOR_THRESHOLD && this.currentRoomNode.hasDoor(DOOR.TOP)) {
+            const neighbor = this.dungeonLevel.getRoomAt(this.currentRoomNode.gridX, this.currentRoomNode.gridY - 1);
+            if (neighbor && this.doorManager.isDoorOpen(this.currentRoomNode, DOOR.TOP)) {
+                nextRoomNode = neighbor;
+            }
+        } else if (playerY > GAME_HEIGHT - DOOR_THRESHOLD && this.currentRoomNode.hasDoor(DOOR.BOTTOM)) {
+            const neighbor = this.dungeonLevel.getRoomAt(this.currentRoomNode.gridX, this.currentRoomNode.gridY + 1);
+            if (neighbor && this.doorManager.isDoorOpen(this.currentRoomNode, DOOR.BOTTOM)) {
+                nextRoomNode = neighbor;
+            }
+        }
+
+        if (nextRoomNode) {
+            this.changeRoom(nextRoomNode);
+        }
     }
 
     /**
@@ -2089,6 +2250,8 @@ class GameLogic {
     onBossKilled() {
         console.log('Boss被击杀!');
         
+        this.isVictory = true;
+        
         // 生成爆炸粒子效果
         this.spawnBossExplosion(this.boss.x, this.boss.y);
         
@@ -2429,41 +2592,48 @@ class GameLogic {
      * 检查房间是否已清除
      */
     checkRoomClear() {
-        if (!this.currentRoom) return;
+        if (!this.currentRoom || !this.currentRoomNode) return;
 
         const roomCompleted = this.currentRoom.checkRoomCompleted(this);
 
         if (roomCompleted && !this.allEnemiesCleared) {
             this.allEnemiesCleared = true;
+            this.currentRoomNode.markCleared();
 
             const roomType = this.currentRoom.roomType;
             const isBossRoom = roomType === ROOM_TYPES.BOSS || this.boss;
-            const level = this.state.getData().currentLevel;
-
-            if (isBossRoom) {
-                return;
-            }
 
             // 房间清除时自动存档
             if (typeof saveManager !== 'undefined') {
                 saveManager.autoSave(this.state.getData());
             }
 
-            // 第2间房（level=2）清空后触发路线选择
-            if (level === 2 && !this.state.getData().routeSelectLocked) {
+            if (isBossRoom) {
                 setTimeout(() => {
-                    this.state.startRouteSelect();
-                }, 1000);
-                return;
+                    if (this.currentRoom) {
+                        this.currentRoom.spawnPortal();
+                        this.spawnGoldenChest();
+                    }
+                }, PORTAL.SPAWN_DELAY);
             }
 
-            // 其他房间正常生成传送门
-            setTimeout(() => {
-                if (this.currentRoom) {
-                    this.currentRoom.spawnPortal();
-                }
-            }, PORTAL.SPAWN_DELAY);
+            // 调用门禁管理器，开门
+            this.doorManager.onRoomCleared(this.currentRoomNode);
+
+            // 更新小地图房间状态
+            this.minimap.updateRoomState(this.currentRoomNode);
         }
+    }
+
+    /**
+     * 生成金色宝箱（Boss房专属）
+     */
+    spawnGoldenChest() {
+        const chest = new Chest(GAME_WIDTH / 2, GAME_HEIGHT / 2, true);
+        this.chests.push(chest);
+        
+        this.playSound('chest_spawn');
+        console.log('Boss房金色宝箱生成');
     }
     
     /**
@@ -2553,6 +2723,16 @@ class GameLogic {
         }
         
         return { x: targetX, y: targetY };
+    }
+    
+    /**
+     * 切换瞄准辅助开关
+     */
+    toggleAimAssist() {
+        this.aimAssist.enabled = !this.aimAssist.enabled;
+        
+        const stateText = this.aimAssist.enabled ? '开启' : '关闭';
+        this.showPickupText(GAME_WIDTH / 2, GAME_HEIGHT / 2, `瞄准辅助: ${stateText}`, 'system');
     }
     
     /**
@@ -2685,9 +2865,9 @@ class GameLogic {
             15,
             80
         );
-        mainGlow.setKind(PARTICLES.KIND.CIRCLE);
-        mainGlow.disableGravity();
-        mainGlow.setFriction(0.9);
+        mainGlow.kind = PARTICLES.KIND.CIRCLE;
+        mainGlow.gravity = 0;
+        mainGlow.friction = 0.9;
         this.particles.push(mainGlow);
         
         const outerGlow = new Particle(
@@ -2697,9 +2877,9 @@ class GameLogic {
             25,
             60
         );
-        outerGlow.setKind(PARTICLES.KIND.CIRCLE);
-        outerGlow.disableGravity();
-        outerGlow.setFriction(0.85);
+        outerGlow.kind = PARTICLES.KIND.CIRCLE;
+        outerGlow.gravity = 0;
+        outerGlow.friction = 0.85;
         this.particles.push(outerGlow);
         
         const sparkCount = 8;
@@ -3467,6 +3647,53 @@ class GameLogic {
             'TimeScale': this.timeManager.timeScale.toFixed(2),
             'Shake': camera.getCurrentShakeIntensity().toFixed(1)
         });
+        
+        // 渲染准星（在UI层之上，不受相机影响）
+        this.renderCrosshair(ctx);
+    }
+    
+    /**
+     * 渲染准星
+     * @param {CanvasRenderingContext2D} ctx - 画布上下文
+     */
+    renderCrosshair(ctx) {
+        if (!gameState.isPlaying()) return;
+        
+        const mousePos = inputManager.getMouseWorldPosition();
+        if (!mousePos || mousePos.x === undefined || mousePos.y === undefined) return;
+        
+        const weapon = this.state.getCurrentWeapon();
+        const color = weapon ? weapon.COLOR : '#ffffff';
+        
+        ctx.save();
+        ctx.translate(mousePos.x, mousePos.y);
+        
+        const size = 16;
+        const lineWidth = 2;
+        const gap = 6;
+        
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth;
+        ctx.lineCap = 'round';
+        
+        ctx.beginPath();
+        ctx.moveTo(-size, 0);
+        ctx.lineTo(-gap, 0);
+        ctx.moveTo(gap, 0);
+        ctx.lineTo(size, 0);
+        ctx.moveTo(0, -size);
+        ctx.lineTo(0, -gap);
+        ctx.moveTo(0, gap);
+        ctx.lineTo(0, size);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.arc(0, 0, size + 4, 0, Math.PI * 2);
+        ctx.strokeStyle = color + '40';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        ctx.restore();
     }
     
     /**
@@ -3659,7 +3886,8 @@ class GameLogic {
             gold: '#ffd700',
             gem: '#00ffcc',
             item: '#ffffff',
-            legendary: '#ff00ff'
+            legendary: '#ff00ff',
+            system: '#00ccff'
         };
         
         this.pickupTexts.push({
@@ -4753,19 +4981,5 @@ class GameLogic {
             return weapon.color;
         }
         return COLORS.WEAPON.PISTOL;
-    }
-    
-    /**
-     * 进入下一房间
-     */
-    nextRoom() {
-        // 进入下一房间前自动存档
-        if (typeof saveManager !== 'undefined') {
-            saveManager.autoSave(this.state.getData());
-        }
-        
-        if (this.state.nextLevel()) {
-            this.initRoom();
-        }
     }
 }

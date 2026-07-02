@@ -129,6 +129,9 @@ class Boss {
         // 旋转光环
         this.auraRotation = 0;
         this.auraSpeed = 0.002;
+        
+        // 死亡动画计时器ID数组（用于清理）
+        this.deathTimeoutIds = [];
     }
     
     /**
@@ -1011,16 +1014,38 @@ class Boss {
                     particleSystem.createBossDeath(this.x, this.y);
                 } else if (particleSystem.createExplosion) {
                     for (let i = 0; i < 5; i++) {
-                        setTimeout(() => {
+                        const timeoutId = setTimeout(() => {
                             if (particleSystem.createExplosion) {
                                 particleSystem.createExplosion(this.x, this.y, 30, '#ffff00');
                             }
                         }, i * 100);
+                        this.deathTimeoutIds.push(timeoutId);
                     }
                 }
             }
             this.deathExplosionCount = 100;
         }
+    }
+    
+    /**
+     * 清理所有定时器和资源
+     */
+    cleanup() {
+        // 清理死亡动画计时器
+        for (const id of this.deathTimeoutIds) {
+            clearTimeout(id);
+        }
+        this.deathTimeoutIds = [];
+        
+        // 清理召唤计时器
+        this.summonTokens.forEach(token => {
+            token.cancelled = true;
+            if (token.timeoutId) {
+                clearTimeout(token.timeoutId);
+            }
+        });
+        this.summonTokens = [];
+        this.summonEffects = [];
     }
     
     /**

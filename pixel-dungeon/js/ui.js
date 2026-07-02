@@ -719,6 +719,10 @@ class UIManager {
                 this.renderCharacterInfo();
                 // 渲染被动技能效果
                 this.renderPassiveEffects();
+                // 渲染小地图
+                if (this.gameLogic && this.gameLogic.minimap) {
+                    this.gameLogic.minimap.render(renderer.ctx, this.gameLogic.dungeonLevel, this.gameLogic.currentRoomNode);
+                }
                 // 渲染新手引导
                 if (typeof tutorialManager !== 'undefined' && tutorialManager.active) {
                     tutorialManager.render(renderer.ctx);

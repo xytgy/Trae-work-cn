@@ -237,6 +237,126 @@ const LEVELS = {
     ]
 };
 
+// ==================== 大关主题配置 ====================
+const ACT_THEMES = {
+    1: {
+        difficultyMultiplier: 1.0,
+        themes: [
+            {
+                name: '森林',
+                background: '#1a2f1a',
+                wall: '#2d4a2d',
+                floor: '#1e3a1e',
+                enemyPool: ['slime', 'bat'],
+                boss: 'forest_guardian'
+            },
+            {
+                name: '冰原',
+                background: '#1a2a3a',
+                wall: '#3a5a7a',
+                floor: '#2a4a6a',
+                enemyPool: ['slime', 'bat'],
+                boss: 'ice_lord'
+            },
+            {
+                name: '遗迹',
+                background: '#1a1a2e',
+                wall: '#3a3a5a',
+                floor: '#2a2a4a',
+                enemyPool: ['slime', 'ghost'],
+                boss: 'ancient_king'
+            }
+        ]
+    },
+    2: {
+        difficultyMultiplier: 1.3,
+        themes: [
+            {
+                name: '城堡',
+                background: '#2a2a2a',
+                wall: '#4a4a4a',
+                floor: '#3a3a3a',
+                enemyPool: ['skeleton', 'archer', 'bat'],
+                boss: 'castle_knight'
+            },
+            {
+                name: '墓穴',
+                background: '#1a1a1a',
+                wall: '#3a3a3a',
+                floor: '#2a2a2a',
+                enemyPool: ['skeleton', 'ghost', 'mage'],
+                boss: 'skeleton_king'
+            },
+            {
+                name: '沼泽',
+                background: '#1a2a1a',
+                wall: '#2a4a2a',
+                floor: '#1e3a1e',
+                enemyPool: ['slime', 'bomber', 'mage'],
+                boss: 'swamp_lord'
+            }
+        ]
+    },
+    3: {
+        difficultyMultiplier: 1.6,
+        themes: [
+            {
+                name: '火山',
+                background: '#2a1a1a',
+                wall: '#5a2a2a',
+                floor: '#3a1a1a',
+                enemyPool: ['bomber', 'archer', 'mage'],
+                boss: 'fire_dragon'
+            },
+            {
+                name: '深渊',
+                background: '#0a0a1a',
+                wall: '#2a2a4a',
+                floor: '#1a1a3a',
+                enemyPool: ['ghost', 'mage', 'elite'],
+                boss: 'abyss_demon'
+            },
+            {
+                name: '神庙',
+                background: '#2a2a1a',
+                wall: '#4a4a2a',
+                floor: '#3a3a2a',
+                enemyPool: ['skeleton', 'archer', 'elite'],
+                boss: 'temple_god'
+            }
+        ]
+    },
+    4: {
+        difficultyMultiplier: 2.0,
+        themes: [
+            {
+                name: '虚空',
+                background: '#0a0a0a',
+                wall: '#3a1a3a',
+                floor: '#1a0a2a',
+                enemyPool: ['ghost', 'mage', 'elite'],
+                boss: 'void_lord'
+            },
+            {
+                name: '王座',
+                background: '#1a0a0a',
+                wall: '#4a1a1a',
+                floor: '#2a0a0a',
+                enemyPool: ['skeleton', 'archer', 'elite'],
+                boss: 'throne_king'
+            },
+            {
+                name: '终末',
+                background: '#000000',
+                wall: '#2a2a2a',
+                floor: '#1a1a1a',
+                enemyPool: ['mage', 'bomber', 'elite'],
+                boss: 'final_boss'
+            }
+        ]
+    }
+};
+
 // ==================== 传送门配置 ====================
 const PORTAL = {
     SIZE: 32,

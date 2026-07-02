@@ -18,6 +18,10 @@ class GameStateManager {
             // 当前关卡
             currentLevel: 1,
             
+            // 当前大关和小关
+            currentAct: 1,
+            currentStage: 1,
+            
             // 选中的角色
             selectedCharacter: null,
             selectedCharacterId: 1,        // 当前选择的角色ID
@@ -129,7 +133,7 @@ class GameStateManager {
             [GAME_STATE.MENU]: [GAME_STATE.CHARACTER_SELECT, GAME_STATE.SETTINGS, GAME_STATE.LEADERBOARD, GAME_STATE.ACHIEVEMENTS, GAME_STATE.HELP, GAME_STATE.TUTORIAL],
             [GAME_STATE.CHARACTER_SELECT]: [GAME_STATE.DIFFICULTY_SELECT, GAME_STATE.MENU],
             [GAME_STATE.DIFFICULTY_SELECT]: [GAME_STATE.PLAYING, GAME_STATE.CHARACTER_SELECT, GAME_STATE.MENU],
-            [GAME_STATE.PLAYING]: [GAME_STATE.PAUSED, GAME_STATE.GAME_OVER, GAME_STATE.VICTORY],
+            [GAME_STATE.PLAYING]: [GAME_STATE.PAUSED, GAME_STATE.GAME_OVER, GAME_STATE.VICTORY, GAME_STATE.ROUTE_SELECT, GAME_STATE.MENU],
             [GAME_STATE.PAUSED]: [GAME_STATE.PLAYING, GAME_STATE.SETTINGS, GAME_STATE.MENU],
             [GAME_STATE.GAME_OVER]: [GAME_STATE.MENU, GAME_STATE.CHARACTER_SELECT, GAME_STATE.PLAYING, GAME_STATE.LEADERBOARD],
             [GAME_STATE.VICTORY]: [GAME_STATE.MENU, GAME_STATE.CHARACTER_SELECT, GAME_STATE.PLAYING, GAME_STATE.LEADERBOARD],
@@ -211,6 +215,8 @@ class GameStateManager {
             playerWeapons: [{ ...WEAPONS.PISTOL }],  // 深拷贝初始武器
             currentWeaponIndex: 0,
             currentLevel: 1,
+            currentAct: 1,
+            currentStage: 1,
             killCount: 0,
             playTime: 0,
             weaponsCollected: 0,
@@ -529,6 +535,26 @@ class GameStateManager {
     nextLevel() {
         if (this.data.currentLevel < LEVELS.COUNT) {
             this.data.currentLevel++;
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * 进入下一小关
+     */
+    nextStage() {
+        this.data.currentStage++;
+        return true;
+    }
+    
+    /**
+     * 进入下一大关
+     */
+    nextAct() {
+        if (this.data.currentAct < 4) {
+            this.data.currentAct++;
+            this.data.currentStage = 1;
             return true;
         }
         return false;

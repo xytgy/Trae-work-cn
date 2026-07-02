@@ -505,6 +505,11 @@ class Game {
             this.gameLogic.cleanup();
         }
         
+        // 清理全局粒子系统
+        if (particleSystem && typeof particleSystem.clear === 'function') {
+            particleSystem.clear();
+        }
+        
         // 重新初始化游戏逻辑
         this.gameLogic.init();
         
@@ -719,10 +724,16 @@ class Game {
         // 标记路线选择已锁定（每局只触发一次）
         this.gameLogic.state.getData().routeSelectLocked = true;
 
-        // 跳转到对应房间
-        this.gameLogic._pendingRoomType = roomType;
-        this.gameLogic.state.getData().currentLevel++;
-        this.gameLogic.initRoom();
+        // 从 DungeonLevel 中找到对应类型的房间节点
+        const nextRoomNode = this.gameLogic.dungeonLevel.findNextRoomByType(roomType);
+        if (nextRoomNode) {
+            this.gameLogic.changeRoom(nextRoomNode);
+        } else {
+            this.gameLogic._pendingRoomType = roomType;
+            this.gameLogic.state.getData().currentLevel++;
+            this.gameLogic.initRoom();
+        }
+        
         this.gameLogic.portal = null;
         this.gameLogic.allEnemiesCleared = false;
 
@@ -747,13 +758,9 @@ class Game {
         // 切回游戏状态
         gameState.setState(GAME_STATE.PLAYING);
 
-        // 生成传送门让玩家正常进入下一关
-        if (this.gameLogic.currentRoom && !this.gameLogic.portal) {
-            setTimeout(() => {
-                if (this.gameLogic.currentRoom) {
-                    this.gameLogic.currentRoom.spawnPortal();
-                }
-            }, PORTAL.SPAWN_DELAY);
+        // 如果当前房间未清空，开门让玩家进入下一房间
+        if (this.gameLogic.currentRoomNode && !this.gameLogic.currentRoomNode.cleared) {
+            this.gameLogic.doorManager.onRoomCleared(this.gameLogic.currentRoomNode);
         }
     }
 
@@ -875,19 +882,10 @@ class Game {
     }
     
     /**
-     * 检查传送门碰撞
+     * 检查门碰撞（DungeonLevel驱动的房间切换）
      */
     checkPortalCollision() {
-        if (!this.gameLogic.currentRoom) return;
-        
-        const player = this.gameLogic.player;
-        if (!player) return;
-        
-        // 检查玩家是否进入传送门
-        if (this.gameLogic.currentRoom.checkPortalCollision(player)) {
-            console.log('玩家进入传送门，进入下一房间');
-            this.gameLogic.nextRoom();
-        }
+        this.gameLogic.checkDoorCollision();
     }
     
     /**
@@ -926,8 +924,9 @@ class Game {
             return;
         }
         
-        // 检查是否通关（击败Boss）
-        if (this.gameLogic.isVictory) {
+        // 检查是否通关（击败Boss）- 通过游戏状态或gameLogic.isVictory检测
+        const isGameStateVictory = this.gameLogic.state && this.gameLogic.state.isState && this.gameLogic.state.isState(GAME_STATE.VICTORY);
+        if (this.gameLogic.isVictory || isGameStateVictory) {
             this.handleVictory();
         }
     }
