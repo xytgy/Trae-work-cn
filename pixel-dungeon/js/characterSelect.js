@@ -7,43 +7,43 @@ class CharacterSelectManager {
     constructor() {
         // 角色列表
         this.characters = [];
-        
+
         // 当前选中的角色索引
         this.selectedIndex = 0;
-        
+
         // 角色分类
         this.categories = ['战士', '刺客', '法师', '辅助', '猎人', '机械', '召唤', '特殊'];
-        
+
         // 当前显示的分类
         this.currentCategory = 0;
-        
+
         // 角色卡片布局
         this.cardWidth = 120;
         this.cardHeight = 160;
         this.cardSpacing = 15;
-        
+
         // 面板尺寸
         this.detailPanelWidth = 300;
         this.detailPanelHeight = 400;
-        
+
         // 动画状态
         this.animationTime = 0;
-        
+
         // 鼠标悬停状态
         this.hoveredIndex = -1;
-        
+
         // 鼠标位置
         this.mouseX = 0;
         this.mouseY = 0;
-        
+
         // 初始动画状态
         this.introAnimationProgress = 0;
         this.isIntroComplete = false;
-        
+
         // 初始化角色
         this.initCharacters();
     }
-    
+
     /**
      * 初始化角色数据
      */
@@ -92,7 +92,7 @@ class CharacterSelectManager {
                     { name: '旋风斩', key: 'Space', cooldown: 2000, description: '周围敌人受伤' }
                 ]
             },
-            
+
             // 刺客系
             {
                 id: 4,
@@ -122,7 +122,7 @@ class CharacterSelectManager {
                     { name: '致命一击', key: 'Space', cooldown: 5000, description: '造成500%伤害' }
                 ]
             },
-            
+
             // 法师系
             {
                 id: 6,
@@ -152,7 +152,7 @@ class CharacterSelectManager {
                     { name: '暗影箭', key: 'Space', cooldown: 1000, description: '发射暗影箭' }
                 ]
             },
-            
+
             // 辅助系
             {
                 id: 8,
@@ -182,7 +182,7 @@ class CharacterSelectManager {
                     { name: '混乱之歌', key: 'Space', cooldown: 4000, description: '使敌人混乱' }
                 ]
             },
-            
+
             // 猎人系
             {
                 id: 10,
@@ -212,7 +212,7 @@ class CharacterSelectManager {
                     { name: '穿甲弹', key: 'Space', cooldown: 3000, description: '无视护甲' }
                 ]
             },
-            
+
             // 机械系
             {
                 id: 12,
@@ -242,7 +242,7 @@ class CharacterSelectManager {
                     { name: 'EMP', key: 'Space', cooldown: 6000, description: '瘫痪敌人电子设备' }
                 ]
             },
-            
+
             // 召唤系
             {
                 id: 14,
@@ -272,7 +272,7 @@ class CharacterSelectManager {
                     { name: '荆棘', key: 'Space', cooldown: 3000, description: '反弹伤害' }
                 ]
             },
-            
+
             // 特殊系
             {
                 id: 16,
@@ -316,7 +316,7 @@ class CharacterSelectManager {
                     { name: '幻影', key: 'Space', cooldown: 3000, description: '制造分身' }
                 ]
             },
-            
+
             // 更多角色
             {
                 id: 19,
@@ -404,14 +404,14 @@ class CharacterSelectManager {
             }
         ];
     }
-    
+
     /**
      * 更新动画状态
      * @param {number} deltaTime - 时间增量
      */
     update(deltaTime) {
         this.animationTime += deltaTime;
-        
+
         // 初始动画
         if (!this.isIntroComplete) {
             this.introAnimationProgress += deltaTime / 1500; // 1.5秒完成
@@ -420,11 +420,11 @@ class CharacterSelectManager {
                 this.isIntroComplete = true;
             }
         }
-        
+
         // 处理鼠标悬停检测
         this.updateHoverState();
     }
-    
+
     /**
      * 更新鼠标悬停状态
      */
@@ -432,27 +432,30 @@ class CharacterSelectManager {
         // 直接从 inputManager 获取鼠标位置
         this.mouseX = inputManager.mouse.worldX || 0;
         this.mouseY = inputManager.mouse.worldY || 0;
-        
+
         const startX = (GAME_WIDTH - this.getTotalWidth()) / 2;
         const startY = 120;
-        
+
         this.hoveredIndex = -1;
-        
+
         for (let i = 0; i < this.characters.length; i++) {
             const col = i % this.getColumnCount();
             const row = Math.floor(i / this.getColumnCount());
-            
+
             const cardX = startX + col * (this.cardWidth + this.cardSpacing);
             const cardY = startY + row * (this.cardHeight + this.cardSpacing);
-            
-            if (this.mouseX >= cardX && this.mouseX <= cardX + this.cardWidth &&
-                this.mouseY >= cardY && this.mouseY <= cardY + this.cardHeight) {
+
+            if (this.mouseX >= cardX &&
+                this.mouseX <= cardX + this.cardWidth &&
+                this.mouseY >= cardY &&
+                this.mouseY <= cardY + this.cardHeight
+            ) {
                 this.hoveredIndex = i;
                 break;
             }
         }
     }
-    
+
     /**
      * 获取列数
      */
@@ -460,40 +463,40 @@ class CharacterSelectManager {
         const availableWidth = GAME_WIDTH - 100;
         return Math.floor(availableWidth / (this.cardWidth + this.cardSpacing));
     }
-    
+
     /**
      * 获取总宽度
      */
     getTotalWidth() {
         return this.getColumnCount() * (this.cardWidth + this.cardSpacing) - this.cardSpacing;
     }
-    
+
     /**
      * 渲染角色选择界面
      * @param {CanvasRenderingContext2D} ctx - 绘图上下文
      */
     render(ctx) {
         const time = this.animationTime;
-        
+
         // 绘制背景
         this.renderBackground(ctx, time);
-        
+
         // 绘制标题
         this.renderTitle(ctx, time);
-        
+
         // 绘制角色卡片
         this.renderCharacterCards(ctx, time);
-        
+
         // 绘制详情面板
         this.renderDetailPanel(ctx, time);
-        
+
         // 绘制操作提示
         this.renderControlsHint(ctx);
-        
+
         // 绘制分类标题
         this.renderCategoryTitle(ctx);
     }
-    
+
     /**
      * 渲染背景
      * @param {CanvasRenderingContext2D} ctx - 绘图上下文
@@ -506,19 +509,19 @@ class CharacterSelectManager {
         gradient.addColorStop(1, '#1a1a3a');
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-        
+
         // 背景粒子效果
         for (let i = 0; i < 30; i++) {
             const x = (i * 137 + time * 0.01) % GAME_WIDTH;
             const y = (i * 89 + time * 0.02) % GAME_HEIGHT;
             const alpha = Math.sin(time / 1000 + i) * 0.3 + 0.4;
             const size = 2 + Math.sin(i) * 1;
-            
+
             ctx.fillStyle = `rgba(100, 100, 200, ${alpha})`;
             ctx.fillRect(x, y, size, size);
         }
     }
-    
+
     /**
      * 渲染标题
      * @param {CanvasRenderingContext2D} ctx - 绘图上下文
@@ -527,19 +530,19 @@ class CharacterSelectManager {
     renderTitle(ctx, time) {
         const pulse = Math.sin(time / 300) * 0.1 + 0.9;
         const titleY = 50;
-        
+
         ctx.save();
         ctx.shadowColor = '#6666ff';
         ctx.shadowBlur = 20 * pulse;
-        
+
         ctx.font = 'bold 36px Arial';
         ctx.textAlign = 'center';
         ctx.fillStyle = '#ffffff';
         ctx.fillText('选择你的角色', GAME_WIDTH / 2, titleY);
-        
+
         ctx.restore();
     }
-    
+
     /**
      * 渲染角色卡片
      * @param {CanvasRenderingContext2D} ctx - 绘图上下文
@@ -548,71 +551,90 @@ class CharacterSelectManager {
     renderCharacterCards(ctx, time) {
         const startX = (GAME_WIDTH - this.getTotalWidth()) / 2;
         const startY = 120;
-        
+
         for (let i = 0; i < this.characters.length; i++) {
             const character = this.characters[i];
             const col = i % this.getColumnCount();
             const row = Math.floor(i / this.getColumnCount());
-            
+
             const cardX = startX + col * (this.cardWidth + this.cardSpacing);
             const cardY = startY + row * (this.cardHeight + this.cardSpacing);
-            
+
             // 初始动画偏移
             let offsetY = 0;
             if (!this.isIntroComplete) {
                 offsetY = (1 - this.introAnimationProgress) * 50;
             }
-            
+
             // 选中动画
             if (i === this.selectedIndex) {
-                this.renderSelectionAnimation(ctx, cardX - 3, cardY - 3 + offsetY, 
-                    this.cardWidth + 6, this.cardHeight + 6, time);
+                this.renderSelectionAnimation(
+                    ctx,
+                    cardX - 3,
+                    cardY - 3 + offsetY,
+                    this.cardWidth + 6,
+                    this.cardHeight + 6,
+                    time
+                );
             }
-            
+
             // 悬停动画
             if (i === this.hoveredIndex && i !== this.selectedIndex) {
                 this.renderHoverEffect(ctx, cardX, cardY + offsetY, this.cardWidth, this.cardHeight, time);
             }
-            
+
             // 检查角色是否解锁
             if (!this.isCharacterUnlocked(character.id)) {
-                this.renderLockedCharacter(ctx, character, cardX, cardY + offsetY, 
-                    this.cardWidth, this.cardHeight, time);
+                this.renderLockedCharacter(
+                    ctx,
+                    character,
+                    cardX,
+                    cardY + offsetY,
+                    this.cardWidth,
+                    this.cardHeight,
+                    time
+                );
                 continue;
             }
-            
+
             // 绘制卡片背景
             ctx.fillStyle = 'rgba(30, 30, 60, 0.9)';
             ctx.fillRect(cardX, cardY + offsetY, this.cardWidth, this.cardHeight);
-            
+
             // 卡片边框
             const borderColor = i === this.selectedIndex ? '#6666ff' : '#444466';
             ctx.strokeStyle = borderColor;
             ctx.lineWidth = i === this.selectedIndex ? 3 : 1;
             ctx.strokeRect(cardX, cardY + offsetY, this.cardWidth, this.cardHeight);
-            
+
             // 角色图标
             const iconSize = 40;
-            this.renderCharacterIcon(ctx, character, 
-                cardX + this.cardWidth / 2, cardY + 35 + offsetY, iconSize, 
-                i === this.selectedIndex, time);
-            
+            this.renderCharacterIcon(
+                ctx,
+                character,
+                cardX + this.cardWidth / 2,
+                cardY + 35 + offsetY,
+                iconSize,
+                i === this.selectedIndex,
+                time
+            );
+
             // 角色名称
             ctx.font = 'bold 14px Arial';
             ctx.textAlign = 'center';
             ctx.fillStyle = '#ffffff';
             ctx.fillText(character.name, cardX + this.cardWidth / 2, cardY + 85 + offsetY);
-            
+
             // 角色分类
             ctx.font = '11px Arial';
             ctx.fillStyle = character.color;
             ctx.fillText(character.category, cardX + this.cardWidth / 2, cardY + 102 + offsetY);
-            
+
             // 绘制角色统计
             this.renderMiniStats(ctx, character, cardX + 10, cardY + 120 + offsetY);
         }
     }
-    
+
     /**
      * 渲染角色图标动画
      * @param {CanvasRenderingContext2D} ctx - 绘图上下文
@@ -628,13 +650,13 @@ class CharacterSelectManager {
         if (isSelected) {
             offsetY = Math.sin(time / 300) * 3;
         }
-        
+
         if (isSelected) {
             ctx.save();
             ctx.shadowColor = character.color;
             ctx.shadowBlur = 15;
         }
-        
+
         if (isSelected) {
             const gradient = ctx.createRadialGradient(x, y + offsetY, 0, x, y + offsetY, size);
             gradient.addColorStop(0, character.color + '60');
@@ -644,24 +666,24 @@ class CharacterSelectManager {
             ctx.arc(x, y + offsetY, size, 0, Math.PI * 2);
             ctx.fill();
         }
-        
+
         if (character.bodyShape) {
             ctx.save();
             ctx.translate(x, y + offsetY);
-            
+
             const breathScale = 1 + Math.sin(time / 500) * 0.05;
             ctx.scale(1, breathScale);
-            
+
             const drawSize = size * 1.5;
             const bodyColor = character.color;
             const accentColor = character.color;
-            
+
             drawCharacterDecor(ctx, character.bodyShape.decor, accentColor, 0, -drawSize * 0.3, drawSize);
             drawCharacterBody(ctx, character.bodyShape.build, bodyColor, 0, 0, drawSize);
             drawCharacterPattern(ctx, character.bodyShape.pattern, accentColor, 0, 0, drawSize);
             drawCharacterHead(ctx, character.bodyShape.head, bodyColor, 0, -drawSize * 0.7, drawSize);
             drawCharacterWeapon(ctx, character.bodyShape.weapon, accentColor, drawSize * 0.4, 0, drawSize, Math.PI / 4);
-            
+
             ctx.restore();
         } else {
             ctx.font = `${size}px serif`;
@@ -669,18 +691,18 @@ class CharacterSelectManager {
             ctx.textBaseline = 'middle';
             ctx.fillText(character.icon, x, y + offsetY);
         }
-        
+
         if (isSelected) {
             ctx.restore();
         }
-        
+
         if (character.category === '法师' && isSelected) {
             this.renderMagicParticles(ctx, x, y + offsetY, time);
         } else if (character.category === '战士' && isSelected) {
             this.renderWarriorParticles(ctx, x, y + offsetY, time);
         }
     }
-    
+
     /**
      * 法师粒子效果
      * @param {CanvasRenderingContext2D} ctx - 绘图上下文
@@ -694,14 +716,14 @@ class CharacterSelectManager {
             const radius = 40 + Math.sin(time / 500 + i) * 10;
             const px = x + Math.cos(angle) * radius;
             const py = y + Math.sin(angle) * radius;
-            
+
             ctx.fillStyle = `rgba(100, 100, 255, ${0.5 + Math.sin(time / 200 + i) * 0.3})`;
             ctx.beginPath();
             ctx.arc(px, py, 3, 0, Math.PI * 2);
             ctx.fill();
         }
     }
-    
+
     /**
      * 战士粒子效果
      * @param {CanvasRenderingContext2D} ctx - 绘图上下文
@@ -713,14 +735,14 @@ class CharacterSelectManager {
         for (let i = 0; i < 3; i++) {
             const offsetX = Math.sin(time / 300 + i) * 20;
             const offsetY = -20 + Math.cos(time / 400 + i) * 5;
-            
+
             ctx.fillStyle = `rgba(255, 100, 100, ${0.5 + Math.sin(time / 200 + i) * 0.3})`;
             ctx.beginPath();
             ctx.arc(x + offsetX, y + offsetY, 4, 0, Math.PI * 2);
             ctx.fill();
         }
     }
-    
+
     /**
      * 渲染迷你统计
      * @param {CanvasRenderingContext2D} ctx - 绘图上下文
@@ -732,19 +754,19 @@ class CharacterSelectManager {
         ctx.font = '10px Arial';
         ctx.textAlign = 'left';
         ctx.fillStyle = '#aaaaaa';
-        
+
         const stats = [
             { label: '生存', value: character.stats.survivability },
             { label: '攻击', value: character.stats.offensive },
             { label: '技能', value: character.stats.skillPower }
         ];
-        
+
         stats.forEach((stat, index) => {
             const statY = y + index * 12;
             ctx.fillText(`${stat.label}: ${'★'.repeat(stat.value)}${'☆'.repeat(5 - stat.value)}`, x, statY);
         });
     }
-    
+
     /**
      * 渲染选择动画
      * @param {CanvasRenderingContext2D} ctx - 绘图上下文
@@ -756,13 +778,13 @@ class CharacterSelectManager {
      */
     renderSelectionAnimation(ctx, x, y, width, height, time) {
         const pulse = Math.sin(time / 200) * 0.2 + 0.8;
-        
+
         // 脉冲光晕
         ctx.strokeStyle = `rgba(102, 102, 255, ${pulse * 0.5})`;
         ctx.lineWidth = 6;
         ctx.strokeRect(x - 3, y - 3, width + 6, height + 6);
     }
-    
+
     /**
      * 渲染悬停效果
      * @param {CanvasRenderingContext2D} ctx - 绘图上下文
@@ -774,7 +796,7 @@ class CharacterSelectManager {
      */
     renderHoverEffect(ctx, x, y, width, height, time) {
         const glow = Math.sin(time / 150) * 0.3 + 0.7;
-        
+
         ctx.save();
         ctx.shadowColor = '#8888ff';
         ctx.shadowBlur = 10 * glow;
@@ -782,7 +804,7 @@ class CharacterSelectManager {
         ctx.fillRect(x, y, width, height);
         ctx.restore();
     }
-    
+
     /**
      * 检查角色是否解锁
      * @param {number} characterId - 角色ID
@@ -793,7 +815,7 @@ class CharacterSelectManager {
         // 后续可以实现解锁系统
         return true;
     }
-    
+
     /**
      * 渲染锁定角色
      * @param {CanvasRenderingContext2D} ctx - 绘图上下文
@@ -808,19 +830,19 @@ class CharacterSelectManager {
         // 灰色遮罩
         ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
         ctx.fillRect(x, y, width, height);
-        
+
         // 锁定图标
         ctx.font = '24px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('🔒', x + width / 2, y + height / 2);
-        
+
         // 解锁条件
         ctx.fillStyle = '#aaaaaa';
         ctx.font = '10px Arial';
         ctx.fillText('完成成就解锁', x + width / 2, y + height - 15);
     }
-    
+
     /**
      * 渲染详情面板
      * @param {CanvasRenderingContext2D} ctx - 绘图上下文
@@ -829,59 +851,59 @@ class CharacterSelectManager {
     renderDetailPanel(ctx, time) {
         const panelX = GAME_WIDTH - this.detailPanelWidth - 20;
         const panelY = (GAME_HEIGHT - this.detailPanelHeight) / 2;
-        
+
         const character = this.characters[this.selectedIndex];
-        
+
         // 面板背景
         ctx.fillStyle = 'rgba(20, 20, 50, 0.95)';
         ctx.fillRect(panelX, panelY, this.detailPanelWidth, this.detailPanelHeight);
-        
+
         // 面板边框
         ctx.strokeStyle = '#6666ff';
         ctx.lineWidth = 2;
         ctx.strokeRect(panelX, panelY, this.detailPanelWidth, this.detailPanelHeight);
-        
+
         // 角色图标（带动画）
         const iconX = panelX + this.detailPanelWidth / 2;
         const iconY = panelY + 50;
         this.renderCharacterPreview(ctx, character, iconX, iconY, 50, time);
-        
+
         // 角色名称
         ctx.font = 'bold 22px Arial';
         ctx.textAlign = 'center';
         ctx.fillStyle = '#ffffff';
         ctx.fillText(character.name, iconX, panelY + 110);
-        
+
         // 角色分类
         ctx.font = '14px Arial';
         ctx.fillStyle = character.color;
         ctx.fillText(character.category + '系', iconX, panelY + 130);
-        
+
         // 描述
         ctx.font = '13px Arial';
         ctx.fillStyle = '#aaaaaa';
         ctx.fillText(character.description, iconX, panelY + 155);
-        
+
         // 分隔线
         ctx.strokeStyle = '#444466';
         ctx.beginPath();
         ctx.moveTo(panelX + 20, panelY + 175);
         ctx.lineTo(panelX + this.detailPanelWidth - 20, panelY + 175);
         ctx.stroke();
-        
+
         // 详细统计
         this.renderCharacterStats(ctx, character, panelX + 20, panelY + 195);
-        
+
         // 分隔线
         ctx.beginPath();
         ctx.moveTo(panelX + 20, panelY + 240);
         ctx.lineTo(panelX + this.detailPanelWidth - 20, panelY + 240);
         ctx.stroke();
-        
+
         // 技能列表
         this.renderSkills(ctx, character, panelX + 20, panelY + 255, time);
     }
-    
+
     /**
      * 渲染角色3D预览效果（简化版）
      * @param {CanvasRenderingContext2D} ctx - 绘图上下文
@@ -899,27 +921,27 @@ class CharacterSelectManager {
         ctx.beginPath();
         ctx.arc(x, y, size, 0, Math.PI * 2);
         ctx.fill();
-        
+
         if (character.bodyShape) {
             ctx.save();
             ctx.translate(x, y);
-            
+
             const breathScale = 1 + Math.sin(time / 500) * 0.05;
             ctx.scale(1, breathScale);
-            
+
             const floatOffset = Math.sin(time / 800) * 3;
             ctx.translate(0, floatOffset);
-            
+
             const drawSize = size * 2;
             const bodyColor = character.color;
             const accentColor = character.color;
-            
+
             drawCharacterDecor(ctx, character.bodyShape.decor, accentColor, 0, -drawSize * 0.3, drawSize);
             drawCharacterBody(ctx, character.bodyShape.build, bodyColor, 0, 0, drawSize);
             drawCharacterPattern(ctx, character.bodyShape.pattern, accentColor, 0, 0, drawSize);
             drawCharacterHead(ctx, character.bodyShape.head, bodyColor, 0, -drawSize * 0.7, drawSize);
             drawCharacterWeapon(ctx, character.bodyShape.weapon, accentColor, drawSize * 0.4, 0, drawSize, Math.PI / 4);
-            
+
             ctx.restore();
         } else {
             ctx.font = `${size}px serif`;
@@ -927,14 +949,14 @@ class CharacterSelectManager {
             ctx.textBaseline = 'middle';
             ctx.fillText(character.icon, x, y);
         }
-        
+
         if (character.category === '法师') {
             this.renderMagicParticles(ctx, x, y, time);
         } else if (character.category === '战士') {
             this.renderWarriorParticles(ctx, x, y, time);
         }
     }
-    
+
     /**
      * 渲染角色统计
      * @param {CanvasRenderingContext2D} ctx - 绘图上下文
@@ -944,20 +966,20 @@ class CharacterSelectManager {
      */
     renderCharacterStats(ctx, character, x, y) {
         ctx.textAlign = 'left';
-        
+
         const stats = [
             { label: '生存能力', value: character.stats.survivability, color: '#66ff66' },
             { label: '攻击能力', value: character.stats.offensive, color: '#ff6666' },
             { label: '技能强度', value: character.stats.skillPower, color: '#6666ff' }
         ];
-        
+
         stats.forEach((stat, index) => {
             const statY = y + index * 18;
-            
+
             ctx.fillStyle = '#888888';
             ctx.font = '12px Arial';
             ctx.fillText(stat.label + ':', x, statY);
-            
+
             // 星级
             ctx.font = '12px Arial';
             ctx.fillStyle = stat.color;
@@ -965,7 +987,7 @@ class CharacterSelectManager {
             ctx.fillText(stars, x + 80, statY);
         });
     }
-    
+
     /**
      * 渲染技能详细说明
      * @param {CanvasRenderingContext2D} ctx - 绘图上下文
@@ -977,28 +999,28 @@ class CharacterSelectManager {
     renderSkills(ctx, character, x, y, time) {
         character.skills.forEach((skill, index) => {
             const skillY = y + index * 70;
-            
+
             // 技能图标
             ctx.font = '24px Arial';
             ctx.textAlign = 'center';
             ctx.fillText(this.getSkillIcon(skill), x + 20, skillY + 25);
-            
+
             // 技能名称
             ctx.fillStyle = '#66ccff';
             ctx.font = 'bold 14px Arial';
             ctx.textAlign = 'left';
             ctx.fillText(skill.name, x + 45, skillY + 20);
-            
+
             // 冷却时间
             ctx.fillStyle = '#ff6666';
             ctx.font = '11px Arial';
             ctx.fillText(`冷却: ${skill.cooldown / 1000}秒`, x + 45, skillY + 36);
-            
+
             // 技能描述
             ctx.fillStyle = '#aaaaaa';
             ctx.font = '12px Arial';
             this.wrapText(ctx, skill.description, x + 45, skillY + 52, 230, 15);
-            
+
             // 按键提示
             ctx.fillStyle = '#ffffff';
             ctx.font = 'bold 12px Arial';
@@ -1006,7 +1028,7 @@ class CharacterSelectManager {
             ctx.fillText(`[${keyText}]`, x + 230, skillY + 20);
         });
     }
-    
+
     /**
      * 获取技能图标
      * @param {Object} skill - 技能数据
@@ -1014,21 +1036,21 @@ class CharacterSelectManager {
      */
     getSkillIcon(skill) {
         const icons = {
-            '冲刺': '💨',
-            '闪电链': '⚡',
-            '地雷': '💣',
-            '护盾': '🛡️',
-            '治疗': '💚',
-            '炮台': '🔫',
-            '火球': '🔥',
-            '冰霜': '❄️',
-            '影遁': '🌑',
-            '龙息': '🔥',
-            '龙鳞': '🛡️'
+            冲刺: '💨',
+            闪电链: '⚡',
+            地雷: '💣',
+            护盾: '🛡️',
+            治疗: '💚',
+            炮台: '🔫',
+            火球: '🔥',
+            冰霜: '❄️',
+            影遁: '🌑',
+            龙息: '🔥',
+            龙鳞: '🛡️'
         };
         return icons[skill.name] || '✨';
     }
-    
+
     /**
      * 文字换行
      * @param {CanvasRenderingContext2D} ctx - 绘图上下文
@@ -1042,11 +1064,11 @@ class CharacterSelectManager {
         const words = text.split('');
         let line = '';
         let testLine = '';
-        
+
         for (let i = 0; i < words.length; i++) {
             testLine += words[i];
             const metrics = ctx.measureText(testLine);
-            
+
             if (metrics.width > maxWidth && i > 0) {
                 ctx.fillText(line, x, y);
                 line = words[i];
@@ -1058,39 +1080,39 @@ class CharacterSelectManager {
         }
         ctx.fillText(line, x, y);
     }
-    
+
     /**
      * 渲染分类标题
      * @param {CanvasRenderingContext2D} ctx - 绘图上下文
      */
     renderCategoryTitle(ctx) {
         const y = 80;
-        
+
         const colors = {
-            '战士': '#ff6666',
-            '刺客': '#66ff66',
-            '法师': '#6666ff',
-            '辅助': '#ffff66',
-            '猎人': '#66ffff',
-            '机械': '#ff66ff',
-            '召唤': '#ff9966',
-            '特殊': '#ffffff'
+            战士: '#ff6666',
+            刺客: '#66ff66',
+            法师: '#6666ff',
+            辅助: '#ffff66',
+            猎人: '#66ffff',
+            机械: '#ff66ff',
+            召唤: '#ff9966',
+            特殊: '#ffffff'
         };
-        
+
         // 分类导航
         const navX = 20;
         const navY = 30;
-        
+
         ctx.font = '12px Arial';
         ctx.textAlign = 'left';
-        
+
         this.categories.forEach((category, index) => {
             const catX = navX + index * 70;
             const isActive = index === this.currentCategory;
-            
-            ctx.fillStyle = isActive ? (colors[category] || '#ffffff') : '#666666';
+
+            ctx.fillStyle = isActive ? colors[category] || '#ffffff' : '#666666';
             ctx.fillText(category, catX, navY);
-            
+
             if (isActive) {
                 ctx.strokeStyle = colors[category] || '#ffffff';
                 ctx.lineWidth = 2;
@@ -1101,32 +1123,28 @@ class CharacterSelectManager {
             }
         });
     }
-    
+
     /**
      * 渲染操作提示
      * @param {CanvasRenderingContext2D} ctx - 绘图上下文
      */
     renderControlsHint(ctx) {
         const y = GAME_HEIGHT - 30;
-        
+
         ctx.fillStyle = '#666666';
         ctx.font = '12px Arial';
         ctx.textAlign = 'center';
-        
-        ctx.fillText(
-            '↑↓←→ / WASD: 选择角色    Enter / 空格: 开始游戏    ESC: 返回主菜单',
-            GAME_WIDTH / 2,
-            y
-        );
+
+        ctx.fillText('↑↓←→ / WASD: 选择角色    Enter / 空格: 开始游戏    ESC: 返回主菜单', GAME_WIDTH / 2, y);
     }
-    
+
     /**
      * 处理键盘导航
      * @param {string} key - 按键
      */
     handleKeyNavigation(key) {
         const columnCount = this.getColumnCount();
-        
+
         switch (key) {
             case 'ArrowUp':
             case 'KeyW':
@@ -1150,7 +1168,7 @@ class CharacterSelectManager {
                 break;
         }
     }
-    
+
     /**
      * 确认选择
      */
@@ -1164,7 +1182,7 @@ class CharacterSelectManager {
             }
         }
     }
-    
+
     /**
      * 获取当前选中的角色
      * @returns {Object} 当前角色
@@ -1172,7 +1190,7 @@ class CharacterSelectManager {
     getSelectedCharacter() {
         return this.characters[this.selectedIndex];
     }
-    
+
     /**
      * 设置鼠标位置
      * @param {number} x - X坐标
@@ -1182,7 +1200,7 @@ class CharacterSelectManager {
         this.mouseX = x;
         this.mouseY = y;
     }
-    
+
     /**
      * 处理鼠标点击
      * @param {number} x - X坐标

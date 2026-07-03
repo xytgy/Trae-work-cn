@@ -46,7 +46,9 @@ class RoomManager {
                 break;
         }
 
-        console.log(`房间 ${level} 初始化完成 - 类型: ${gl.currentRoom.getRoomTypeName()}, 敌人数量: ${gl.enemies.length}, Boss: ${!!gl.boss}`);
+        console.log(
+            `房间 ${level} 初始化完成 - 类型: ${gl.currentRoom.getRoomTypeName()}, 敌人数量: ${gl.enemies.length}, Boss: ${!!gl.boss}`
+        );
     }
 
     /**
@@ -280,7 +282,9 @@ class RoomManager {
      * @param {number} aiLevel - AI等级
      */
     applyDifficultyToEnemy(enemy, healthMult, damageMult, speedMult, aiLevel) {
-        if (!enemy) return;
+        if (!enemy) {
+            return;
+        }
 
         enemy.maxHealth = Math.ceil(enemy.maxHealth * healthMult);
         enemy.health = enemy.maxHealth;
@@ -299,7 +303,9 @@ class RoomManager {
      */
     checkRoomClear() {
         const gl = this.gameLogic;
-        if (!gl.currentRoom) return;
+        if (!gl.currentRoom) {
+            return;
+        }
 
         const roomCompleted = gl.currentRoom.checkRoomCompleted(gl);
 

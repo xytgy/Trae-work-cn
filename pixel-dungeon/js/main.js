@@ -8,98 +8,121 @@ class Game {
     constructor(eventBus) {
         // 游戏是否正在运行
         this.running = false;
-        
+
         // 菜单循环是否运行
         this.menuLoopRunning = false;
-        
+
         // 上一帧时间戳
         this.lastTime = 0;
-        
+
         // 帧时间统计
         this.frameTime = 0;
-        
+
         // 动画帧ID
         this.animationFrameId = null;
-        
+
         // 菜单动画帧ID
         this.menuAnimationFrameId = null;
-        
+
         // 游戏组件引用
         this.gameLogic = null;
-        
+
         // 事件总线
         this.eventBus = eventBus;
-        
+
         // 崩溃界面状态
         this._crashScreenActive = false;
         this._crashError = null;
         this._crashRetryBtn = null;
         this._crashMenuBtn = null;
     }
-    
+
     /**
      * 初始化游戏
      */
     init() {
         console.log('正在初始化游戏...');
-        
-        // 初始化渲染器
+
+        // 初始化渲染器（必须最先初始化）
         if (!renderer.init('game-canvas')) {
             console.error('渲染器初始化失败');
             return false;
         }
-        
-        // 初始化存档管理器
-        if (typeof SaveManager !== 'undefined') {
-            window.saveManager = new SaveManager();
-            saveManager.init();
-        }
-        
-        // 初始化设置管理器
-        if (typeof SettingsManager !== 'undefined') {
-            window.settingsManager = new SettingsManager();
-            settingsManager.init();
-        }
-        
-        // 初始化排行榜管理器
-        if (typeof LeaderboardManager !== 'undefined') {
-            window.leaderboardManager = new LeaderboardManager();
-            leaderboardManager.init();
-        }
-        
-        // 初始化音效管理器
-        if (typeof SoundManager !== 'undefined') {
-            window.soundManager = new SoundManager();
-        }
-        
-        // 初始化新手引导管理器
-        if (typeof TutorialManager !== 'undefined') {
-            window.tutorialManager = new TutorialManager();
-            tutorialManager.init();
-        }
-        
-        // 初始化音频系统
-        audioManager.init();
-        
-        // 设置输入管理器
-        inputManager.setCanvas(renderer.getCanvas());
-        
-        // 初始化游戏逻辑
-        this.gameLogic = new GameLogic({ eventBus: this.eventBus });
-        this.gameLogic.init();
-        
-        // 初始化UI设置界面
-        if (uiManager && typeof uiManager.initSettingsUI === 'function') {
-            uiManager.initSettingsUI();
-        }
-        
-        // 绑定UI事件
-        this.bindUIEvents();
-        
+
+        // 初始化后开始显示加载进度
+        this.showLoadingScreen();
+        this.loadingProgress = 0;
+        this.loadingSteps = 9;
+        this.currentStep = 0;
+
+        this.updateLoadingProgress('初始化存档系统', () => {
+            if (typeof SaveManager !== 'undefined') {
+                window.saveManager = new SaveManager();
+                saveManager.init();
+            }
+            return true;
+        });
+
+        this.updateLoadingProgress('初始化设置系统', () => {
+            if (typeof SettingsManager !== 'undefined') {
+                window.settingsManager = new SettingsManager();
+                settingsManager.init();
+            }
+            return true;
+        });
+
+        this.updateLoadingProgress('初始化排行榜', () => {
+            if (typeof LeaderboardManager !== 'undefined') {
+                window.leaderboardManager = new LeaderboardManager();
+                leaderboardManager.init();
+            }
+            return true;
+        });
+
+        this.updateLoadingProgress('初始化音效管理器', () => {
+            if (typeof SoundManager !== 'undefined') {
+                window.soundManager = new SoundManager();
+            }
+            return true;
+        });
+
+        this.updateLoadingProgress('初始化新手引导', () => {
+            if (typeof TutorialManager !== 'undefined') {
+                window.tutorialManager = new TutorialManager();
+                tutorialManager.init();
+            }
+            return true;
+        });
+
+        this.updateLoadingProgress('初始化音频系统', () => {
+            audioManager.init();
+            return true;
+        });
+
+        this.updateLoadingProgress('初始化输入系统', () => {
+            inputManager.setCanvas(renderer.getCanvas());
+            return true;
+        });
+
+        this.updateLoadingProgress('初始化游戏逻辑', () => {
+            this.gameLogic = new GameLogic({ eventBus: this.eventBus });
+            this.gameLogic.init();
+            return true;
+        });
+
+        this.updateLoadingProgress('初始化UI界面', () => {
+            if (uiManager && typeof uiManager.initSettingsUI === 'function') {
+                uiManager.initSettingsUI();
+            }
+            this.bindUIEvents();
+            return true;
+        });
+
+        this.hideLoadingScreen();
         console.log('游戏初始化完成');
         return true;
     }
-    
+
     /**
      * 绑定UI事件
      */
@@ -129,8 +152,8 @@ class Game {
             document.removeEventListener('keydown', this._handleKeyDown);
         }
         this._handleKeyDown = (e) => {
-            if (!gameState.isState(GAME_STATE.PLAYING)) return;
-            if (!this.gameLogic) return;
+            if (!gameState.isState(GAME_STATE.PLAYING)) {return;}
+            if (!this.gameLogic) {return;}
 
             if (e.code === 'KeyI') {
                 this.gameLogic.toggleInventory();
@@ -181,7 +204,7 @@ class Game {
         };
         document.addEventListener('keydown', this._handleKeyDown);
     }
-    
+
     /**
      * 处理Canvas点击事件
      * @param {MouseEvent} e - 鼠标事件
@@ -193,19 +216,19 @@ class Game {
         const scaleY = GAME_HEIGHT / rect.height;
         const x = (e.clientX - rect.left) * scaleX;
         const y = (e.clientY - rect.top) * scaleY;
-        
+
         // 如果崩溃界面激活，拦截所有点击
         if (this._crashScreenActive) {
             this.handleCrashClick(x, y);
             return;
         }
-        
+
         // 初始化音效（首次用户交互时）
         if (typeof soundManager !== 'undefined' && !soundManager.initialized) {
             soundManager.init();
             soundManager.playMusic('menu');
         }
-        
+
         // 处理设置界面点击
         if (gameState.isState(GAME_STATE.SETTINGS)) {
             const result = uiManager.handleSettingsClick(x, y);
@@ -214,7 +237,7 @@ class Game {
             }
             return;
         }
-        
+
         // 处理排行榜界面点击
         if (gameState.isState(GAME_STATE.LEADERBOARD)) {
             const result = uiManager.handleLeaderboardClick(x, y);
@@ -223,7 +246,7 @@ class Game {
             }
             return;
         }
-        
+
         // 处理成就界面点击
         if (gameState.isState(GAME_STATE.ACHIEVEMENTS)) {
             const result = uiManager.handleAchievementsClick(x, y);
@@ -232,7 +255,7 @@ class Game {
             }
             return;
         }
-        
+
         // 处理帮助界面点击
         if (gameState.isState(GAME_STATE.HELP)) {
             const result = uiManager.handleHelpClick(x, y);
@@ -241,10 +264,10 @@ class Game {
             }
             return;
         }
-        
+
         // 检查UI按钮点击
         const action = uiManager.handleClick(x, y);
-        
+
         if (action) {
             switch (action) {
                 case 'start':
@@ -303,58 +326,58 @@ class Game {
             return;
         }
     }
-    
+
     /**
      * 进入角色选择界面
      */
     goToCharacterSelect() {
         console.log('进入角色选择界面');
-        
+
         // 重置角色选择管理器动画
         characterSelectManager.introAnimationProgress = 0;
         characterSelectManager.isIntroComplete = false;
-        
+
         // 设置游戏状态为角色选择
         gameState.startCharacterSelect();
-        
+
         // 更新UI
         this.updateUI(GAME_STATE.CHARACTER_SELECT);
     }
-    
+
     /**
      * 开始游戏（使用选中的角色）
      */
     startGameWithCharacter() {
         // 获取选中的角色
         const character = characterSelectManager.getSelectedCharacter();
-        
+
         if (character) {
             console.log(`选择角色: ${character.name}，进入难度选择`);
-            
+
             // 设置选中的角色到游戏状态
             gameState.setSelectedCharacter(character);
-            
+
             // 进入难度选择界面
             this.goToDifficultySelect();
         }
     }
-    
+
     /**
      * 进入难度选择界面
      */
     goToDifficultySelect() {
         console.log('进入难度选择界面');
-        
+
         // 重置难度选择动画
         uiManager.resetDifficultySelectAnimation();
-        
+
         // 设置游戏状态为难度选择
         gameState.startDifficultySelect();
-        
+
         // 更新UI
         this.updateUI(GAME_STATE.DIFFICULTY_SELECT);
     }
-    
+
     startGameWithDifficulty() {
         console.log('确认难度，开始游戏');
 
@@ -372,24 +395,24 @@ class Game {
         this.lastTime = performance.now();
         this.gameLoop(this.lastTime);
     }
-    
+
     /**
      * 从难度选择返回角色选择
      */
     returnToCharacterSelectFromDifficulty() {
         console.log('返回角色选择');
-        
+
         // 重置角色选择动画
         characterSelectManager.introAnimationProgress = 0;
         characterSelectManager.isIntroComplete = false;
-        
+
         // 设置游戏状态为角色选择
         gameState.setState(GAME_STATE.CHARACTER_SELECT);
-        
+
         // 更新UI
         this.updateUI(GAME_STATE.CHARACTER_SELECT);
     }
-    
+
     /**
      * 状态变化处理
      * @param {string} oldState - 原状态
@@ -399,40 +422,40 @@ class Game {
         // 显示/隐藏对应的UI界面
         this.updateUI(newState);
     }
-    
+
     /**
      * 更新UI显示
      * @param {string} state - 当前游戏状态
      */
     updateUI(state) {
         // 隐藏所有HTML屏幕元素（新版使用Canvas绘制）
-        document.querySelectorAll('.screen').forEach(screen => {
+        document.querySelectorAll('.screen').forEach((screen) => {
             screen.classList.add('hidden');
         });
-        
+
         // 根据状态更新HTML屏幕（仅用于兼容备用，实际由Canvas渲染）
         // Canvas UI在uiManager.render()中统一处理
         switch (state) {
             case GAME_STATE.MENU:
                 // Canvas会渲染菜单画面
                 break;
-                
+
             case GAME_STATE.CHARACTER_SELECT:
                 // Canvas会渲染角色选择画面
                 break;
-                
+
             case GAME_STATE.DIFFICULTY_SELECT:
                 // Canvas会渲染难度选择画面
                 break;
-                
+
             case GAME_STATE.PLAYING:
                 // 游戏界面由Canvas渲染HUD
                 break;
-                
+
             case GAME_STATE.PAUSED:
                 // Canvas会渲染暂停画面
                 break;
-                
+
             case GAME_STATE.GAME_OVER:
                 // Canvas会渲染死亡画面
                 // 同时更新HTML统计数据（备用）
@@ -441,7 +464,7 @@ class Game {
                 document.getElementById('final-kills').textContent = gameData.killCount;
                 document.getElementById('final-score').textContent = gameData.finalScore;
                 break;
-                
+
             case GAME_STATE.VICTORY:
                 // Canvas会渲染通关画面
                 // 同时更新HTML统计数据（备用）
@@ -453,275 +476,275 @@ class Game {
                 break;
         }
     }
-    
+
     /**
      * 开始新游戏
      */
     start() {
-        if (this.running) return;
-        
+        if (this.running) {return;}
+
         console.log('进入角色选择');
-        
+
         // 停止菜单循环
         this.stopMenuLoop();
-        
+
         // 进入角色选择状态
         gameState.startCharacterSelect();
-        
+
         // 启动菜单动画循环（用于渲染角色选择界面）
         this.startMenuLoop();
     }
-    
+
     /**
      * 暂停游戏
      */
     pause() {
-        if (!this.running) return;
-        
+        if (!this.running) {return;}
+
         console.log('暂停游戏');
         gameState.pauseGame();
     }
-    
+
     /**
      * 继续游戏
      */
     resume() {
-        if (!this.running) return;
-        
+        if (!this.running) {return;}
+
         console.log('继续游戏');
         gameState.resumeGame();
-        
+
         // 继续游戏循环
         this.lastTime = performance.now();
         this.gameLoop(this.lastTime);
     }
-    
+
     /**
      * 重新开始游戏
      */
     restart() {
         console.log('重新开始游戏');
-        
+
         // 停止当前游戏循环
         this.running = false;
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
             this.animationFrameId = null;
         }
-        
+
         // 停止菜单循环
         this.stopMenuLoop();
-        
+
         // 清理游戏逻辑
         if (this.gameLogic) {
             this.gameLogic.cleanup();
         }
-        
+
         // 清理全局粒子系统
         if (particleSystem && typeof particleSystem.clear === 'function') {
             particleSystem.clear();
         }
-        
+
         // 重新初始化游戏逻辑
         this.gameLogic.init();
-        
+
         // 重新绑定UI事件
         this.bindUIEvents();
-        
+
         // 开始新游戏
         this.start();
     }
-    
+
     /**
      * 返回主菜单
      */
     returnToMenu() {
         console.log('返回主菜单');
-        
+
         // 停止游戏循环
         this.running = false;
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
             this.animationFrameId = null;
         }
-        
+
         // 停止菜单循环
         this.stopMenuLoop();
-        
+
         // 清理游戏逻辑
         if (this.gameLogic) {
             this.gameLogic.cleanup();
         }
-        
+
         // 重置游戏状态
         gameState.returnToMenu();
-        
+
         // 更新UI
         this.updateUI(GAME_STATE.MENU);
-        
+
         // 播放菜单音乐
         if (typeof soundManager !== 'undefined' && soundManager.initialized) {
             soundManager.playMusic('menu');
         }
-        
+
         // 启动菜单动画循环
         this.startMenuLoop();
     }
-    
+
     /**
      * 打开设置界面
      */
     openSettings() {
         console.log('打开设置');
-        
+
         // 记录上一个状态
         this.previousState = gameState.getState();
-        
+
         // 切换到设置状态
         gameState.setState(GAME_STATE.SETTINGS);
-        
+
         // 播放按钮音效
         if (typeof soundManager !== 'undefined' && soundManager.initialized) {
             soundManager.play(SOUND_EFFECTS.CLICK);
         }
     }
-    
+
     /**
      * 从设置界面返回
      */
     returnFromSettings() {
         console.log('从设置返回');
-        
+
         // 保存设置
         if (typeof settingsManager !== 'undefined') {
             settingsManager.saveSettings();
         }
-        
+
         // 返回上一个状态
         if (this.previousState) {
             gameState.setState(this.previousState);
         } else {
             gameState.setState(GAME_STATE.MENU);
         }
-        
+
         // 播放按钮音效
         if (typeof soundManager !== 'undefined' && soundManager.initialized) {
             soundManager.play(SOUND_EFFECTS.CLICK);
         }
     }
-    
+
     /**
      * 打开排行榜界面
      */
     openLeaderboard() {
         console.log('打开排行榜');
-        
+
         this.previousState = gameState.getState();
         gameState.setState(GAME_STATE.LEADERBOARD);
-        
+
         if (typeof soundManager !== 'undefined' && soundManager.initialized) {
             soundManager.play(SOUND_EFFECTS.CLICK);
         }
     }
-    
+
     /**
      * 从排行榜返回
      */
     returnFromLeaderboard() {
         console.log('从排行榜返回');
-        
+
         if (this.previousState) {
             gameState.setState(this.previousState);
         } else {
             gameState.setState(GAME_STATE.MENU);
         }
-        
+
         if (typeof soundManager !== 'undefined' && soundManager.initialized) {
             soundManager.play(SOUND_EFFECTS.CLICK);
         }
     }
-    
+
     /**
      * 打开成就界面
      */
     openAchievements() {
         console.log('打开成就');
-        
+
         this.previousState = gameState.getState();
         gameState.setState(GAME_STATE.ACHIEVEMENTS);
-        
+
         if (typeof soundManager !== 'undefined' && soundManager.initialized) {
             soundManager.play(SOUND_EFFECTS.CLICK);
         }
     }
-    
+
     /**
      * 从成就返回
      */
     returnFromAchievements() {
         console.log('从成就返回');
-        
+
         if (this.previousState) {
             gameState.setState(this.previousState);
         } else {
             gameState.setState(GAME_STATE.MENU);
         }
-        
+
         if (typeof soundManager !== 'undefined' && soundManager.initialized) {
             soundManager.play(SOUND_EFFECTS.CLICK);
         }
     }
-    
+
     /**
      * 打开帮助界面
      */
     openHelp() {
         console.log('打开帮助');
-        
+
         this.previousState = gameState.getState();
         gameState.setState(GAME_STATE.HELP);
-        
+
         if (typeof soundManager !== 'undefined' && soundManager.initialized) {
             soundManager.play(SOUND_EFFECTS.CLICK);
         }
     }
-    
+
     /**
      * 从帮助返回
      */
     returnFromHelp() {
         console.log('从帮助返回');
-        
+
         if (this.previousState) {
             gameState.setState(this.previousState);
         } else {
             gameState.setState(GAME_STATE.MENU);
         }
-        
+
         if (typeof soundManager !== 'undefined' && soundManager.initialized) {
             soundManager.play(SOUND_EFFECTS.CLICK);
         }
     }
-    
+
     /**
      * 开始新手引导
      */
     startTutorial() {
         console.log('开始新手引导');
-        
+
         // 停止菜单循环
         this.stopMenuLoop();
-        
+
         // 开始游戏
         this.running = true;
         this.lastTime = performance.now();
         gameState.confirmDifficultyAndStart();
-        
+
         // 启动新手引导
         if (typeof tutorialManager !== 'undefined') {
             tutorialManager.startTutorial(this.gameLogic);
         }
-        
+
         // 启动游戏循环
         this.gameLoop(this.lastTime);
     }
@@ -745,7 +768,7 @@ class Game {
             this.gameLogic.state.getData().currentLevel++;
             this.gameLogic.initRoom();
         }
-        
+
         this.gameLogic.portal = null;
         this.gameLogic.allEnemiesCleared = false;
 
@@ -780,13 +803,13 @@ class Game {
      * 启动菜单动画循环
      */
     startMenuLoop() {
-        if (this.menuLoopRunning) return;
-        
+        if (this.menuLoopRunning) {return;}
+
         this.menuLoopRunning = true;
         this.lastTime = performance.now();
         this.menuLoop(this.lastTime);
     }
-    
+
     /**
      * 停止菜单动画循环
      */
@@ -797,24 +820,24 @@ class Game {
             this.menuAnimationFrameId = null;
         }
     }
-    
+
     /**
      * 菜单动画循环（仅渲染UI和菜单动画）
      * @param {number} currentTime - 当前时间戳
      */
     menuLoop(currentTime) {
-        if (!this.menuLoopRunning) return;
-        
+        if (!this.menuLoopRunning) {return;}
+
         // 计算delta time
         const deltaTime = currentTime - this.lastTime;
         this.lastTime = currentTime;
-        
+
         // 更新帧率统计
         renderer.updateFps(currentTime);
-        
+
         // 限制delta time
         const clampedDelta = Math.min(deltaTime, DELTA_TIME_MAX);
-        
+
         // 渲染游戏背景和UI
         try {
             if (this.gameLogic) {
@@ -825,46 +848,46 @@ class Game {
         } catch (error) {
             console.error('[MENU LOOP ERROR]', error);
         }
-        
+
         // 继续下一帧
         this.menuAnimationFrameId = requestAnimationFrame(this.menuLoop.bind(this));
     }
-    
+
     /**
      * 游戏主循环
      * @param {number} currentTime - 当前时间戳
      */
     gameLoop(currentTime) {
-        if (!this.running) return;
-        
+        if (!this.running) {return;}
+
         // 计算delta time
         const deltaTime = currentTime - this.lastTime;
         this.lastTime = currentTime;
-        
+
         // 更新帧率统计
         renderer.updateFps(currentTime);
-        
+
         // 限制delta time（防止卡顿后出现意外）
         const clampedDelta = Math.min(deltaTime, DELTA_TIME_MAX);
-        
+
         // 如果游戏正在运行且未暂停，更新游戏逻辑
         if (gameState.isPlaying()) {
             try {
                 this.gameLogic.update(clampedDelta);
-                
+
                 // 更新全局粒子系统
                 if (particleSystem) {
                     particleSystem.update(clampedDelta);
                 }
-                
+
                 // 更新新手引导
                 if (typeof tutorialManager !== 'undefined' && tutorialManager.active) {
                     tutorialManager.update(clampedDelta);
                 }
-                
+
                 // 检查传送门碰撞
                 this.checkPortalCollision();
-                
+
                 // 检查游戏结束
                 this.checkGameEnd();
             } catch (error) {
@@ -872,35 +895,35 @@ class Game {
                 this.handleGameError(error);
             }
         }
-        
+
         // 渲染游戏画面
         try {
             this.gameLogic.render();
-            
+
             // 渲染全局粒子系统效果（在游戏元素之上，UI之下）
             if (particleSystem && gameState.isPlaying()) {
                 particleSystem.render(renderer.ctx);
             }
-            
+
             // 更新并渲染UI（使用Canvas绘制）
             uiManager.update(clampedDelta);
             uiManager.render();
         } catch (error) {
             console.error('[RENDER ERROR]', error);
         }
-        
+
         // 继续下一帧
         this.animationFrameId = requestAnimationFrame(this.gameLoop.bind(this));
     }
-    
+
     /**
      * 检查门碰撞（DungeonLevel驱动的房间切换）
      */
     checkPortalCollision() {
-        this.gameLogic.checkDoorCollision();
+        this.gameLogic.checkPlayerArea();
         this.gameLogic.checkPortalCollision();
     }
-    
+
     /**
      * 处理游戏运行时错误
      * @param {Error} error - 错误对象
@@ -908,7 +931,7 @@ class Game {
     handleGameError(error) {
         console.error('[GAME ERROR] 游戏运行时发生错误:', error);
         console.error('错误堆栈:', error.stack);
-        
+
         if (gameState.isState(GAME_STATE.PLAYING)) {
             if (confirm('游戏运行时出现错误，是否继续游戏？')) {
                 return;
@@ -917,14 +940,14 @@ class Game {
             }
         }
     }
-    
+
     /**
      * 处理未捕获的全局错误
      * @param {Error} error - 错误对象
      */
     handleError(error) {
         console.error('[GLOBAL ERROR]', error);
-        
+
         // 停止游戏循环
         this.running = false;
         this.menuLoopRunning = false;
@@ -936,44 +959,44 @@ class Game {
             cancelAnimationFrame(this.menuAnimationFrameId);
             this.menuAnimationFrameId = null;
         }
-        
+
         // 保存错误信息用于渲染
         this._crashError = error;
         this._crashScreenActive = true;
-        
+
         // 渲染崩溃界面
         this.renderCrashScreen();
     }
-    
+
     /**
      * 渲染崩溃界面到Canvas
      */
     renderCrashScreen() {
         const canvas = renderer.getCanvas();
-        if (!canvas) return;
+        if (!canvas) {return;}
         const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        
+        if (!ctx) {return;}
+
         const w = canvas.width;
         const h = canvas.height;
-        
+
         // 半透明黑色遮罩
         ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
         ctx.fillRect(0, 0, w, h);
-        
+
         // 标题
         ctx.fillStyle = '#e94560';
         ctx.font = 'bold 36px "Courier New", monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('游戏遇到问题', w / 2, h / 2 - 100);
-        
+
         // 错误信息
         ctx.fillStyle = '#888888';
         ctx.font = '14px "Courier New", monospace';
-        const errorMsg = this._crashError ? (this._crashError.message || '未知错误') : '未知错误';
+        const errorMsg = this._crashError ? this._crashError.message || '未知错误' : '未知错误';
         ctx.fillText(errorMsg.substring(0, 60), w / 2, h / 2 - 50);
-        
+
         // "重试" 按钮
         this._crashRetryBtn = { x: w / 2 - 100, y: h / 2, w: 200, h: 50 };
         ctx.fillStyle = '#0f3460';
@@ -984,7 +1007,7 @@ class Game {
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 18px "Courier New", monospace';
         ctx.fillText('重试', w / 2, h / 2 + 25);
-        
+
         // "返回主菜单" 按钮
         this._crashMenuBtn = { x: w / 2 - 100, y: h / 2 + 70, w: 200, h: 50 };
         ctx.fillStyle = '#0f3460';
@@ -996,7 +1019,136 @@ class Game {
         ctx.font = 'bold 18px "Courier New", monospace';
         ctx.fillText('返回主菜单', w / 2, h / 2 + 95);
     }
-    
+
+    /**
+     * 显示加载屏幕
+     */
+    showLoadingScreen() {
+        const canvas = renderer.getCanvas();
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const w = canvas.width;
+        const h = canvas.height;
+
+        ctx.fillStyle = '#0a0a0f';
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 24px "Courier New", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('加载中...', w / 2, h / 2 - 60);
+
+        ctx.fillStyle = '#444444';
+        ctx.fillRect(w / 2 - 150, h / 2, 300, 20);
+    }
+
+    /**
+     * 更新加载进度
+     * @param {string} message - 当前加载步骤消息
+     * @param {function} callback - 加载回调函数
+     */
+    updateLoadingProgress(message, callback) {
+        try {
+            const result = callback();
+            if (result === false) {
+                return;
+            }
+
+            this.currentStep++;
+            this.loadingProgress = Math.floor((this.currentStep / this.loadingSteps) * 100);
+
+            const canvas = renderer.getCanvas();
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+
+            const w = canvas.width;
+            const h = canvas.height;
+
+            ctx.fillStyle = '#0a0a0f';
+            ctx.fillRect(0, 0, w, h);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 24px "Courier New", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('加载中...', w / 2, h / 2 - 60);
+
+            ctx.fillStyle = '#444444';
+            ctx.fillRect(w / 2 - 150, h / 2, 300, 20);
+
+            ctx.fillStyle = '#00ff88';
+            ctx.fillRect(w / 2 - 150, h / 2, (this.loadingProgress / 100) * 300, 20);
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(w / 2 - 150, h / 2, 300, 20);
+
+            ctx.fillStyle = '#888888';
+            ctx.font = '14px "Courier New", monospace';
+            ctx.fillText(message, w / 2, h / 2 + 40);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '16px "Courier New", monospace';
+            ctx.fillText(`${this.loadingProgress}%`, w / 2, h / 2 + 70);
+        } catch (error) {
+            console.error(`加载失败: ${message}`, error);
+            this.showLoadingError(`加载失败: ${message}`);
+        }
+    }
+
+    /**
+     * 显示加载错误
+     * @param {string} message - 错误消息
+     */
+    showLoadingError(message) {
+        const canvas = renderer.getCanvas();
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const w = canvas.width;
+        const h = canvas.height;
+
+        ctx.fillStyle = '#1a0505';
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.fillStyle = '#ff4444';
+        ctx.font = 'bold 28px "Courier New", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('加载失败', w / 2, h / 2 - 60);
+
+        ctx.fillStyle = '#884444';
+        ctx.font = '14px "Courier New", monospace';
+        ctx.fillText(message, w / 2, h / 2);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 18px "Courier New", monospace';
+        ctx.fillText('点击屏幕重试', w / 2, h / 2 + 60);
+
+        this._loadingError = message;
+        this._loadingErrorActive = true;
+
+        canvas.addEventListener('click', () => {
+            if (this._loadingErrorActive) {
+                this._loadingErrorActive = false;
+                this.restart();
+            }
+        }, { once: true });
+    }
+
+    /**
+     * 隐藏加载屏幕
+     */
+    hideLoadingScreen() {
+        this._loadingError = null;
+        this._loadingErrorActive = false;
+    }
+
     /**
      * 处理崩溃界面的点击
      * @param {number} x - Canvas X坐标
@@ -1004,159 +1156,168 @@ class Game {
      * @returns {boolean} 是否被崩溃界面处理
      */
     handleCrashClick(x, y) {
-        if (!this._crashScreenActive) return false;
-        
+        if (!this._crashScreenActive) {return false;}
+
         // 检查"重试"按钮
-        if (this._crashRetryBtn && 
-            x >= this._crashRetryBtn.x && x <= this._crashRetryBtn.x + this._crashRetryBtn.w &&
-            y >= this._crashRetryBtn.y && y <= this._crashRetryBtn.y + this._crashRetryBtn.h) {
+        if (
+            this._crashRetryBtn &&
+            x >= this._crashRetryBtn.x &&
+            x <= this._crashRetryBtn.x + this._crashRetryBtn.w &&
+            y >= this._crashRetryBtn.y &&
+            y <= this._crashRetryBtn.y + this._crashRetryBtn.h
+        ) {
             this._crashScreenActive = false;
             this._crashError = null;
             this.restart();
             return true;
         }
-        
+
         // 检查"返回主菜单"按钮
-        if (this._crashMenuBtn && 
-            x >= this._crashMenuBtn.x && x <= this._crashMenuBtn.x + this._crashMenuBtn.w &&
-            y >= this._crashMenuBtn.y && y <= this._crashMenuBtn.y + this._crashMenuBtn.h) {
+        if (
+            this._crashMenuBtn &&
+            x >= this._crashMenuBtn.x &&
+            x <= this._crashMenuBtn.x + this._crashMenuBtn.w &&
+            y >= this._crashMenuBtn.y &&
+            y <= this._crashMenuBtn.y + this._crashMenuBtn.h
+        ) {
             this._crashScreenActive = false;
             this._crashError = null;
             this.returnToMenu();
             return true;
         }
-        
+
         return true; // 拦截所有点击，防止穿透
     }
-    
+
     /**
      * 检查游戏是否结束
      */
     checkGameEnd() {
         const gameData = gameState.getData();
-        
+
         // 检查游戏结束状态
         if (gameState.isState(GAME_STATE.GAME_OVER) || gameState.isState(GAME_STATE.VICTORY)) {
             // 游戏已经结束，不再处理
             return;
         }
-        
+
         // 检查玩家是否死亡
         const player = this.gameLogic.player;
         if (player && player.health <= 0) {
             this.handleGameOver();
             return;
         }
-        
+
         // 检查是否通关（击败Boss）- 通过游戏状态或gameLogic.isVictory检测
-        const isGameStateVictory = this.gameLogic.state && this.gameLogic.state.isState && this.gameLogic.state.isState(GAME_STATE.VICTORY);
+        const isGameStateVictory =
+            this.gameLogic.state && this.gameLogic.state.isState && this.gameLogic.state.isState(GAME_STATE.VICTORY);
         if (this.gameLogic.isVictory || isGameStateVictory) {
             this.handleVictory();
         }
     }
-    
+
     /**
      * 处理游戏结束（死亡）
      */
     handleGameOver() {
         console.log('游戏结束');
-        
+
         // 停止游戏
         this.running = false;
-        
+
         // 设置游戏结束状态
         gameState.setGameOver();
-        
+
         // 播放死亡音效
         if (typeof soundManager !== 'undefined' && soundManager.initialized) {
             soundManager.play(SOUND_EFFECTS.DEFEAT);
             soundManager.stopMusic();
         }
-        
+
         // 保存游戏统计数据
         this.saveGameStats(false);
     }
-    
+
     /**
      * 处理胜利（通关）
      */
     handleVictory() {
         console.log('游戏胜利！');
-        
+
         // 停止游戏
         this.running = false;
-        
+
         // 设置胜利状态
         gameState.victory();
-        
+
         // 播放胜利音效
         if (typeof soundManager !== 'undefined' && soundManager.initialized) {
             soundManager.play(SOUND_EFFECTS.VICTORY);
             soundManager.stopMusic();
         }
-        
+
         // 保存游戏统计数据
         this.saveGameStats(true);
-        
+
         // 提交排行榜记录
         this.submitLeaderboardRecords(true);
     }
-    
+
     /**
      * 保存游戏统计数据
      * @param {boolean} victory - 是否胜利
      */
     saveGameStats(victory) {
-        if (typeof saveManager === 'undefined') return;
-        
+        if (typeof saveManager === 'undefined') {return;}
+
         const gameData = gameState.getData();
         const character = gameState.getSelectedCharacter();
-        
+
         // 更新全局统计
         saveManager.addTotalKills(gameData.killCount || 0);
         saveManager.addTotalPlayTime(gameData.survivalTime || 0);
         saveManager.addTotalCoins(gameData.coins || 0);
-        
+
         // 如果胜利，更新通关记录
         if (victory && character) {
             saveManager.unlockCharacter(character.id);
             saveManager.setBestClearTime(gameData.survivalTime);
         }
-        
+
         // 保存
         saveManager.saveGlobalStats();
     }
-    
+
     /**
      * 提交排行榜记录
      * @param {boolean} victory - 是否胜利
      */
     submitLeaderboardRecords(victory) {
-        if (typeof leaderboardManager === 'undefined') return;
-        
+        if (typeof leaderboardManager === 'undefined') {return;}
+
         const gameData = gameState.getData();
         const character = gameState.getSelectedCharacter();
         const characterName = character ? character.name : '未知';
-        
+
         // 提交击杀数
         if (gameData.killCount > 0) {
             leaderboardManager.addKillsRecord(gameData.killCount, characterName);
         }
-        
+
         // 提交金币数
         if (gameData.coins > 0) {
             leaderboardManager.addCoinsRecord(gameData.coins, characterName);
         }
-        
+
         // 如果胜利，提交通关时间
         if (victory && gameData.survivalTime > 0) {
             leaderboardManager.submitSpeedRun(gameData.survivalTime, characterName);
         }
-        
+
         // 保存排行榜
         leaderboardManager.saveLeaderboards();
     }
-    
+
     /**
      * 获取游戏逻辑实例
      */
@@ -1173,24 +1334,24 @@ let eventBus = null;
 // 页面加载完成后初始化游戏
 window.addEventListener('DOMContentLoaded', () => {
     console.log('页面加载完成，正在初始化...');
-    
+
     // 创建事件总线
     eventBus = new EventBus();
-    
+
     // 创建粒子系统
     particleSystem = new ParticleSystem();
-    
+
     // 创建游戏实例
     game = new Game(eventBus);
-    
+
     // 初始化游戏
     if (game.init()) {
         // 显示主菜单
         game.updateUI(GAME_STATE.MENU);
-        
+
         // 启动菜单动画循环
         game.startMenuLoop();
-        
+
         console.log('游戏已就绪');
     } else {
         console.error('游戏初始化失败');
@@ -1207,24 +1368,36 @@ window.addEventListener('beforeunload', () => {
 // 键盘快捷键监听
 window.addEventListener('keydown', (e) => {
     // 如果游戏未初始化，忽略
-    if (!game) return;
-    
+    if (!game) {return;}
+
     // 处理角色选择界面的键盘输入
     if (gameState.isState(GAME_STATE.CHARACTER_SELECT)) {
         characterSelectManager.handleKeyNavigation(e.code);
-        
+
         if (e.code === 'Enter' || e.code === 'Space') {
             game.startGameWithCharacter();
         } else if (e.code === 'Escape') {
             game.returnToMenu();
         }
-        
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'Enter', 'Space', 'Escape'].includes(e.code)) {
+
+        if ([
+                'ArrowUp',
+                'ArrowDown',
+                'ArrowLeft',
+                'ArrowRight',
+                'KeyW',
+                'KeyA',
+                'KeyS',
+                'KeyD',
+                'Enter',
+                'Space',
+                'Escape'
+            ].includes(e.code)) {
             e.preventDefault();
         }
         return;
     }
-    
+
     // 处理设置界面ESC返回
     if (gameState.isState(GAME_STATE.SETTINGS)) {
         if (e.code === 'Escape') {
@@ -1233,7 +1406,7 @@ window.addEventListener('keydown', (e) => {
         }
         return;
     }
-    
+
     // 处理排行榜界面ESC返回
     if (gameState.isState(GAME_STATE.LEADERBOARD)) {
         if (e.code === 'Escape') {
@@ -1242,7 +1415,7 @@ window.addEventListener('keydown', (e) => {
         }
         return;
     }
-    
+
     // 处理成就界面ESC返回
     if (gameState.isState(GAME_STATE.ACHIEVEMENTS)) {
         if (e.code === 'Escape') {
@@ -1251,7 +1424,7 @@ window.addEventListener('keydown', (e) => {
         }
         return;
     }
-    
+
     // 处理帮助界面ESC返回
     if (gameState.isState(GAME_STATE.HELP)) {
         if (e.code === 'Escape') {
@@ -1282,20 +1455,35 @@ window.addEventListener('keydown', (e) => {
             uiManager.selectedDifficultyIndex = Math.max(0, uiManager.selectedDifficultyIndex - 1);
             gameState.setSelectedDifficulty(uiManager.difficultyOptions[uiManager.selectedDifficultyIndex].id);
         } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
-            uiManager.selectedDifficultyIndex = Math.min(uiManager.difficultyOptions.length - 1, uiManager.selectedDifficultyIndex + 1);
+            uiManager.selectedDifficultyIndex = Math.min(
+                uiManager.difficultyOptions.length - 1,
+                uiManager.selectedDifficultyIndex + 1
+            );
             gameState.setSelectedDifficulty(uiManager.difficultyOptions[uiManager.selectedDifficultyIndex].id);
         } else if (e.code === 'Enter' || e.code === 'Space') {
             game.startGameWithDifficulty();
         } else if (e.code === 'Escape') {
             game.returnToCharacterSelectFromDifficulty();
         }
-        
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'Enter', 'Space', 'Escape'].includes(e.code)) {
+
+        if ([
+                'ArrowUp',
+                'ArrowDown',
+                'ArrowLeft',
+                'ArrowRight',
+                'KeyW',
+                'KeyA',
+                'KeyS',
+                'KeyD',
+                'Enter',
+                'Space',
+                'Escape'
+            ].includes(e.code)) {
             e.preventDefault();
         }
         return;
     }
-    
+
     // 某些情况下阻止默认行为
     if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
         // 防止页面滚动
@@ -1306,7 +1494,7 @@ window.addEventListener('keydown', (e) => {
 });
 
 // ==================== 全局错误捕获 ====================
-window.onerror = function(msg, url, line, col, error) {
+window.onerror = function (msg, url, line, col, error) {
     console.error('[WINDOW ONERROR]', { msg, url, line, col, error });
     if (game) {
         game.handleError(error || new Error(msg));

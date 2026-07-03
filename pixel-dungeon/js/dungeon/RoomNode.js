@@ -46,20 +46,33 @@ class RoomNode {
 
     getDoorDirections() {
         const directions = [];
-        if (this.hasDoor(DOOR.TOP)) directions.push('top');
-        if (this.hasDoor(DOOR.BOTTOM)) directions.push('bottom');
-        if (this.hasDoor(DOOR.LEFT)) directions.push('left');
-        if (this.hasDoor(DOOR.RIGHT)) directions.push('right');
+        if (this.hasDoor(DOOR.TOP)) {
+            directions.push('top');
+        }
+        if (this.hasDoor(DOOR.BOTTOM)) {
+            directions.push('bottom');
+        }
+        if (this.hasDoor(DOOR.LEFT)) {
+            directions.push('left');
+        }
+        if (this.hasDoor(DOOR.RIGHT)) {
+            directions.push('right');
+        }
         return directions;
     }
 
     getOppositeDirection(direction) {
         switch (direction) {
-            case DOOR.TOP: return DOOR.BOTTOM;
-            case DOOR.BOTTOM: return DOOR.TOP;
-            case DOOR.LEFT: return DOOR.RIGHT;
-            case DOOR.RIGHT: return DOOR.LEFT;
-            default: return null;
+            case DOOR.TOP:
+                return DOOR.BOTTOM;
+            case DOOR.BOTTOM:
+                return DOOR.TOP;
+            case DOOR.LEFT:
+                return DOOR.RIGHT;
+            case DOOR.RIGHT:
+                return DOOR.LEFT;
+            default:
+                return null;
         }
     }
 

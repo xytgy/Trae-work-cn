@@ -6,27 +6,27 @@
 class WeaponLightning extends Weapon {
     constructor() {
         super(
-            '闪电法杖',       // 名称
-            WEAPONS.LIGHTNING.DAMAGE,    // 伤害
+            '闪电法杖', // 名称
+            WEAPONS.LIGHTNING.DAMAGE, // 伤害
             WEAPONS.LIGHTNING.FIRE_RATE, // 射速（毫秒）
-            WEAPONS.LIGHTNING.AMMO,      // 弹药
-            WEAPONS.LIGHTNING.MAX_AMMO,  // 最大弹药
-            WEAPONS.LIGHTNING.ICON,      // 图标
-            WEAPONS.LIGHTNING.COLOR      // 颜色
+            WEAPONS.LIGHTNING.AMMO, // 弹药
+            WEAPONS.LIGHTNING.MAX_AMMO, // 最大弹药
+            WEAPONS.LIGHTNING.ICON, // 图标
+            WEAPONS.LIGHTNING.COLOR // 颜色
         );
-        
+
         this.id = WEAPONS.LIGHTNING.ID;
         this.bulletSpeed = WEAPONS.LIGHTNING.BULLET_SPEED;
-        this.penetrate = WEAPONS.LIGHTNING.PENETRATE;  // 可穿透1个敌人
+        this.penetrate = WEAPONS.LIGHTNING.PENETRATE; // 可穿透1个敌人
     }
-    
+
     /**
      * 获取子弹速度
      */
     getBulletSpeed() {
         return this.bulletSpeed;
     }
-    
+
     /**
      * 创建闪电子弹
      */

@@ -18,12 +18,16 @@ class ConfigLoader {
         const results = await Promise.allSettled(
             Object.entries(files).map(([key, path]) =>
                 fetch(path)
-                    .then(res => {
-                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    .then((res) => {
+                        if (!res.ok) {
+                            throw new Error(`HTTP ${res.status}`);
+                        }
                         return res.json();
                     })
-                    .then(data => { this.configs[key] = data; })
-                    .catch(err => {
+                    .then((data) => {
+                        this.configs[key] = data;
+                    })
+                    .catch((err) => {
                         console.warn(`[ConfigLoader] Failed to load ${path}:`, err.message);
                     })
             )
@@ -35,8 +39,12 @@ class ConfigLoader {
 
     getCharacter(id) {
         const data = this.configs.characters && this.configs.characters[String(id)];
-        if (!data) return null;
-        if (typeof Character === 'undefined') return data;
+        if (!data) {
+            return null;
+        }
+        if (typeof Character === 'undefined') {
+            return data;
+        }
         const character = new Character();
         character.id = data.id;
         character.name = data.name;
@@ -59,11 +67,11 @@ class ConfigLoader {
     }
 
     getWeapon(type) {
-        return this.configs.weapons && this.configs.weapons[type.toLowerCase()] || null;
+        return (this.configs.weapons && this.configs.weapons[type.toLowerCase()]) || null;
     }
 
     getEnemy(type) {
-        return this.configs.enemies && this.configs.enemies[type.toLowerCase()] || null;
+        return (this.configs.enemies && this.configs.enemies[type.toLowerCase()]) || null;
     }
 
     getSkill(id) {
@@ -71,19 +79,27 @@ class ConfigLoader {
     }
 
     getLevel(index) {
-        if (!this.configs.levels) return null;
-        if (index === undefined) return this.configs.levels;
-        return this.configs.levels.enemies && this.configs.levels.enemies[index] || null;
+        if (!this.configs.levels) {
+            return null;
+        }
+        if (index === undefined) {
+            return this.configs.levels;
+        }
+        return (this.configs.levels.enemies && this.configs.levels.enemies[index]) || null;
     }
 
     getBoss(type) {
-        if (!this.configs.bosses) return null;
-        if (type === undefined) return this.configs.bosses;
+        if (!this.configs.bosses) {
+            return null;
+        }
+        if (type === undefined) {
+            return this.configs.bosses;
+        }
         return this.configs.bosses[type.toLowerCase()] || null;
     }
 
     getTrap(type) {
-        return this.configs.traps && this.configs.traps[type.toLowerCase()] || null;
+        return (this.configs.traps && this.configs.traps[type.toLowerCase()]) || null;
     }
 
     async reload() {

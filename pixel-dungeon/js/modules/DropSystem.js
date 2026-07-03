@@ -50,15 +50,13 @@ class DropSystem {
      */
     checkItemPickup() {
         const gl = this.gameLogic;
-        if (!gl.player) return;
+        if (!gl.player) {
+            return;
+        }
 
-        const pickedUp = gl.dropManager.pickUpInRange(
-            gl.player.x,
-            gl.player.y,
-            gl.inventory
-        );
+        const pickedUp = gl.dropManager.pickUpInRange(gl.player.x, gl.player.y, gl.inventory);
 
-        pickedUp.forEach(item => {
+        pickedUp.forEach((item) => {
             gl.achievementManager.onItemCollected(item.id);
 
             if (item.rarity === 'legendary') {
@@ -91,7 +89,7 @@ class DropSystem {
         const weapon = weaponTypes[Math.floor(Math.random() * weaponTypes.length)];
 
         const playerWeapons = gl.state.getData().playerWeapons;
-        if (playerWeapons.some(w => w.ID === weapon.ID)) {
+        if (playerWeapons.some((w) => w.ID === weapon.ID)) {
             return;
         }
 
@@ -118,12 +116,16 @@ class DropSystem {
      */
     checkWeaponPickup() {
         const gl = this.gameLogic;
-        if (!gl.weaponDrops || gl.weaponDrops.length === 0) return;
+        if (!gl.weaponDrops || gl.weaponDrops.length === 0) {
+            return;
+        }
 
         const playerPos = gl.player.getPosition();
 
-        gl.weaponDrops = gl.weaponDrops.filter(drop => {
-            if (!drop.active) return false;
+        gl.weaponDrops = gl.weaponDrops.filter((drop) => {
+            if (!drop.active) {
+                return false;
+            }
 
             const dx = playerPos.x - drop.x;
             const dy = playerPos.y - drop.y;
@@ -140,7 +142,10 @@ class DropSystem {
                     uiManager.updateWeapon();
                     uiManager.updateWeaponInfo();
 
-                    camera.shake(FEEDBACK.SCREEN_SHAKE.WEAPON_PICKUP.intensity, FEEDBACK.SCREEN_SHAKE.WEAPON_PICKUP.duration);
+                    camera.shake(
+                        FEEDBACK.SCREEN_SHAKE.WEAPON_PICKUP.intensity,
+                        FEEDBACK.SCREEN_SHAKE.WEAPON_PICKUP.duration
+                    );
 
                     gl.timeManager.startTimeStop(FEEDBACK.TIME_STOP.POWER_WEAPON);
 

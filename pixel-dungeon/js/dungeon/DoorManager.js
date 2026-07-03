@@ -12,7 +12,9 @@ class DoorManager {
         this.doorStates.clear();
         this.dungeonLevel = dungeonLevel;
 
-        if (!dungeonLevel || !dungeonLevel.rooms) return;
+        if (!dungeonLevel || !dungeonLevel.rooms) {
+            return;
+        }
 
         for (const roomNode of dungeonLevel.rooms) {
             const directions = roomNode.getDoorDirections();
@@ -21,9 +23,7 @@ class DoorManager {
                 let initialState = 'open';
 
                 const roomType = roomNode.roomType;
-                if (roomType === ROOM_TYPES.BATTLE ||
-                    roomType === ROOM_TYPES.ELITE ||
-                    roomType === ROOM_TYPES.BOSS) {
+                if (roomType === ROOM_TYPES.BATTLE || roomType === ROOM_TYPES.ELITE || roomType === ROOM_TYPES.BOSS) {
                     initialState = 'closed';
                 } else {
                     initialState = 'open';
@@ -86,18 +86,17 @@ class DoorManager {
     }
 
     onPlayerEnterRoom(roomNode) {
-        if (roomNode.cleared) return;
+        if (roomNode.cleared) {
+            return;
+        }
 
-        const isInitialRoom = this.dungeonLevel && 
-                              this.dungeonLevel.startRoom && 
-                              roomNode === this.dungeonLevel.startRoom;
+        const isInitialRoom =
+            this.dungeonLevel && this.dungeonLevel.startRoom && roomNode === this.dungeonLevel.startRoom;
 
         if (!isInitialRoom) {
             const roomType = roomNode.roomType;
 
-            if (roomType === ROOM_TYPES.BATTLE ||
-                roomType === ROOM_TYPES.ELITE ||
-                roomType === ROOM_TYPES.BOSS) {
+            if (roomType === ROOM_TYPES.BATTLE || roomType === ROOM_TYPES.ELITE || roomType === ROOM_TYPES.BOSS) {
                 const directions = roomNode.getDoorDirections();
                 for (const direction of directions) {
                     this.closeAndLockDoor(roomNode, direction);
@@ -109,9 +108,7 @@ class DoorManager {
     onRoomCleared(roomNode) {
         const roomType = roomNode.roomType;
 
-        if (roomType === ROOM_TYPES.BATTLE ||
-            roomType === ROOM_TYPES.ELITE ||
-            roomType === ROOM_TYPES.BOSS) {
+        if (roomType === ROOM_TYPES.BATTLE || roomType === ROOM_TYPES.ELITE || roomType === ROOM_TYPES.BOSS) {
             const directions = roomNode.getDoorDirections();
             for (const direction of directions) {
                 this.openDoor(roomNode, direction);
@@ -121,33 +118,51 @@ class DoorManager {
 
     getOppositeDirection(direction) {
         switch (direction) {
-            case 'top': return 'bottom';
-            case 'bottom': return 'top';
-            case 'left': return 'right';
-            case 'right': return 'left';
-            default: return null;
+            case 'top':
+                return 'bottom';
+            case 'bottom':
+                return 'top';
+            case 'left':
+                return 'right';
+            case 'right':
+                return 'left';
+            default:
+                return null;
         }
     }
 
     getNeighborInDirection(roomNode, direction) {
-        if (!roomNode) return null;
+        if (!roomNode) {
+            return null;
+        }
 
         if (this.dungeonLevel && this.dungeonLevel.getRoomAt) {
             let targetX = roomNode.gridX;
             let targetY = roomNode.gridY;
 
             switch (direction) {
-                case 'top': targetY -= 1; break;
-                case 'bottom': targetY += 1; break;
-                case 'left': targetX -= 1; break;
-                case 'right': targetX += 1; break;
-                default: return null;
+                case 'top':
+                    targetY -= 1;
+                    break;
+                case 'bottom':
+                    targetY += 1;
+                    break;
+                case 'left':
+                    targetX -= 1;
+                    break;
+                case 'right':
+                    targetX += 1;
+                    break;
+                default:
+                    return null;
             }
 
             return this.dungeonLevel.getRoomAt(targetX, targetY);
         }
 
-        if (!roomNode.neighbors || !Array.isArray(roomNode.neighbors)) return null;
+        if (!roomNode.neighbors || !Array.isArray(roomNode.neighbors)) {
+            return null;
+        }
 
         for (const neighbor of roomNode.neighbors) {
             if (neighbor && this.isNeighborInDirection(roomNode, neighbor, direction)) {
@@ -162,11 +177,16 @@ class DoorManager {
         const dy = neighbor.gridY - roomNode.gridY;
 
         switch (direction) {
-            case 'top': return dy === -1 && dx === 0;
-            case 'bottom': return dy === 1 && dx === 0;
-            case 'left': return dx === -1 && dy === 0;
-            case 'right': return dx === 1 && dy === 0;
-            default: return false;
+            case 'top':
+                return dy === -1 && dx === 0;
+            case 'bottom':
+                return dy === 1 && dx === 0;
+            case 'left':
+                return dx === -1 && dy === 0;
+            case 'right':
+                return dx === 1 && dy === 0;
+            default:
+                return false;
         }
     }
 
@@ -175,12 +195,19 @@ class DoorManager {
         const dy = targetRoom.gridY - playerRoom.gridY;
 
         let direction = null;
-        if (dy === -1) direction = 'top';
-        else if (dy === 1) direction = 'bottom';
-        else if (dx === -1) direction = 'left';
-        else if (dx === 1) direction = 'right';
+        if (dy === -1) {
+            direction = 'top';
+        } else if (dy === 1) {
+            direction = 'bottom';
+        } else if (dx === -1) {
+            direction = 'left';
+        } else if (dx === 1) {
+            direction = 'right';
+        }
 
-        if (!direction) return false;
+        if (!direction) {
+            return false;
+        }
 
         const doorState = this.getDoorState(playerRoom, direction);
         return doorState === 'open';

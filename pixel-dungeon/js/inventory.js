@@ -11,7 +11,7 @@ class Inventory {
         this.gems = 0;
         this.collectedItemIds = new Set();
     }
-    
+
     /**
      * 重置背包
      */
@@ -21,7 +21,7 @@ class Inventory {
         this.gems = 0;
         this.collectedItemIds = new Set();
     }
-    
+
     /**
      * 添加道具
      * @param {Item} item - 道具
@@ -40,9 +40,9 @@ class Inventory {
                 return true;
             }
         }
-        
+
         if (item.stackable) {
-            const existing = this.slots.find(slot => slot.id === item.id);
+            const existing = this.slots.find((slot) => slot.id === item.id);
             if (existing) {
                 const space = existing.maxStack - existing.count;
                 if (space >= item.count) {
@@ -55,16 +55,16 @@ class Inventory {
                 }
             }
         }
-        
+
         if (this.slots.length < this.maxSlots) {
             this.slots.push(item);
             this.collectedItemIds.add(item.id);
             return true;
         }
-        
+
         return false;
     }
-    
+
     /**
      * 移除指定位置的道具
      * @param {number} slotIndex - 槽位索引
@@ -75,7 +75,7 @@ class Inventory {
         if (slotIndex < 0 || slotIndex >= this.slots.length) {
             return null;
         }
-        
+
         const item = this.slots[slotIndex];
         if (item.stackable && item.count > count) {
             item.count -= count;
@@ -85,7 +85,7 @@ class Inventory {
             return item;
         }
     }
-    
+
     /**
      * 使用指定槽位的道具
      * @param {number} slotIndex - 槽位索引
@@ -96,9 +96,9 @@ class Inventory {
         if (slotIndex < 0 || slotIndex >= this.slots.length) {
             return false;
         }
-        
+
         const item = this.slots[slotIndex];
-        
+
         if (item.type === 'relic') {
             const success = gameLogic.relicManager.addRelic(item, gameLogic);
             if (success) {
@@ -106,15 +106,15 @@ class Inventory {
             }
             return success;
         }
-        
+
         const consumed = item.use(gameLogic);
         if (consumed) {
             this.slots.splice(slotIndex, 1);
         }
-        
+
         return true;
     }
-    
+
     /**
      * 获取指定槽位的道具
      * @param {number} slotIndex
@@ -126,7 +126,7 @@ class Inventory {
         }
         return this.slots[slotIndex];
     }
-    
+
     /**
      * 检查是否有足够的金币
      * @param {number} amount
@@ -135,7 +135,7 @@ class Inventory {
     hasGold(amount) {
         return this.gold >= amount;
     }
-    
+
     /**
      * 检查是否有足够的宝石
      * @param {number} amount
@@ -144,7 +144,7 @@ class Inventory {
     hasGems(amount) {
         return this.gems >= amount;
     }
-    
+
     /**
      * 消费金币
      * @param {number} amount
@@ -157,7 +157,7 @@ class Inventory {
         }
         return false;
     }
-    
+
     /**
      * 消费宝石
      * @param {number} amount
@@ -170,7 +170,7 @@ class Inventory {
         }
         return false;
     }
-    
+
     /**
      * 添加金币
      * @param {number} amount
@@ -183,7 +183,7 @@ class Inventory {
         }
         this.gold += Math.floor(amount * bonus);
     }
-    
+
     /**
      * 添加宝石
      * @param {number} amount
@@ -191,7 +191,7 @@ class Inventory {
     addGems(amount) {
         this.gems += amount;
     }
-    
+
     /**
      * 获取收集的不同道具数量
      * @returns {number}
@@ -199,7 +199,7 @@ class Inventory {
     getCollectedItemCount() {
         return this.collectedItemIds.size;
     }
-    
+
     /**
      * 获取背包中道具数量
      * @returns {number}
@@ -207,7 +207,7 @@ class Inventory {
     getItemCount() {
         return this.slots.length;
     }
-    
+
     /**
      * 检查背包是否已满
      * @returns {boolean}

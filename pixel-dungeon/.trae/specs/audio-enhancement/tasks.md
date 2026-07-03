@@ -38,7 +38,7 @@
   - `human-judgment` TR-3.2: 音效质量明显改善
 - **Notes**: 需要查找game.js中所有audioManager.playSound调用（约20处）
 
-## [/] Task 4: 替换其他文件中的音效调用
+## [x] Task 4: 替换其他文件中的音效调用
 - **Priority**: high
 - **Depends On**: Task 2
 - **Description**: 
@@ -53,7 +53,7 @@
   - `human-judgment` TR-4.1: 所有场景中的音效都能正常播放
 - **Notes**: 需要查找约10处audioManager.playSound调用
 
-## [ ] Task 5: 优化BGM合成质量
+## [x] Task 5: 优化BGM合成质量
 - **Priority**: medium
 - **Depends On**: None
 - **Description**: 
@@ -65,7 +65,7 @@
   - `human-judgment` TR-5.1: BGM听起来更加柔和舒适
 - **Notes**: 修改soundManager.js中的getMusicData方法和scheduleNote方法
 
-## [ ] Task 6: 测试验证
+## [x] Task 6: 测试验证
 - **Priority**: high
 - **Depends On**: Tasks 1-5
 - **Description**: 

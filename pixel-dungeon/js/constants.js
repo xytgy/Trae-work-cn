@@ -4,99 +4,99 @@
  */
 
 // ==================== 游戏画布尺寸 ====================
-const GAME_WIDTH = 800;      // 游戏画布宽度
-const GAME_HEIGHT = 600;     // 游戏画布高度
+const GAME_WIDTH = 800; // 游戏画布宽度
+const GAME_HEIGHT = 600; // 游戏画布高度
 
 // ==================== 游戏循环 ====================
-const TARGET_FPS = 60;                    // 目标帧率
-const FRAME_TIME = 1000 / TARGET_FPS;     // 每帧时间（毫秒）
-const DELTA_TIME_MAX = 100;               // 最大delta time，防止卡顿
+const TARGET_FPS = 60; // 目标帧率
+const FRAME_TIME = 1000 / TARGET_FPS; // 每帧时间（毫秒）
+const DELTA_TIME_MAX = 100; // 最大delta time，防止卡顿
 
 // ==================== 调色板 - 地牢背景 ====================
 const COLORS = {
     // 地牢背景
     DUNGEON: {
-        BACKGROUND: '#1a1a2e',     // 主背景
-        FLOOR: '#16213e',          // 地砖
-        WALL: '#0f3460',           // 墙壁
-        DOOR: '#e94560'            // 门
+        BACKGROUND: '#1a1a2e', // 主背景
+        FLOOR: '#16213e', // 地砖
+        WALL: '#0f3460', // 墙壁
+        DOOR: '#e94560' // 门
     },
     // 玩家
     PLAYER: {
-        BODY: '#4fc3f7',           // 身体
-        EYES: '#ffffff',          // 眼睛
-        WEAPON: '#ffd54f'         // 武器
+        BODY: '#4fc3f7', // 身体
+        EYES: '#ffffff', // 眼睛
+        WEAPON: '#ffd54f' // 武器
     },
     // 敌人
     ENEMY: {
-        SLIME: '#4caf50',         // 史莱姆（小怪A）
-        BAT: '#f44336',           // 蝙蝠（小怪B）
-        GHOST: '#9c27b0',         // 幽灵（小怪C）
-        BOSS: '#7b1fa2'           // Boss
+        SLIME: '#4caf50', // 史莱姆（小怪A）
+        BAT: '#f44336', // 蝙蝠（小怪B）
+        GHOST: '#9c27b0', // 幽灵（小怪C）
+        BOSS: '#7b1fa2' // Boss
     },
     // 武器
     WEAPON: {
-        PISTOL: '#ffd54f',        // 手枪
-        LIGHTNING: '#ffeb3b',     // 闪电法杖
-        GRENADE: '#ff9800',       // 榴弹发射器
-        FLAME: '#f44336',         // 火焰喷射器
-        BOOMERANG: '#e91e63',     // 回旋镖
-        FREEZE: '#00bcd4',        // 冰冻枪
-        SHOTGUN: '#ff9800',       // 散弹枪
-        HOMING: '#9c27b0'         // 追踪导弹
+        PISTOL: '#ffd54f', // 手枪
+        LIGHTNING: '#ffeb3b', // 闪电法杖
+        GRENADE: '#ff9800', // 榴弹发射器
+        FLAME: '#f44336', // 火焰喷射器
+        BOOMERANG: '#e91e63', // 回旋镖
+        FREEZE: '#00bcd4', // 冰冻枪
+        SHOTGUN: '#ff9800', // 散弹枪
+        HOMING: '#9c27b0' // 追踪导弹
     },
     // 子弹
     BULLET: {
-        NORMAL: '#ffd54f',        // 普通子弹
-        ENEMY: '#ff1744',         // 敌人子弹
-        LIGHTNING: '#ffeb3b',     // 闪电子弹
-        GRENADE: '#ff9800',       // 榴弹
-        FLAME: '#ff5722',         // 火焰
-        LASER: '#ffff00',         // 激光
-        FREEZE: '#00bcd4',        // 冰冻子弹
-        SHOTGUN: '#ff9800',       // 散弹
-        HOMING: '#9c27b0'         // 追踪导弹
+        NORMAL: '#ffd54f', // 普通子弹
+        ENEMY: '#ff1744', // 敌人子弹
+        LIGHTNING: '#ffeb3b', // 闪电子弹
+        GRENADE: '#ff9800', // 榴弹
+        FLAME: '#ff5722', // 火焰
+        LASER: '#ffff00', // 激光
+        FREEZE: '#00bcd4', // 冰冻子弹
+        SHOTGUN: '#ff9800', // 散弹
+        HOMING: '#9c27b0' // 追踪导弹
     },
     // UI
     UI: {
-        HEALTH_FULL: '#e91e63',   // 满血心形
-        HEALTH_EMPTY: '#424242',  // 空血心形
-        TEXT: '#ffffff',          // 主文字
-        TEXT_PRIMARY: '#ffffff',   // 主文字（别名）
+        HEALTH_FULL: '#e91e63', // 满血心形
+        HEALTH_EMPTY: '#424242', // 空血心形
+        TEXT: '#ffffff', // 主文字
+        TEXT_PRIMARY: '#ffffff', // 主文字（别名）
         TEXT_SECONDARY: '#aaaaaa', // 副文字
-        TEXT_SHADOW: '#000000',   // 文字阴影
+        TEXT_SHADOW: '#000000', // 文字阴影
         OVERLAY: 'rgba(0, 0, 0, 0.7)', // 遮罩
-        
+
         // 按钮颜色
         BUTTON_BG: '#ff6600',
         BUTTON_BG_HOVER: '#ff8833',
         BUTTON_BORDER: '#ff9900',
         BUTTON_BORDER_HOVER: '#ffcc00',
-        
+
         // 标题颜色
         TITLE_FILL: '#ffcc00',
         TITLE_STROKE: '#ff6600',
         TITLE_GLOW: '#ff6600',
-        
+
         // 菜单背景
         MENU_BG_TOP: '#1a1030',
         MENU_BG_BOTTOM: '#0a0520',
-        
+
         // 怒气条
         RAGE_FULL: '#ffcc00',
         RAGE_EMPTY: '#333333',
-        
+
         // 技能
         SKILL_READY: '#00ff00',
         SKILL_COOLDOWN: '#666666',
-        
+
         // 伤害类型
         DAMAGE_CRIT: '#ffff00',
         DAMAGE_FIRE: '#ff6600',
         DAMAGE_FROST: '#00ccff',
         DAMAGE_POISON: '#33ff33',
         DAMAGE_LIGHTNING: '#ffff33',
-        
+
         // Buff效果
         BUFF_SPEED: '#00ff00',
         BUFF_DAMAGE: '#ff0000',
@@ -105,129 +105,285 @@ const COLORS = {
     },
     // 粒子
     PARTICLE: {
-        EXPLOSION: '#ff5722',     // 爆炸
-        SPARK: '#ffeb3b',         // 火花
-        HEAL: '#4caf50',          // 治疗
-        PORTAL: '#9c27b0'         // 传送门
+        EXPLOSION: '#ff5722', // 爆炸
+        SPARK: '#ffeb3b', // 火花
+        HEAL: '#4caf50', // 治疗
+        PORTAL: '#9c27b0' // 传送门
     }
 };
 
 // ==================== 像素尺寸规格 ====================
 const PIXEL_SIZE = {
-    PLAYER: 16,         // 玩家角色
-    ENEMY: 16,          // 普通敌人
-    BOSS: 32,           // Boss
-    BULLET: 8,          // 子弹
-    WEAPON_ICON: 16,    // 武器图标
-    PORTAL: 32,         // 传送门
-    TILE: 40            // 墙壁厚度
+    PLAYER: 16, // 玩家角色
+    ENEMY: 16, // 普通敌人
+    BOSS: 32, // Boss
+    BULLET: 8, // 子弹
+    WEAPON_ICON: 16, // 武器图标
+    PORTAL: 32, // 传送门
+    TILE: 40 // 墙壁厚度
 };
 
 // ==================== 玩家属性 ====================
 const PLAYER = {
-    SIZE: 16,                   // 角色尺寸
-    SPEED: 4,                   // 基础移动速度（像素/帧）
-    MAX_HEALTH: 3,              // 最大生命值（心数）
-    INVINCIBLE_TIME: 1000,      // 无敌时间（毫秒）
-    FLASH_INTERVAL: 80,         // 闪烁间隔（毫秒）- 调快让无敌帧更明显
-    MAX_WEAPONS: 2,             // 最大携带武器数
+    SIZE: 16, // 角色尺寸
+    SPEED: 4, // 基础移动速度（像素/帧）
+    MAX_HEALTH: 3, // 最大生命值（心数）
+    INVINCIBLE_TIME: 1000, // 无敌时间（毫秒）
+    FLASH_INTERVAL: 80, // 闪烁间隔（毫秒）- 调快让无敌帧更明显
+    MAX_WEAPONS: 2, // 最大携带武器数
     WEAPON_SWITCH_COOLDOWN: 150, // 武器切换冷却时间（毫秒）- 缩短提升手感
-    
+
     // 移动系统参数（优化后）
-    MAX_SPEED: 5.2,             // 最大速度（像素/帧）- 略微提升最高速度
-    ACCELERATION: 2.2,          // 加速度（像素/帧²）- 提升后响应更快更灵敏
-    DECELERATION: 2.8,          // 减速度（像素/帧²，松开按键时）- 更快停止
-    FRICTION: 0.82,             // 摩擦系数（无输入时每帧乘以摩擦系数）- 更快减速
-    AIR_RESISTANCE: 0.99,       // 空气阻力（移动时的微小阻力）
-    
+    MAX_SPEED: 5.2, // 最大速度（像素/帧）- 略微提升最高速度
+    ACCELERATION: 2.2, // 加速度（像素/帧²）- 提升后响应更快更灵敏
+    DECELERATION: 2.8, // 减速度（像素/帧²，松开按键时）- 更快停止
+    FRICTION: 0.82, // 摩擦系数（无输入时每帧乘以摩擦系数）- 更快减速
+    AIR_RESISTANCE: 0.99, // 空气阻力（移动时的微小阻力）
+
     // 插值参数
-    INTERPOLATION_FACTOR: 0.3,  // 位置插值系数（每帧向目标靠近的比例）- 跟随更紧更流畅
-    
+    INTERPOLATION_FACTOR: 0.3, // 位置插值系数（每帧向目标靠近的比例）- 跟随更紧更流畅
+
     // 新增移动参数
-    TURN_SENSITIVITY: 0.9,      // 转向灵敏度（0-1，越高转向越快）- 提升转向响应
-    DIAGONAL_CORRECTION: 0.97,  // 对角线移动修正系数 - 略微提升对角线速度
-    BURST_SPEED: 1.6,           // 起步爆发速度倍率 - 更强的起步爆发力
-    BURST_DURATION: 200,        // 起步爆发持续时间（毫秒）- 延长爆发时间
-    WALL_SLIDE_FACTOR: 0.75,    // 靠墙滑行速度衰减系数 - 优化靠墙移动
-    
+    TURN_SENSITIVITY: 0.9, // 转向灵敏度（0-1，越高转向越快）- 提升转向响应
+    DIAGONAL_CORRECTION: 0.97, // 对角线移动修正系数 - 略微提升对角线速度
+    BURST_SPEED: 1.6, // 起步爆发速度倍率 - 更强的起步爆发力
+    BURST_DURATION: 200, // 起步爆发持续时间（毫秒）- 延长爆发时间
+    WALL_SLIDE_FACTOR: 0.75, // 靠墙滑行速度衰减系数 - 优化靠墙移动
+
     // 走路动画参数
-    WALK_BOB_AMOUNT: 2,         // 走路摆动幅度（像素）
-    WALK_BOB_SPEED: 0.1,        // 走路摆动速度系数
-    MAX_TILT: 0.1,              // 最大倾斜角度（弧度）
-    TILT_SPEED: 0.1,            // 倾斜过渡速度
-    
+    WALK_BOB_AMOUNT: 2, // 走路摆动幅度（像素）
+    WALK_BOB_SPEED: 0.1, // 走路摆动速度系数
+    MAX_TILT: 0.1, // 最大倾斜角度（弧度）
+    TILT_SPEED: 0.1, // 倾斜过渡速度
+
     // 阴影参数
-    SHADOW_COLOR: 'rgba(0, 0, 0, 0.3)',  // 阴影颜色
-    SHADOW_WIDTH: 12,           // 阴影宽度
-    SHADOW_HEIGHT: 4,           // 阴影高度
-    SHADOW_OFFSET_Y: 12         // 阴影Y轴偏移
+    SHADOW_COLOR: 'rgba(0, 0, 0, 0.3)', // 阴影颜色
+    SHADOW_WIDTH: 12, // 阴影宽度
+    SHADOW_HEIGHT: 4, // 阴影高度
+    SHADOW_OFFSET_Y: 12 // 阴影Y轴偏移
 };
 
 // ==================== 武器属性 ====================
 const WEAPONS = {
     PISTOL: {
-        ID: 1, NAME: '手枪', DAMAGE: 1, FIRE_RATE: 270,
-        AMMO: Infinity, MAX_AMMO: Infinity, BULLET_SPEED: 8,
-        RECOIL: 3, COLOR: '#ffd54f', ICON: '🔫'
+        ID: 1,
+        NAME: '手枪',
+        DAMAGE: 1,
+        FIRE_RATE: 270,
+        AMMO: Infinity,
+        MAX_AMMO: Infinity,
+        BULLET_SPEED: 8,
+        RECOIL: 3,
+        COLOR: '#ffd54f',
+        ICON: '🔫'
     },
     LIGHTNING: {
-        ID: 2, NAME: '闪电法杖', DAMAGE: 1.5, FIRE_RATE: 200,
-        AMMO: 30, MAX_AMMO: 30, BULLET_SPEED: 12, PENETRATE: 1,
-        RECOIL: 2, COLOR: '#ffeb3b', ICON: '⚡'
+        ID: 2,
+        NAME: '闪电法杖',
+        DAMAGE: 1.5,
+        FIRE_RATE: 200,
+        AMMO: 30,
+        MAX_AMMO: 30,
+        BULLET_SPEED: 12,
+        PENETRATE: 1,
+        RECOIL: 2,
+        COLOR: '#ffeb3b',
+        ICON: '⚡'
     },
     GRENADE: {
-        ID: 3, NAME: '榴弹发射器', DAMAGE: 3, FIRE_RATE: 800,
-        AMMO: 15, MAX_AMMO: 15, BULLET_SPEED: 6, EXPLOSION_RADIUS: 60,
-        RECOIL: 8, COLOR: '#ff9800', ICON: '💣'
+        ID: 3,
+        NAME: '榴弹发射器',
+        DAMAGE: 3,
+        FIRE_RATE: 800,
+        AMMO: 15,
+        MAX_AMMO: 15,
+        BULLET_SPEED: 6,
+        EXPLOSION_RADIUS: 60,
+        RECOIL: 8,
+        COLOR: '#ff9800',
+        ICON: '💣'
     },
     FLAME: {
-        ID: 4, NAME: '火焰喷射器', DAMAGE: 1, FIRE_RATE: 50,
-        AMMO: 50, MAX_AMMO: 50, BULLET_SPEED: 5, RANGE: 120,
-        BURN_DAMAGE: 1, RECOIL: 1, COLOR: '#f44336', ICON: '🔥'
+        ID: 4,
+        NAME: '火焰喷射器',
+        DAMAGE: 1,
+        FIRE_RATE: 50,
+        AMMO: 50,
+        MAX_AMMO: 50,
+        BULLET_SPEED: 5,
+        RANGE: 120,
+        BURN_DAMAGE: 1,
+        RECOIL: 1,
+        COLOR: '#f44336',
+        ICON: '🔥'
     },
     BOOMERANG: {
-        ID: 5, NAME: '星星回旋镖', DAMAGE: 2, FIRE_RATE: 400,
-        AMMO: 20, MAX_AMMO: 20, BULLET_SPEED: 7, BOOMERANG: true,
-        MULTI_HIT: true, PENETRATE: 2, RECOIL: 4, COLOR: '#e91e63', ICON: '⭐'
+        ID: 5,
+        NAME: '星星回旋镖',
+        DAMAGE: 2,
+        FIRE_RATE: 400,
+        AMMO: 20,
+        MAX_AMMO: 20,
+        BULLET_SPEED: 7,
+        BOOMERANG: true,
+        MULTI_HIT: true,
+        PENETRATE: 2,
+        RECOIL: 4,
+        COLOR: '#e91e63',
+        ICON: '⭐'
     },
     FREEZE: {
-        ID: 6, NAME: '冰冻枪', DAMAGE: 1, FIRE_RATE: 400,
-        AMMO: 25, MAX_AMMO: 25, BULLET_SPEED: 9, SLOW_FACTOR: 0.45,
-        SLOW_DURATION: 2000, RECOIL: 3, COLOR: '#00bcd4', ICON: '❄️'
+        ID: 6,
+        NAME: '冰冻枪',
+        DAMAGE: 1,
+        FIRE_RATE: 400,
+        AMMO: 25,
+        MAX_AMMO: 25,
+        BULLET_SPEED: 9,
+        SLOW_FACTOR: 0.45,
+        SLOW_DURATION: 2000,
+        RECOIL: 3,
+        COLOR: '#00bcd4',
+        ICON: '❄️'
     },
     SHOTGUN: {
-        ID: 7, NAME: '散弹枪', DAMAGE: 1, FIRE_RATE: 700,
-        AMMO: 20, MAX_AMMO: 20, BULLET_SPEED: 8, BULLET_COUNT: 3,
-        SPREAD_ANGLE: 27, RECOIL: 7, COLOR: '#ff9800', ICON: '🎯'
+        ID: 7,
+        NAME: '散弹枪',
+        DAMAGE: 1,
+        FIRE_RATE: 700,
+        AMMO: 20,
+        MAX_AMMO: 20,
+        BULLET_SPEED: 8,
+        BULLET_COUNT: 3,
+        SPREAD_ANGLE: 27,
+        RECOIL: 7,
+        COLOR: '#ff9800',
+        ICON: '🎯'
     },
     HOMING: {
-        ID: 8, NAME: '追踪导弹', DAMAGE: 2, FIRE_RATE: 900,
-        AMMO: 12, MAX_AMMO: 12, BULLET_SPEED: 5, MAX_SPEED: 12,
-        ACCELERATION: 0.1, TURN_SPEED: 2.4, EXPLOSION_RADIUS: 20,
-        RECOIL: 6, COLOR: '#9c27b0', ICON: '🚀'
+        ID: 8,
+        NAME: '追踪导弹',
+        DAMAGE: 2,
+        FIRE_RATE: 900,
+        AMMO: 12,
+        MAX_AMMO: 12,
+        BULLET_SPEED: 5,
+        MAX_SPEED: 12,
+        ACCELERATION: 0.1,
+        TURN_SPEED: 2.4,
+        EXPLOSION_RADIUS: 20,
+        RECOIL: 6,
+        COLOR: '#9c27b0',
+        ICON: '🚀'
     }
 };
 
 // ==================== 敌人属性 ====================
 const ENEMIES = {
-    SLIME: { TYPE: 'slime', NAME: '绿色史莱姆', SIZE: 16, HEALTH: 2, SPEED: 1.5, DAMAGE: 1, DROP_RATE: 0.3, ATTACK_RANGE: 30, ATTACK_COOLDOWN: 1000, COLOR: '#4caf50', AI: 'chase' },
-    BAT: { TYPE: 'bat', NAME: '红色蝙蝠', SIZE: 16, HEALTH: 1, SPEED: 3, DAMAGE: 1, DROP_RATE: 0.25, ATTACK_RANGE: 30, ATTACK_COOLDOWN: 500, COLOR: '#f44336', AI: 'flanker' },
-    GHOST: { TYPE: 'ghost', NAME: '紫色幽灵', SIZE: 16, HEALTH: 2, SPEED: 2, DAMAGE: 1, DROP_RATE: 0.35, ATTACK_RANGE: 30, ATTACK_COOLDOWN: 2000, SHOOT_INTERVAL: 2000, BULLET_SPEED: 4, COLOR: '#9c27b0', AI: 'shooter' }
+    SLIME: {
+        TYPE: 'slime',
+        NAME: '绿色史莱姆',
+        SIZE: 16,
+        HEALTH: 2,
+        SPEED: 1.5,
+        DAMAGE: 1,
+        DROP_RATE: 0.3,
+        ATTACK_RANGE: 30,
+        ATTACK_COOLDOWN: 1000,
+        COLOR: '#4caf50',
+        AI: 'chase'
+    },
+    BAT: {
+        TYPE: 'bat',
+        NAME: '红色蝙蝠',
+        SIZE: 16,
+        HEALTH: 1,
+        SPEED: 3,
+        DAMAGE: 1,
+        DROP_RATE: 0.25,
+        ATTACK_RANGE: 30,
+        ATTACK_COOLDOWN: 500,
+        COLOR: '#f44336',
+        AI: 'flanker'
+    },
+    GHOST: {
+        TYPE: 'ghost',
+        NAME: '紫色幽灵',
+        SIZE: 16,
+        HEALTH: 2,
+        SPEED: 2,
+        DAMAGE: 1,
+        DROP_RATE: 0.35,
+        ATTACK_RANGE: 30,
+        ATTACK_COOLDOWN: 2000,
+        SHOOT_INTERVAL: 2000,
+        BULLET_SPEED: 4,
+        COLOR: '#9c27b0',
+        AI: 'shooter'
+    }
 };
 
 // ==================== Boss属性 ====================
 const BOSS = {
-    SIZE: 32, HEALTH: 20, SPEED: 1, DAMAGE: 2,
-    PHASE1: { NAME: '正常状态', HEALTH_THRESHOLD: 0.5, ATTACK: 'spreadshot', ATTACK_COOLDOWN: 3000, BULLET_COUNT: 5, BULLET_SPEED: 5 },
-    PHASE2: { NAME: '狂暴状态', HEALTH_THRESHOLD: 0.25, SPEED_MULTIPLIER: 1.5, SUMMON_INTERVAL: 5000, SUMMON_COUNT: 2, COLOR: '#ff1744', CHARGE_COOLDOWN: 8000, CHARGE_WARNING: 800, CHARGE_DURATION: 500, CHARGE_SPEED_MULTIPLIER: 3, CHARGE_DAMAGE_MULTIPLIER: 2, CHARGE_STUN_DURATION: 1000 },
-    PHASE3: { NAME: '最终状态', LASER_WIDTH: 40, LASER_DURATION: 2000, LASER_INTERVAL: 8000, LASER_WARNING: 500, DAMAGE_PER_TICK: 1, COLOR: '#ffff00', HEAL_THRESHOLD: 3, HEAL_AMOUNT: 2, HEAL_CHARGE_TIME: 3000, HEAL_COOLDOWN: 15000, HEAL_DAMAGE_THRESHOLD: 3, SPREADSHOT_COOLDOWN: 4000, SUMMON_INTERVAL: 7000 },
+    SIZE: 32,
+    HEALTH: 20,
+    SPEED: 1,
+    DAMAGE: 2,
+    PHASE1: {
+        NAME: '正常状态',
+        HEALTH_THRESHOLD: 0.5,
+        ATTACK: 'spreadshot',
+        ATTACK_COOLDOWN: 3000,
+        BULLET_COUNT: 5,
+        BULLET_SPEED: 5
+    },
+    PHASE2: {
+        NAME: '狂暴状态',
+        HEALTH_THRESHOLD: 0.25,
+        SPEED_MULTIPLIER: 1.5,
+        SUMMON_INTERVAL: 5000,
+        SUMMON_COUNT: 2,
+        COLOR: '#ff1744',
+        CHARGE_COOLDOWN: 8000,
+        CHARGE_WARNING: 800,
+        CHARGE_DURATION: 500,
+        CHARGE_SPEED_MULTIPLIER: 3,
+        CHARGE_DAMAGE_MULTIPLIER: 2,
+        CHARGE_STUN_DURATION: 1000
+    },
+    PHASE3: {
+        NAME: '最终状态',
+        LASER_WIDTH: 40,
+        LASER_DURATION: 2000,
+        LASER_INTERVAL: 8000,
+        LASER_WARNING: 500,
+        DAMAGE_PER_TICK: 1,
+        COLOR: '#ffff00',
+        HEAL_THRESHOLD: 3,
+        HEAL_AMOUNT: 2,
+        HEAL_CHARGE_TIME: 3000,
+        HEAL_COOLDOWN: 15000,
+        HEAL_DAMAGE_THRESHOLD: 3,
+        SPREADSHOT_COOLDOWN: 4000,
+        SUMMON_INTERVAL: 7000
+    },
     DODGE: { PROBABILITY: 0.4, SPEED_MULTIPLIER: 2, DURATION: 300, COOLDOWN: 2000, TILT_ANGLE: 0.3 },
-    SUMMON_POSITION: { BEHIND_PLAYER: 0.5, SIDE_PLAYER: 0.3, NEAR_BOSS: 0.2, EFFECT_DURATION: 500, FADE_IN_DURATION: 300 }
+    SUMMON_POSITION: {
+        BEHIND_PLAYER: 0.5,
+        SIDE_PLAYER: 0.3,
+        NEAR_BOSS: 0.2,
+        EFFECT_DURATION: 500,
+        FADE_IN_DURATION: 300
+    }
 };
 
 // ==================== 关卡配置 ====================
 const LEVELS = {
-    COUNT: 7, ROOM_WIDTH: GAME_WIDTH, ROOM_HEIGHT: GAME_HEIGHT, WALL_THICKNESS: 40, DOOR_SIZE: 60,
+    COUNT: 7,
+    ROOM_WIDTH: GAME_WIDTH,
+    ROOM_HEIGHT: GAME_HEIGHT,
+    WALL_THICKNESS: 40,
+    DOOR_SIZE: 60,
     ENEMIES: [
         { slime: 2, bat: 0, ghost: 0 },
         { slime: 2, bat: 1, ghost: 0 },
@@ -360,21 +516,21 @@ const ACT_THEMES = {
 // ==================== 传送门配置 ====================
 const PORTAL = {
     SIZE: 32,
-    SPAWN_DELAY: 3000,          // 击杀后3秒出现
+    SPAWN_DELAY: 3000, // 击杀后3秒出现
     COLOR: '#9c27b0',
     PARTICLE_COLOR: '#e91e63'
 };
 
 // ==================== 粒子系统配置 ====================
 const PARTICLES = {
-    MAX_COUNT: 200,             // 同时最大粒子数（增加以支持环境粒子）
-    LIFETIME_MIN: 300,          // 最短寿命（毫秒）
-    LIFETIME_MAX: 1000,         // 最长寿命（毫秒）
+    MAX_COUNT: 200, // 同时最大粒子数（增加以支持环境粒子）
+    LIFETIME_MIN: 300, // 最短寿命（毫秒）
+    LIFETIME_MAX: 1000, // 最长寿命（毫秒）
     SPEED_MIN: 1,
     SPEED_MAX: 5,
     SIZE_MIN: 2,
     SIZE_MAX: 8,
-    
+
     // 粒子形状类型
     KIND: {
         CIRCLE: 'circle',
@@ -382,9 +538,9 @@ const PARTICLES = {
         RING: 'ring',
         STAR: 'star',
         BURN_MARK: 'burn_mark',
-        DUST: 'dust'            // 灰尘粒子
+        DUST: 'dust' // 灰尘粒子
     },
-    
+
     // 各种粒子效果配置
     TYPES: {
         BULLET_TRAIL: { size: 4, lifetime: 200, color: '#ffd54f' },
@@ -397,23 +553,81 @@ const PARTICLES = {
         AMBIENT_DUST: { sizeMin: 1, sizeMax: 2, lifetime: 10000, color: 'rgba(255, 255, 200, 0.3)' },
 
         // 击中碎片
-        HIT_FRAGMENT: { countMin: 3, countMax: 6, speedMin: 2, speedMax: 5, sizeMin: 2, sizeMax: 4, lifetimeMin: 200, lifetimeMax: 400, gravity: 0.15 },
+        HIT_FRAGMENT: {
+            countMin: 3,
+            countMax: 6,
+            speedMin: 2,
+            speedMax: 5,
+            sizeMin: 2,
+            sizeMax: 4,
+            lifetimeMin: 200,
+            lifetimeMax: 400,
+            gravity: 0.15
+        },
 
         // 爆炸碎片
-        EXPLOSION_FRAGMENT: { countMin: 8, countMax: 15, speedMin: 2, speedMax: 6, sizeMin: 2, sizeMax: 5, lifetimeMin: 300, lifetimeMax: 600, gravity: 0.1, colors: ['#ff5722', '#ff9800', '#ffeb3b', '#ffffff'] },
+        EXPLOSION_FRAGMENT: {
+            countMin: 8,
+            countMax: 15,
+            speedMin: 2,
+            speedMax: 6,
+            sizeMin: 2,
+            sizeMax: 5,
+            lifetimeMin: 300,
+            lifetimeMax: 600,
+            gravity: 0.1,
+            colors: ['#ff5722', '#ff9800', '#ffeb3b', '#ffffff']
+        },
 
         // 爆炸烟雾
-        EXPLOSION_SMOKE: { countMin: 5, countMax: 10, speedMin: 1, speedMax: 3, sizeMin: 8, sizeMax: 16, lifetimeMin: 500, lifetimeMax: 1000, gravity: -0.03, color: '#666666' },
+        EXPLOSION_SMOKE: {
+            countMin: 5,
+            countMax: 10,
+            speedMin: 1,
+            speedMax: 3,
+            sizeMin: 8,
+            sizeMax: 16,
+            lifetimeMin: 500,
+            lifetimeMax: 1000,
+            gravity: -0.03,
+            color: '#666666'
+        },
 
         // 燃烧痕迹
         BURN_MARK: { sizeMin: 8, sizeMax: 16, lifetime: 3000, color: 'rgba(80, 30, 10, 0.5)', flickerSpeed: 0.02 },
 
         // 升级光环
-        UPGRADE_RING: { ringCount: 3, expandSpeedMin: 0.5, expandSpeedMax: 1.0, lifetime: 500, colors: ['#ffd700', '#ffcc00', '#ffaa00'] },
-        UPGRADE_STAR: { countMin: 5, countMax: 10, speedMin: 1, speedMax: 3, sizeMin: 3, sizeMax: 6, lifetimeMin: 400, lifetimeMax: 800, color: '#ffd700', gravity: -0.05 },
+        UPGRADE_RING: {
+            ringCount: 3,
+            expandSpeedMin: 0.5,
+            expandSpeedMax: 1.0,
+            lifetime: 500,
+            colors: ['#ffd700', '#ffcc00', '#ffaa00']
+        },
+        UPGRADE_STAR: {
+            countMin: 5,
+            countMax: 10,
+            speedMin: 1,
+            speedMax: 3,
+            sizeMin: 3,
+            sizeMax: 6,
+            lifetimeMin: 400,
+            lifetimeMax: 800,
+            color: '#ffd700',
+            gravity: -0.05
+        },
 
         // 激光预警粒子
-        LASER_WARNING: { countMin: 5, countMax: 10, sizeMin: 2, sizeMax: 4, lifetimeMin: 200, lifetimeMax: 500, flickerSpeed: 0.1, colors: ['#ff0000', '#ff4444'] },
+        LASER_WARNING: {
+            countMin: 5,
+            countMax: 10,
+            sizeMin: 2,
+            sizeMax: 4,
+            lifetimeMin: 200,
+            lifetimeMax: 500,
+            flickerSpeed: 0.1,
+            colors: ['#ff0000', '#ff4444']
+        },
 
         // 枪口闪光
         MUZZLE_FLASH: {
@@ -423,7 +637,7 @@ const PARTICLES = {
 
         // 蓄力光环
         CAST_RING: { size: 20, lifetime: 400, color: '#ffff00' },
-        
+
         // 击杀爆发
         KILL_BURST: {
             RADIAL_COUNT: 30,
@@ -444,60 +658,60 @@ const PARTICLES = {
 
 // ==================== 地砖配置 ====================
 const FLOOR_TILE = {
-    SIZE: 32,                   // 地砖尺寸
+    SIZE: 32, // 地砖尺寸
     TYPES: {
-        NORMAL: 0,              // 普通地砖
-        PATTERN: 1,             // 花纹地砖
-        WORN: 2                 // 磨损地砖
+        NORMAL: 0, // 普通地砖
+        PATTERN: 1, // 花纹地砖
+        WORN: 2 // 磨损地砖
     },
     COLORS: {
-        BASE: ['#2a2040', '#251c38', '#2f2448'],  // 地砖基础颜色（深紫色系）
-        DETAIL: '#1a1530',                         // 花纹细节颜色
-        GAP: 'rgba(0, 0, 0, 0.3)'                  // 地砖缝隙颜色
+        BASE: ['#2a2040', '#251c38', '#2f2448'], // 地砖基础颜色（深紫色系）
+        DETAIL: '#1a1530', // 花纹细节颜色
+        GAP: 'rgba(0, 0, 0, 0.3)' // 地砖缝隙颜色
     },
-    PATTERN_CHANCE: 0.2,        // 花纹地砖出现概率
-    WORN_CHANCE: 0.15           // 磨损地砖出现概率
+    PATTERN_CHANCE: 0.2, // 花纹地砖出现概率
+    WORN_CHANCE: 0.15 // 磨损地砖出现概率
 };
 
 // ==================== 墙壁配置 ====================
 const WALL_BRICK = {
-    BRICK_WIDTH: 32,            // 砖块宽度
-    BRICK_HEIGHT: 16,           // 砖块高度
+    BRICK_WIDTH: 32, // 砖块宽度
+    BRICK_HEIGHT: 16, // 砖块高度
     COLORS: {
-        BASE: '#4a4060',        // 砖块主体颜色
-        HIGHLIGHT: '#5a5070',   // 顶部/左侧高光
-        SHADOW: '#3a3050'       // 底部/右侧阴影
+        BASE: '#4a4060', // 砖块主体颜色
+        HIGHLIGHT: '#5a5070', // 顶部/左侧高光
+        SHADOW: '#3a3050' // 底部/右侧阴影
     }
 };
 
 // ==================== 光影系统配置 ====================
 const LIGHTING = {
-    AMBIENT_COLOR: 'rgba(10, 5, 20, 0.4)',  // 环境暗度
-    VIGNETTE_STRENGTH: 0.3,                 // 暗角强度
+    AMBIENT_COLOR: 'rgba(10, 5, 20, 0.4)', // 环境暗度
+    VIGNETTE_STRENGTH: 0.3, // 暗角强度
     PLAYER_LIGHT: {
-        RADIUS: 150,                        // 玩家光圈半径
-        INTENSITY: 0.8,                     // 玩家光圈强度
-        COLOR: 'rgba(255, 200, 100, 1)'     // 玩家光圈颜色（暖黄色）
+        RADIUS: 150, // 玩家光圈半径
+        INTENSITY: 0.8, // 玩家光圈强度
+        COLOR: 'rgba(255, 200, 100, 1)' // 玩家光圈颜色（暖黄色）
     },
     TORCH_LIGHT: {
-        RADIUS: 100,                        // 火把光圈半径
-        INTENSITY: 0.6,                     // 火把光圈强度
-        COLOR: 'rgba(255, 150, 50, 1)'      // 火把光圈颜色（橙黄色）
+        RADIUS: 100, // 火把光圈半径
+        INTENSITY: 0.6, // 火把光圈强度
+        COLOR: 'rgba(255, 150, 50, 1)' // 火把光圈颜色（橙黄色）
     }
 };
 
 // ==================== 环境装饰配置 ====================
 const DECORATIONS = {
     TYPES: {
-        TORCH: 'torch',       // 火把
-        SKULL: 'skull',       // 骷髅
-        CHEST: 'chest',       // 箱子
-        PILLAR: 'pillar'      // 石柱
+        TORCH: 'torch', // 火把
+        SKULL: 'skull', // 骷髅
+        CHEST: 'chest', // 箱子
+        PILLAR: 'pillar' // 石柱
     },
-    TORCH_COUNT: 4,           // 每房间火把数量
-    SKULL_COUNT: 3,           // 每房间骷髅数量
-    CHEST_COUNT: 1,           // 每房间箱子数量
-    PILLAR_COUNT: 2           // 每房间石柱数量
+    TORCH_COUNT: 4, // 每房间火把数量
+    SKULL_COUNT: 3, // 每房间骷髅数量
+    CHEST_COUNT: 1, // 每房间箱子数量
+    PILLAR_COUNT: 2 // 每房间石柱数量
 };
 
 // ==================== 动画配置 ====================
@@ -572,7 +786,7 @@ const DIFFICULTY = {
             icon: '🌱',
             description: '适合新手',
             color: '#4caf50',
-            
+
             // 敌人属性缩放
             enemy: {
                 healthMultiplier: 0.7,
@@ -580,7 +794,7 @@ const DIFFICULTY = {
                 speedMultiplier: 0.9,
                 aiLevel: 1
             },
-            
+
             // 玩家属性影响
             player: {
                 initialHealth: 4,
@@ -588,7 +802,7 @@ const DIFFICULTY = {
                 shopPriceMultiplier: 0.8,
                 dropRateMultiplier: 1.3
             },
-            
+
             // 房间配置
             room: {
                 normalRoomCount: 3,
@@ -596,14 +810,14 @@ const DIFFICULTY = {
                 bossCount: 1
             }
         },
-        
+
         NORMAL: {
             id: 'normal',
             name: '普通',
             icon: '⚔️',
             description: '平衡的挑战',
             color: '#2196f3',
-            
+
             // 敌人属性缩放
             enemy: {
                 healthMultiplier: 1.0,
@@ -611,7 +825,7 @@ const DIFFICULTY = {
                 speedMultiplier: 1.0,
                 aiLevel: 1
             },
-            
+
             // 玩家属性影响
             player: {
                 initialHealth: 3,
@@ -619,7 +833,7 @@ const DIFFICULTY = {
                 shopPriceMultiplier: 1.0,
                 dropRateMultiplier: 1.0
             },
-            
+
             // 房间配置
             room: {
                 normalRoomCount: 4,
@@ -627,14 +841,14 @@ const DIFFICULTY = {
                 bossCount: 1
             }
         },
-        
+
         HARD: {
             id: 'hard',
             name: '困难',
             icon: '💀',
             description: '真正的挑战',
             color: '#ff9800',
-            
+
             // 敌人属性缩放
             enemy: {
                 healthMultiplier: 1.5,
@@ -642,7 +856,7 @@ const DIFFICULTY = {
                 speedMultiplier: 1.1,
                 aiLevel: 2
             },
-            
+
             // 玩家属性影响
             player: {
                 initialHealth: 3,
@@ -650,7 +864,7 @@ const DIFFICULTY = {
                 shopPriceMultiplier: 1.2,
                 dropRateMultiplier: 0.8
             },
-            
+
             // 房间配置
             room: {
                 normalRoomCount: 5,
@@ -658,14 +872,14 @@ const DIFFICULTY = {
                 bossCount: 1
             }
         },
-        
+
         NIGHTMARE: {
             id: 'nightmare',
             name: '噩梦',
             icon: '🔥',
             description: '只有勇者才能生还',
             color: '#f44336',
-            
+
             // 敌人属性缩放
             enemy: {
                 healthMultiplier: 2.0,
@@ -673,7 +887,7 @@ const DIFFICULTY = {
                 speedMultiplier: 1.2,
                 aiLevel: 3
             },
-            
+
             // 玩家属性影响
             player: {
                 initialHealth: 2,
@@ -681,7 +895,7 @@ const DIFFICULTY = {
                 shopPriceMultiplier: 1.5,
                 dropRateMultiplier: 0.6
             },
-            
+
             // 房间配置
             room: {
                 normalRoomCount: 6,
@@ -690,41 +904,41 @@ const DIFFICULTY = {
             }
         }
     },
-    
+
     // 默认难度
     DEFAULT: 'normal',
-    
+
     // 房间难度递增配置
     ROOM_PROGRESSION: {
         // 每个房间的敌人强度倍率（相对于基础难度）
         enemyStrengthByRoom: [
-            0.8,    // 第1房间
-            0.9,    // 第2房间
-            1.0,    // 第3房间
-            1.1,    // 第4房间
-            1.2,    // 第5房间
-            1.3     // Boss房
+            0.8, // 第1房间
+            0.9, // 第2房间
+            1.0, // 第3房间
+            1.1, // 第4房间
+            1.2, // 第5房间
+            1.3 // Boss房
         ],
-        
+
         // 敌人组合配置
         enemyComposition: {
-            EARLY: ['slime'],                    // 前期：只有史莱姆
-            MID: ['slime', 'bat'],               // 中期：史莱姆+蝙蝠
-            LATE: ['slime', 'bat', 'ghost'],     // 后期：全部敌人
+            EARLY: ['slime'], // 前期：只有史莱姆
+            MID: ['slime', 'bat'], // 中期：史莱姆+蝙蝠
+            LATE: ['slime', 'bat', 'ghost'], // 后期：全部敌人
             ELITE: ['slime', 'bat', 'ghost', 'elite'], // 精英房
-            BOSS: ['boss']                       // Boss房
+            BOSS: ['boss'] // Boss房
         }
     },
-    
+
     // AI等级配置
     AI_LEVELS: {
         1: {
             name: '简单',
-            chaseAccuracy: 0.7,      // 追踪精确度
+            chaseAccuracy: 0.7, // 追踪精确度
             attackCooldownMultiplier: 1.5, // 攻击冷却倍率（越大越慢）
-            dodgeChance: 0,          // 闪避概率
+            dodgeChance: 0, // 闪避概率
             predictiveMovement: false, // 是否预测玩家移动
-            keepDistance: false      // 是否保持攻击距离
+            keepDistance: false // 是否保持攻击距离
         },
         2: {
             name: '普通',
@@ -760,12 +974,12 @@ const COLLISION = {
 
 // ==================== 怒气系统配置 ====================
 const RAGE = {
-    MAX_RAGE: 100,                // 最大怒气值
-    KILL_RAGE_GAIN: 15,           // 击杀敌人获得的怒气
-    HURT_RAGE_GAIN: 8,            // 受伤时获得的怒气
-    DECAY_RATE: 2,                // 怒气自然衰减速度（每秒）
-    DECAY_DELAY: 3000,            // 怒气衰减延迟（毫秒，最后一次获取怒气后多久开始衰减）
-    FULL_THRESHOLD: 100            // 满怒气阈值
+    MAX_RAGE: 100, // 最大怒气值
+    KILL_RAGE_GAIN: 15, // 击杀敌人获得的怒气
+    HURT_RAGE_GAIN: 8, // 受伤时获得的怒气
+    DECAY_RATE: 2, // 怒气自然衰减速度（每秒）
+    DECAY_DELAY: 3000, // 怒气衰减延迟（毫秒，最后一次获取怒气后多久开始衰减）
+    FULL_THRESHOLD: 100 // 满怒气阈值
 };
 
 // ==================== UI布局配置 ====================
@@ -773,26 +987,26 @@ const UI = {
     // 顶部信息栏
     TOP_BAR_HEIGHT: 60,
     TOP_BAR_Y: 0,
-    
+
     // 底部技能栏
     BOTTOM_BAR_HEIGHT: 50,
-    
+
     // 怒气条
     RAGE_BAR_X: 10,
     RAGE_BAR_Y: 70,
     RAGE_BAR_WIDTH: 150,
     RAGE_BAR_HEIGHT: 12,
-    
+
     // 角色信息框
     CHARACTER_INFO_WIDTH: 100,
     CHARACTER_INFO_HEIGHT: 80,
     CHARACTER_INFO_X_OFFSET: 10,
     CHARACTER_INFO_Y_OFFSET: 10,
-    
+
     // 伤害数字
     DAMAGE_NUMBER_DURATION: 1000,
     DAMAGE_NUMBER_SPEED: 2,
-    
+
     // 技能栏
     SKILL_BAR_HEIGHT: 50,
     SKILL_NAME_OFFSET_Y: 20,
@@ -805,67 +1019,67 @@ const UI = {
 const FEEDBACK = {
     // 击中闪白
     HIT_FLASH: {
-        ENEMY_DURATION: 100,      // 敌人闪白持续时间（毫秒）
-        PLAYER_DURATION: 150,     // 玩家闪白持续时间（毫秒）
-        INTENSITY: 1.0            // 闪白最大强度
+        ENEMY_DURATION: 100, // 敌人闪白持续时间（毫秒）
+        PLAYER_DURATION: 150, // 玩家闪白持续时间（毫秒）
+        INTENSITY: 1.0 // 闪白最大强度
     },
-    
+
     // 屏幕震动
     SCREEN_SHAKE: {
-        PLAYER_HURT: { intensity: 3, duration: 200 },    // 玩家受伤
-        ENEMY_KILLED: { intensity: 2, duration: 100 },   // 击杀敌人
-        EXPLOSION: { intensity: 5, duration: 300 },      // 爆炸
-        BOSS_ATTACK: { intensity: 8, duration: 500 },    // Boss攻击
-        WEAPON_PICKUP: { intensity: 4, duration: 200 },  // 拾取强力武器
-        BOSS_DEATH: { intensity: 10, duration: 800 }     // Boss死亡
+        PLAYER_HURT: { intensity: 3, duration: 200 }, // 玩家受伤
+        ENEMY_KILLED: { intensity: 2, duration: 100 }, // 击杀敌人
+        EXPLOSION: { intensity: 5, duration: 300 }, // 爆炸
+        BOSS_ATTACK: { intensity: 8, duration: 500 }, // Boss攻击
+        WEAPON_PICKUP: { intensity: 4, duration: 200 }, // 拾取强力武器
+        BOSS_DEATH: { intensity: 10, duration: 800 } // Boss死亡
     },
-    
+
     // 击退效果
     KNOCKBACK: {
-        ENEMY_BASE_FORCE: 8,       // 敌人基础击退力
-        ENEMY_DAMAGE_MULT: 2,      // 敌人击退伤害倍率
-        PLAYER_FORCE: 5,           // 玩家击退力
-        RECOVERY_TIME: 200,        // 击退恢复时间（毫秒）
-        FRICTION: 0.85             // 击退摩擦系数
+        ENEMY_BASE_FORCE: 8, // 敌人基础击退力
+        ENEMY_DAMAGE_MULT: 2, // 敌人击退伤害倍率
+        PLAYER_FORCE: 5, // 玩家击退力
+        RECOVERY_TIME: 200, // 击退恢复时间（毫秒）
+        FRICTION: 0.85 // 击退摩擦系数
     },
-    
+
     // 慢动作效果
     SLOW_MOTION: {
-        BOSS_DEATH: { duration: 500, targetScale: 0.1 },     // Boss死亡
-        PERFECT_DODGE: { duration: 200, targetScale: 0.5 },  // 极限闪避
+        BOSS_DEATH: { duration: 500, targetScale: 0.1 }, // Boss死亡
+        PERFECT_DODGE: { duration: 200, targetScale: 0.5 }, // 极限闪避
         LEGENDARY_WEAPON: { duration: 300, targetScale: 0.2 } // 传说武器
     },
-    
+
     // 时间停止效果
     TIME_STOP: {
-        POWER_WEAPON: 300,      // 强力武器拾取（毫秒）
-        VICTORY: 500            // 通关瞬间（毫秒）
+        POWER_WEAPON: 300, // 强力武器拾取（毫秒）
+        VICTORY: 500 // 通关瞬间（毫秒）
     },
-    
+
     // 命中停顿（冻结帧）
     HIT_STOP: {
-        ENEMY_HIT: 30,      // 击中普通敌人冻结30ms
-        ENEMY_KILL: 50,     // 击杀敌人冻结50ms
-        BOSS_HIT: 40,       // 击中Boss冻结40ms
-        CRIT_HIT: 60        // 暴击冻结60ms
+        ENEMY_HIT: 30, // 击中普通敌人冻结30ms
+        ENEMY_KILL: 50, // 击杀敌人冻结50ms
+        BOSS_HIT: 40, // 击中Boss冻结40ms
+        CRIT_HIT: 60 // 暴击冻结60ms
     }
 };
 
 // ==================== 敌人血条配置 ====================
 const ENEMY_HEALTH_BAR = {
-    WIDTH: 30,           // 血条宽度
-    HEIGHT: 4,           // 血条高度
-    Y_OFFSET: 20,        // 头顶偏移量
+    WIDTH: 30, // 血条宽度
+    HEIGHT: 4, // 血条高度
+    Y_OFFSET: 20, // 头顶偏移量
     BG_COLOR: '#333333', // 背景色
     BORDER_COLOR: '#000000', // 边框色
-    LOW_THRESHOLD: 0.3,  // 低血量阈值
-    MID_THRESHOLD: 0.6,  // 中血量阈值
-    COLOR_LOW: '#ff0000',    // 低血量颜色
-    COLOR_MID: '#ffff00',    // 中血量颜色
-    COLOR_HIGH: '#00ff00',   // 高血量颜色
-    BOSS_WIDTH: 200,     // Boss血条宽度
-    BOSS_HEIGHT: 12,     // Boss血条高度
-    BOSS_Y: 30           // Boss血条Y位置
+    LOW_THRESHOLD: 0.3, // 低血量阈值
+    MID_THRESHOLD: 0.6, // 中血量阈值
+    COLOR_LOW: '#ff0000', // 低血量颜色
+    COLOR_MID: '#ffff00', // 中血量颜色
+    COLOR_HIGH: '#00ff00', // 高血量颜色
+    BOSS_WIDTH: 200, // Boss血条宽度
+    BOSS_HEIGHT: 12, // Boss血条高度
+    BOSS_Y: 30 // Boss血条Y位置
 };
 
 // ==================== UI颜色配置 ====================
@@ -876,7 +1090,7 @@ const UI_COLORS = {
     TEXT_PRIMARY: COLORS.UI.TEXT_PRIMARY,
     TEXT_SECONDARY: COLORS.UI.TEXT_SECONDARY,
     TEXT_SHADOW: COLORS.UI.TEXT_SHADOW,
-    
+
     // 怒气条
     RAGE_EMPTY: COLORS.UI.RAGE_EMPTY,
     RAGE_FULL: COLORS.UI.RAGE_FULL,
@@ -884,18 +1098,18 @@ const UI_COLORS = {
     RAGE_GRADIENT_START: '#ff0000',
     RAGE_GRADIENT_MID: '#ff6600',
     RAGE_GRADIENT_END: COLORS.UI.RAGE_FULL,
-    
+
     // 技能栏
     SKILL_READY: COLORS.UI.SKILL_READY,
     SKILL_COOLDOWN: COLORS.UI.SKILL_COOLDOWN,
     SKILL_BAR_BG: 'rgba(0, 0, 0, 0.7)',
     SKILL_TEXT: '#ffffff',
     SKILL_CD_TEXT: '#ff6666',
-    
+
     // 伤害数字
     DAMAGE_NORMAL: '#ffffff',
     DAMAGE_CRIT: COLORS.UI.DAMAGE_CRIT,
-    
+
     // 伤害类型颜色（与COLORS.UI一致）
     DAMAGE_FIRE: COLORS.UI.DAMAGE_FIRE,
     DAMAGE_FROST: COLORS.UI.DAMAGE_FROST,
@@ -905,20 +1119,20 @@ const UI_COLORS = {
     DAMAGE_HEAL: '#00ff00',
     HEALTH_GREEN: '#00ff00',
     DAMAGE_SKILL: '#00ccff',
-    
+
     // 被动技能buff颜色（与COLORS.UI一致）
     BUFF_SPEED: COLORS.UI.BUFF_SPEED,
     BUFF_DAMAGE: COLORS.UI.BUFF_DAMAGE,
     BUFF_DEFENSE: COLORS.UI.BUFF_DEFENSE,
     BUFF_DEFAULT: COLORS.UI.BUFF_DEFAULT,
-    
+
     // 角色信息框
     INFO_BG: 'rgba(0, 0, 0, 0.7)',
     INFO_BORDER: '#ffffff',
     INFO_NAME: '#ffffff',
     INFO_TITLE: '#aaaaaa',
     INFO_PASSIVE: '#ffcc00',
-    
+
     // 主菜单UI颜色（与COLORS.UI一致）
     MENU_TITLE_GLOW: COLORS.UI.TITLE_GLOW,
     MENU_TITLE_FILL: COLORS.UI.TITLE_FILL,
@@ -931,16 +1145,16 @@ const UI_COLORS = {
     MENU_BUTTON_HOVER_BORDER: COLORS.UI.BUTTON_BORDER_HOVER,
     MENU_BG_GRADIENT_TOP: COLORS.UI.MENU_BG_TOP,
     MENU_BG_GRADIENT_BOTTOM: COLORS.UI.MENU_BG_BOTTOM,
-    
+
     // 技能图标UI
     SKILL_ICON_BG: 'rgba(0, 0, 0, 0.7)',
     SKILL_ICON_RING_BG: 'rgba(0, 0, 0, 0.5)',
     SKILL_ICON_RING_FG: 'rgba(255, 255, 255, 0.8)',
     SKILL_ICON_READY_GLOW: 'rgba(0, 255, 100, 0.7)',
-    
+
     // 遮罩
     OVERLAY: COLORS.UI.OVERLAY,
-    
+
     // 生命值
     HEALTH_FULL: COLORS.UI.HEALTH_FULL,
     HEALTH_EMPTY: COLORS.UI.HEALTH_EMPTY
@@ -960,7 +1174,7 @@ const MENU_ANIMATION = {
         SWAY_SPEED: 0.02,
         SWAY_AMOUNT: 0.5
     },
-    
+
     // 浮动武器图标
     FLOATING_WEAPONS: {
         COUNT: 8,
@@ -972,7 +1186,7 @@ const MENU_ANIMATION = {
         ROTATE_SPEED: 0.01,
         ALPHA: 0.6
     },
-    
+
     // 打字机效果
     TYPEWRITER: {
         TEXT: '像素地牢',
@@ -980,14 +1194,14 @@ const MENU_ANIMATION = {
         CURSOR_BLINK_SPEED: 500,
         CURSOR_CHAR: '_'
     },
-    
+
     // 地牢滚动背景
     DUNGEON_SCROLL: {
         TILE_SIZE: 40,
         SPEED: 0.3,
         ALPHA: 0.15
     },
-    
+
     // 按钮悬停效果
     BUTTON_HOVER: {
         SCALE: 1.05,
@@ -999,111 +1213,176 @@ const MENU_ANIMATION = {
 
 // ==================== 技能图标映射 ====================
 const SKILL_ICONS = {
-    '冲刺': '💨',
-    '闪电链': '⚡',
-    '地雷': '💣',
-    '护盾': '🛡️',
-    '治疗': '💚',
-    '炮台': '🔫',
-    '瞬移': '✨',
-    '狂暴': '💢',
-    '剑刃风暴': '🌀',
-    '幻影': '👻',
-    '暗影突袭': '🗡️',
-    '流星火雨': '☄️',
-    '冰封': '❄️',
-    '雷霆': '⚡',
-    '预知': '👁️',
-    '复活': '💫',
-    '野性呼唤': '🐺',
-    '精准射击': '🎯',
-    '自我修复': '🔧',
-    '定点爆破': '💥',
-    '骷髅大军': '💀',
-    '召唤飞龙': '🐉',
-    '荆棘陷阱': '🌵',
-    '药水炸弹': '🧪',
-    '惊喜礼盒': '🎁',
-    '元素融合': '🔮'
+    冲刺: '💨',
+    闪电链: '⚡',
+    地雷: '💣',
+    护盾: '🛡️',
+    治疗: '💚',
+    炮台: '🔫',
+    瞬移: '✨',
+    狂暴: '💢',
+    剑刃风暴: '🌀',
+    幻影: '👻',
+    暗影突袭: '🗡️',
+    流星火雨: '☄️',
+    冰封: '❄️',
+    雷霆: '⚡',
+    预知: '👁️',
+    复活: '💫',
+    野性呼唤: '🐺',
+    精准射击: '🎯',
+    自我修复: '🔧',
+    定点爆破: '💥',
+    骷髅大军: '💀',
+    召唤飞龙: '🐉',
+    荆棘陷阱: '🌵',
+    药水炸弹: '🧪',
+    惊喜礼盒: '🎁',
+    元素融合: '🔮'
 };
 
 // ==================== 技能前摇配置 ====================
 const SKILL_CAST = {
-    DEFAULT_CAST_TIME: 200,      // 默认前摇时间（毫秒）
+    DEFAULT_CAST_TIME: 200, // 默认前摇时间（毫秒）
     DEFAULT_CAN_INTERRUPT: true, // 默认是否可打断
-    EFFECT_INTERVAL: 50          // 前摇特效间隔
+    EFFECT_INTERVAL: 50 // 前摇特效间隔
 };
 
 // ==================== 主动技能冷却时间（毫秒） ====================
 const SKILL_COOLDOWN = {
-    SHIELD: 8000, BERSERK: 10000, BLADE_STORM: 12000,
-    BLINK: 5000, PHANTOM: 15000, SHADOW_STRIKE: 8000,
-    METEOR: 15000, FREEZE_SKILL: 10000, THUNDER: 12000,
-    HEAL: 5000, FORESIGHT: 20000, RESURRECTION: 60000,
-    LANDMINE: 8000, SUMMON_PET: 20000, PRECISION_SHOT: 10000,
-    TURRET: 15000, SELF_REPAIR: 30000, DEMOLITION: 12000,
-    ARMY_OF_DEAD: 30000, SUMMON_DRAGON: 25000, THORN_TRAP: 3000,
-    POTION_BOMB: 8000, SURPRISE_BOX: 15000, ELEMENTAL_FUSION: 20000
+    SHIELD: 8000,
+    BERSERK: 10000,
+    BLADE_STORM: 12000,
+    BLINK: 5000,
+    PHANTOM: 15000,
+    SHADOW_STRIKE: 8000,
+    METEOR: 15000,
+    FREEZE_SKILL: 10000,
+    THUNDER: 12000,
+    HEAL: 5000,
+    FORESIGHT: 20000,
+    RESURRECTION: 60000,
+    LANDMINE: 8000,
+    SUMMON_PET: 20000,
+    PRECISION_SHOT: 10000,
+    TURRET: 15000,
+    SELF_REPAIR: 30000,
+    DEMOLITION: 12000,
+    ARMY_OF_DEAD: 30000,
+    SUMMON_DRAGON: 25000,
+    THORN_TRAP: 3000,
+    POTION_BOMB: 8000,
+    SURPRISE_BOX: 15000,
+    ELEMENTAL_FUSION: 20000
 };
 
 // ==================== 主动技能怒气消耗 ====================
 const SKILL_RAGE_COST = {
-    SHIELD: 30, BERSERK: 50, BLADE_STORM: 60,
-    BLINK: 20, PHANTOM: 40, SHADOW_STRIKE: 35,
-    METEOR: 70, FREEZE_SKILL: 40, THUNDER: 50,
-    HEAL: 25, FORESIGHT: 45, RESURRECTION: 80,
-    LANDMINE: 30, SUMMON_PET: 60, PRECISION_SHOT: 45,
-    TURRET: 50, SELF_REPAIR: 35, DEMOLITION: 55,
-    ARMY_OF_DEAD: 80, SUMMON_DRAGON: 75, THORN_TRAP: 20,
-    POTION_BOMB: 35, SURPRISE_BOX: 40, ELEMENTAL_FUSION: 85
+    SHIELD: 30,
+    BERSERK: 50,
+    BLADE_STORM: 60,
+    BLINK: 20,
+    PHANTOM: 40,
+    SHADOW_STRIKE: 35,
+    METEOR: 70,
+    FREEZE_SKILL: 40,
+    THUNDER: 50,
+    HEAL: 25,
+    FORESIGHT: 45,
+    RESURRECTION: 80,
+    LANDMINE: 30,
+    SUMMON_PET: 60,
+    PRECISION_SHOT: 45,
+    TURRET: 50,
+    SELF_REPAIR: 35,
+    DEMOLITION: 55,
+    ARMY_OF_DEAD: 80,
+    SUMMON_DRAGON: 75,
+    THORN_TRAP: 20,
+    POTION_BOMB: 35,
+    SURPRISE_BOX: 40,
+    ELEMENTAL_FUSION: 85
 };
 
 // ==================== 主动技能效果参数 ====================
 const SKILL_EFFECT = {
-    SHIELD_DURATION: 5000, SHIELD_HEALTH: 2,
-    BERSERK_DURATION: 5000, BERSERK_DAMAGE_MULT: 1.8, BERSERK_SPEED_MULT: 1.4,
-    BLADE_STORM_DURATION: 2000, BLADE_STORM_DAMAGE: 1, BLADE_STORM_HIT_INTERVAL: 200, BLADE_STORM_RADIUS: 60,
+    SHIELD_DURATION: 5000,
+    SHIELD_HEALTH: 2,
+    BERSERK_DURATION: 5000,
+    BERSERK_DAMAGE_MULT: 1.8,
+    BERSERK_SPEED_MULT: 1.4,
+    BLADE_STORM_DURATION: 2000,
+    BLADE_STORM_DAMAGE: 1,
+    BLADE_STORM_HIT_INTERVAL: 200,
+    BLADE_STORM_RADIUS: 60,
     BLINK_DISTANCE: 150,
-    PHANTOM_DURATION: 4000, PHANTOM_COUNT: 3,
-    SHADOW_STRIKE_DISTANCE: 100, SHADOW_STRIKE_DAMAGE: 3, SHADOW_STRIKE_SPEED: 3,
-    METEOR_COUNT: 5, METEOR_DAMAGE: 2, METEOR_RADIUS: 40, METEOR_DELAY: 100,
-    FREEZE_RADIUS: 80, FREEZE_DURATION: 2000, FREEZE_SLOW_FACTOR: 0.4,
-    THUNDER_CHAIN_COUNT: 4, THUNDER_DAMAGE: 2, THUNDER_CHAIN_RADIUS: 150,
+    PHANTOM_DURATION: 4000,
+    PHANTOM_COUNT: 3,
+    SHADOW_STRIKE_DISTANCE: 100,
+    SHADOW_STRIKE_DAMAGE: 3,
+    SHADOW_STRIKE_SPEED: 3,
+    METEOR_COUNT: 5,
+    METEOR_DAMAGE: 2,
+    METEOR_RADIUS: 40,
+    METEOR_DELAY: 100,
+    FREEZE_RADIUS: 80,
+    FREEZE_DURATION: 2000,
+    FREEZE_SLOW_FACTOR: 0.4,
+    THUNDER_CHAIN_COUNT: 4,
+    THUNDER_DAMAGE: 2,
+    THUNDER_CHAIN_RADIUS: 150,
     HEAL_AMOUNT: 1,
     FORESIGHT_DURATION: 5000,
-    LANDMINE_DAMAGE: 3, LANDMINE_RADIUS: 60,
-    PET_DURATION: 10000, PET_DAMAGE: 1,
-    PRECISION_SHOT_DAMAGE: 5, PRECISION_SHOT_RANGE: 500, PRECISION_SHOT_CRIT_MULT: 3,
-    TURRET_DURATION: 15000, TURRET_DAMAGE: 1, TURRET_RANGE: 120,
-    SELF_REPAIR_RATE: 0.2, SELF_REPAIR_DURATION: 10000,
-    DEMOLITION_DELAY: 2000, DEMOLITION_DAMAGE: 4, DEMOLITION_RADIUS: 80,
-    SKELETON_COUNT: 4, SKELETON_DAMAGE: 1, SKELETON_DURATION: 15000,
-    DRAGON_DURATION: 15000, DRAGON_DAMAGE: 2,
-    THORN_DAMAGE: 1, THORN_COOLDOWN: 2000,
-    POTION_BOMB_DAMAGE: 3, POTION_BOMB_RADIUS: 50, POTION_POISON_DURATION: 3000, POTION_POISON_DAMAGE: 0.5,
-    ELEMENTAL_FUSION_DAMAGE: 5, ELEMENTAL_FUSION_RADIUS: 150
+    LANDMINE_DAMAGE: 3,
+    LANDMINE_RADIUS: 60,
+    PET_DURATION: 10000,
+    PET_DAMAGE: 1,
+    PRECISION_SHOT_DAMAGE: 5,
+    PRECISION_SHOT_RANGE: 500,
+    PRECISION_SHOT_CRIT_MULT: 3,
+    TURRET_DURATION: 15000,
+    TURRET_DAMAGE: 1,
+    TURRET_RANGE: 120,
+    SELF_REPAIR_RATE: 0.2,
+    SELF_REPAIR_DURATION: 10000,
+    DEMOLITION_DELAY: 2000,
+    DEMOLITION_DAMAGE: 4,
+    DEMOLITION_RADIUS: 80,
+    SKELETON_COUNT: 4,
+    SKELETON_DAMAGE: 1,
+    SKELETON_DURATION: 15000,
+    DRAGON_DURATION: 15000,
+    DRAGON_DAMAGE: 2,
+    THORN_DAMAGE: 1,
+    THORN_COOLDOWN: 2000,
+    POTION_BOMB_DAMAGE: 3,
+    POTION_BOMB_RADIUS: 50,
+    POTION_POISON_DURATION: 3000,
+    POTION_POISON_DAMAGE: 0.5,
+    ELEMENTAL_FUSION_DAMAGE: 5,
+    ELEMENTAL_FUSION_RADIUS: 150
 };
 
 // ==================== 房间类型配置 ====================
 const ROOM_TYPES = {
-    BATTLE: 'battle',           // 普通战斗房
-    CHEST: 'chest',             // 宝箱房
-    SHOP: 'shop',               // 商店房
-    TRAP: 'trap',               // 陷阱房
-    ELITE: 'elite',             // 精英房
-    REST: 'rest',               // 休息房
-    BOSS: 'boss'                // Boss房
+    BATTLE: 'battle', // 普通战斗房
+    CHEST: 'chest', // 宝箱房
+    SHOP: 'shop', // 商店房
+    TRAP: 'trap', // 陷阱房
+    ELITE: 'elite', // 精英房
+    REST: 'rest', // 休息房
+    BOSS: 'boss' // Boss房
 };
 
 // 房间出现概率配置
 const ROOM_SPAWN_CONFIG = {
-    BATTLE: 0.50,
-    CHEST: 0.10,
-    SHOP: 0.10,
-    TRAP: 0.10,
-    ELITE: 0.10,
-    REST: 0.10,
-    BOSS: 0.10
+    BATTLE: 0.5,
+    CHEST: 0.1,
+    SHOP: 0.1,
+    TRAP: 0.1,
+    ELITE: 0.1,
+    REST: 0.1,
+    BOSS: 0.1
 };
 
 // 路线选择配置（分支房间，每局每种出现一次）
@@ -1115,43 +1394,106 @@ const ROUTE_SELECT_CONFIG = {
 
 // 关卡房间布局配置
 const LEVEL_LAYOUT = {
-    TOTAL_ROOMS: 6,             // 总房间数（不含Boss）
-    BRANCH_ROOMS: [1, 3]        // 有分支的房间索引
+    TOTAL_ROOMS: 6, // 总房间数（不含Boss）
+    BRANCH_ROOMS: [1, 3] // 有分支的房间索引
 };
 
 // ==================== 陷阱系统配置 ====================
 const TRAP_TYPES = {
-    SPIKE: 'spike',             // 地刺
-    FIRE: 'fire',               // 火焰
-    POISON: 'poison',           // 毒雾
-    ICE: 'ice',                 // 冰冻
-    ROCK: 'rock',               // 落石
-    TELEPORT: 'teleport'        // 传送
+    SPIKE: 'spike', // 地刺
+    FIRE: 'fire', // 火焰
+    POISON: 'poison', // 毒雾
+    ICE: 'ice', // 冰冻
+    ROCK: 'rock', // 落石
+    TELEPORT: 'teleport' // 传送
 };
 
 const TRAPS = {
-    SPIKE: { TYPE: TRAP_TYPES.SPIKE, NAME: '地刺', DAMAGE: 1, COOLDOWN: 2000, ACTIVE_DURATION: 500, SIZE: 32, COLOR: '#808080', SPIKE_COLOR: '#c0c0c0', VISIBLE: true },
-    FIRE: { TYPE: TRAP_TYPES.FIRE, NAME: '火焰', DAMAGE: 1, COOLDOWN: 3000, ACTIVE_DURATION: 1000, SIZE: 32, COLOR: '#8b4513', FIRE_COLOR: '#ff4500', VISIBLE: true },
-    POISON: { TYPE: TRAP_TYPES.POISON, NAME: '毒雾', DAMAGE: 0.5, COOLDOWN: 500, ACTIVE_DURATION: 4000, SIZE: 48, COLOR: '#228b22', POISON_COLOR: 'rgba(50, 205, 50, 0.4)', VISIBLE: true },
-    ICE: { TYPE: TRAP_TYPES.ICE, NAME: '冰冻', DAMAGE: 0, COOLDOWN: 5000, ACTIVE_DURATION: 2000, SLOW_FACTOR: 0.5, SLOW_DURATION: 3000, SIZE: 40, COLOR: '#4169e1', ICE_COLOR: '#87ceeb', VISIBLE: true },
-    ROCK: { TYPE: TRAP_TYPES.ROCK, NAME: '落石', DAMAGE: 2, COOLDOWN: 4000, WARNING_DURATION: 1000, ACTIVE_DURATION: 300, SIZE: 36, COLOR: '#696969', WARNING_COLOR: 'rgba(255, 0, 0, 0.3)', VISIBLE: false },
-    TELEPORT: { TYPE: TRAP_TYPES.TELEPORT, NAME: '传送', DAMAGE: 0, COOLDOWN: 8000, ACTIVE_DURATION: 500, SIZE: 36, COLOR: '#9932cc', TELEPORT_COLOR: '#da70d6', VISIBLE: true }
+    SPIKE: {
+        TYPE: TRAP_TYPES.SPIKE,
+        NAME: '地刺',
+        DAMAGE: 1,
+        COOLDOWN: 2000,
+        ACTIVE_DURATION: 500,
+        SIZE: 32,
+        COLOR: '#808080',
+        SPIKE_COLOR: '#c0c0c0',
+        VISIBLE: true
+    },
+    FIRE: {
+        TYPE: TRAP_TYPES.FIRE,
+        NAME: '火焰',
+        DAMAGE: 1,
+        COOLDOWN: 3000,
+        ACTIVE_DURATION: 1000,
+        SIZE: 32,
+        COLOR: '#8b4513',
+        FIRE_COLOR: '#ff4500',
+        VISIBLE: true
+    },
+    POISON: {
+        TYPE: TRAP_TYPES.POISON,
+        NAME: '毒雾',
+        DAMAGE: 0.5,
+        COOLDOWN: 500,
+        ACTIVE_DURATION: 4000,
+        SIZE: 48,
+        COLOR: '#228b22',
+        POISON_COLOR: 'rgba(50, 205, 50, 0.4)',
+        VISIBLE: true
+    },
+    ICE: {
+        TYPE: TRAP_TYPES.ICE,
+        NAME: '冰冻',
+        DAMAGE: 0,
+        COOLDOWN: 5000,
+        ACTIVE_DURATION: 2000,
+        SLOW_FACTOR: 0.5,
+        SLOW_DURATION: 3000,
+        SIZE: 40,
+        COLOR: '#4169e1',
+        ICE_COLOR: '#87ceeb',
+        VISIBLE: true
+    },
+    ROCK: {
+        TYPE: TRAP_TYPES.ROCK,
+        NAME: '落石',
+        DAMAGE: 2,
+        COOLDOWN: 4000,
+        WARNING_DURATION: 1000,
+        ACTIVE_DURATION: 300,
+        SIZE: 36,
+        COLOR: '#696969',
+        WARNING_COLOR: 'rgba(255, 0, 0, 0.3)',
+        VISIBLE: false
+    },
+    TELEPORT: {
+        TYPE: TRAP_TYPES.TELEPORT,
+        NAME: '传送',
+        DAMAGE: 0,
+        COOLDOWN: 8000,
+        ACTIVE_DURATION: 500,
+        SIZE: 36,
+        COLOR: '#9932cc',
+        TELEPORT_COLOR: '#da70d6',
+        VISIBLE: true
+    }
 };
 
 // 陷阱房配置
 const TRAP_ROOM_CONFIG = {
     TRAP_COUNT_MIN: 5,
     TRAP_COUNT_MAX: 10,
-    REWARD_CHESTS: 1            // 通过后的奖励宝箱数
+    REWARD_CHESTS: 1 // 通过后的奖励宝箱数
 };
 
 // ==================== 宝箱系统配置 ====================
 const CHEST_TYPES = {
-    NORMAL: 'normal',           // 普通宝箱
-    GOLDEN: 'golden',           // 金宝箱
-    GEM: 'gem',                 // 宝石宝箱
-    LEGENDARY: 'legendary',     // 传说宝箱
-    MIMIC: 'mimic'              // mimic宝箱
+    NORMAL: 'normal', // 普通宝箱
+    GOLDEN: 'golden', // 金宝箱
+    GEM: 'gem', // 宝石宝箱
+    LEGENDARY: 'legendary', // 传说宝箱
+    MIMIC: 'mimic' // mimic宝箱
 };
 
 const CHESTS = {
@@ -1226,16 +1568,93 @@ const CHESTS = {
 const CHEST_ROOM_CONFIG = {
     CHEST_COUNT_MIN: 1,
     CHEST_COUNT_MAX: 2,
-    MIMIC_CHANCE: 0.2           // mimic出现概率
+    MIMIC_CHANCE: 0.2 // mimic出现概率
 };
 
 // ==================== 新敌人配置 ====================
 const NEW_ENEMIES = {
-    SKELETON: { TYPE: 'skeleton', NAME: '骷髅兵', SIZE: 18, HEALTH: 3, SPEED: 1.8, DAMAGE: 1, DROP_RATE: 0.35, ATTACK_RANGE: 35, ATTACK_COOLDOWN: 1200, COLOR: '#d3d3d3', BONE_COLOR: '#f5f5dc', SHIELD_COLOR: '#8b4513', AI: 'tank', SHIELD_DAMAGE_REDUCTION: 0.5 },
-    ARCHER: { TYPE: 'archer', NAME: '弓箭手', SIZE: 16, HEALTH: 2, SPEED: 2.2, DAMAGE: 1, DROP_RATE: 0.3, ATTACK_RANGE: 200, ATTACK_COOLDOWN: 1500, BULLET_SPEED: 6, COLOR: '#228b22', BOW_COLOR: '#8b4513', ARROW_COLOR: '#8b4513', AI: 'ranger', KEEP_DISTANCE: 150 },
-    MAGE: { TYPE: 'mage', NAME: '法师', SIZE: 18, HEALTH: 3, SPEED: 1.5, DAMAGE: 2, DROP_RATE: 0.4, ATTACK_RANGE: 250, ATTACK_COOLDOWN: 2000, BULLET_SPEED: 5, COLOR: '#4b0082', ROBE_COLOR: '#6a5acd', MAGIC_COLOR: '#9400d3', AI: 'caster', KEEP_DISTANCE: 180 },
-    BOMBER: { TYPE: 'bomber', NAME: '炸弹怪', SIZE: 18, HEALTH: 2, SPEED: 2.5, DAMAGE: 3, DROP_RATE: 0.35, ATTACK_RANGE: 40, ATTACK_COOLDOWN: 0, EXPLOSION_RADIUS: 50, COLOR: '#ff4500', BOMB_COLOR: '#333333', FUSE_COLOR: '#ffff00', AI: 'suicide' },
-    ELITE: { TYPE: 'elite', NAME: '精英怪', SIZE: 28, HEALTH: 8, SPEED: 1.5, DAMAGE: 2, DROP_RATE: 1.0, ATTACK_RANGE: 40, ATTACK_COOLDOWN: 1000, COLOR: '#ff0000', ARMOR_COLOR: '#8b0000', EYE_COLOR: '#ffff00', AI: 'berserker', DROP_QUALITY_BOOST: true }
+    SKELETON: {
+        TYPE: 'skeleton',
+        NAME: '骷髅兵',
+        SIZE: 18,
+        HEALTH: 3,
+        SPEED: 1.8,
+        DAMAGE: 1,
+        DROP_RATE: 0.35,
+        ATTACK_RANGE: 35,
+        ATTACK_COOLDOWN: 1200,
+        COLOR: '#d3d3d3',
+        BONE_COLOR: '#f5f5dc',
+        SHIELD_COLOR: '#8b4513',
+        AI: 'tank',
+        SHIELD_DAMAGE_REDUCTION: 0.5
+    },
+    ARCHER: {
+        TYPE: 'archer',
+        NAME: '弓箭手',
+        SIZE: 16,
+        HEALTH: 2,
+        SPEED: 2.2,
+        DAMAGE: 1,
+        DROP_RATE: 0.3,
+        ATTACK_RANGE: 200,
+        ATTACK_COOLDOWN: 1500,
+        BULLET_SPEED: 6,
+        COLOR: '#228b22',
+        BOW_COLOR: '#8b4513',
+        ARROW_COLOR: '#8b4513',
+        AI: 'ranger',
+        KEEP_DISTANCE: 150
+    },
+    MAGE: {
+        TYPE: 'mage',
+        NAME: '法师',
+        SIZE: 18,
+        HEALTH: 3,
+        SPEED: 1.5,
+        DAMAGE: 2,
+        DROP_RATE: 0.4,
+        ATTACK_RANGE: 250,
+        ATTACK_COOLDOWN: 2000,
+        BULLET_SPEED: 5,
+        COLOR: '#4b0082',
+        ROBE_COLOR: '#6a5acd',
+        MAGIC_COLOR: '#9400d3',
+        AI: 'caster',
+        KEEP_DISTANCE: 180
+    },
+    BOMBER: {
+        TYPE: 'bomber',
+        NAME: '炸弹怪',
+        SIZE: 18,
+        HEALTH: 2,
+        SPEED: 2.5,
+        DAMAGE: 3,
+        DROP_RATE: 0.35,
+        ATTACK_RANGE: 40,
+        ATTACK_COOLDOWN: 0,
+        EXPLOSION_RADIUS: 50,
+        COLOR: '#ff4500',
+        BOMB_COLOR: '#333333',
+        FUSE_COLOR: '#ffff00',
+        AI: 'suicide'
+    },
+    ELITE: {
+        TYPE: 'elite',
+        NAME: '精英怪',
+        SIZE: 28,
+        HEALTH: 8,
+        SPEED: 1.5,
+        DAMAGE: 2,
+        DROP_RATE: 1.0,
+        ATTACK_RANGE: 40,
+        ATTACK_COOLDOWN: 1000,
+        COLOR: '#ff0000',
+        ARMOR_COLOR: '#8b0000',
+        EYE_COLOR: '#ffff00',
+        AI: 'berserker',
+        DROP_QUALITY_BOOST: true
+    }
 };
 
 // 精英房配置
@@ -1243,15 +1662,15 @@ const ELITE_ROOM_CONFIG = {
     ELITE_COUNT: 1,
     MINION_COUNT: 1,
     REWARD_CHEST_TYPE: CHEST_TYPES.GOLDEN,
-    
+
     ELITE_STATS_MULTIPLIER: {
         health: 1.1,
         damage: 1.0,
         speed: 1.05
     },
-    
+
     MINION_TYPES: ['slime', 'bat', 'skeleton'],
-    
+
     REWARD_CONFIG: {
         guaranteedDrop: true,
         dropQuality: 'elite',
@@ -1262,22 +1681,58 @@ const ELITE_ROOM_CONFIG = {
 
 // ==================== 新Boss配置 - 骷髅王 ====================
 const SKELETON_KING = {
-    NAME: '骷髅王', SIZE: 48, HEALTH: 30, SPEED: 1.2, DAMAGE: 2,
-    COLOR: '#f5f5dc', ARMOR_COLOR: '#8b0000', CROWN_COLOR: '#ffd700', EYE_COLOR: '#00ff00',
-    PHASE1: { NAME: '第一阶段', HEALTH_THRESHOLD: 0.66, ATTACK_COOLDOWN: 2000, SUMMON_INTERVAL: 8000, SUMMON_COUNT: 2, ATTACK_RANGE: 60, SWING_DAMAGE: 2 },
-    PHASE2: { NAME: '第二阶段', HEALTH_THRESHOLD: 0.33, ATTACK_COOLDOWN: 1500, BONE_SPEAR_SPEED: 6, BONE_SPEAR_DAMAGE: 2, SUMMON_INTERVAL: 6000, SUMMON_COUNT: 3, SPEED_MULTIPLIER: 1.2 },
-    PHASE3: { NAME: '第三阶段', HEALTH_THRESHOLD: 0, ATTACK_COOLDOWN: 1000, DEATH_RAIN_INTERVAL: 5000, DEATH_RAIN_COUNT: 8, DEATH_RAIN_DAMAGE: 1, DEATH_RAIN_WARNING: 800, SPEED_MULTIPLIER: 1.5, DAMAGE_MULTIPLIER: 1.5, SUMMON_INTERVAL: 5000, SUMMON_COUNT: 4 }
+    NAME: '骷髅王',
+    SIZE: 48,
+    HEALTH: 30,
+    SPEED: 1.2,
+    DAMAGE: 2,
+    COLOR: '#f5f5dc',
+    ARMOR_COLOR: '#8b0000',
+    CROWN_COLOR: '#ffd700',
+    EYE_COLOR: '#00ff00',
+    PHASE1: {
+        NAME: '第一阶段',
+        HEALTH_THRESHOLD: 0.66,
+        ATTACK_COOLDOWN: 2000,
+        SUMMON_INTERVAL: 8000,
+        SUMMON_COUNT: 2,
+        ATTACK_RANGE: 60,
+        SWING_DAMAGE: 2
+    },
+    PHASE2: {
+        NAME: '第二阶段',
+        HEALTH_THRESHOLD: 0.33,
+        ATTACK_COOLDOWN: 1500,
+        BONE_SPEAR_SPEED: 6,
+        BONE_SPEAR_DAMAGE: 2,
+        SUMMON_INTERVAL: 6000,
+        SUMMON_COUNT: 3,
+        SPEED_MULTIPLIER: 1.2
+    },
+    PHASE3: {
+        NAME: '第三阶段',
+        HEALTH_THRESHOLD: 0,
+        ATTACK_COOLDOWN: 1000,
+        DEATH_RAIN_INTERVAL: 5000,
+        DEATH_RAIN_COUNT: 8,
+        DEATH_RAIN_DAMAGE: 1,
+        DEATH_RAIN_WARNING: 800,
+        SPEED_MULTIPLIER: 1.5,
+        DAMAGE_MULTIPLIER: 1.5,
+        SUMMON_INTERVAL: 5000,
+        SUMMON_COUNT: 4
+    }
 };
 
 // 可选Boss配置
 const OPTIONAL_BOSS_CONFIG = {
-    UNLOCKED_AFTER_BOSS: true,   // 击败普通Boss后解锁
+    UNLOCKED_AFTER_BOSS: true, // 击败普通Boss后解锁
     REWARD_CHEST_TYPE: CHEST_TYPES.LEGENDARY
 };
 
 // ==================== 休息房配置 ====================
 const REST_ROOM_CONFIG = {
-    FOUNTAIN_HEAL_AMOUNT: 2,     // 回血喷泉恢复量
+    FOUNTAIN_HEAL_AMOUNT: 2, // 回血喷泉恢复量
     FOUNTAIN_COLOR: '#00bfff',
     FOUNTAIN_SIZE: 40
 };
@@ -1301,7 +1756,7 @@ const GOLD = {
 const AIM_ASSIST = {
     // 辅助瞄准总开关
     ENABLED: true,
-    
+
     // 辅助强度档位：low(低), medium(中), high(高)
     STRENGTH_LEVELS: {
         OFF: 0,
@@ -1310,22 +1765,22 @@ const AIM_ASSIST = {
         HIGH: 0.6
     },
     DEFAULT_STRENGTH: 'low',
-    
+
     // 吸附范围（像素）
     ASSIST_RANGE: 150,
-    
+
     // 吸附角度范围（弧度）
-    ASSIST_ANGLE: Math.PI / 12,  // 15度
-    
+    ASSIST_ANGLE: Math.PI / 12, // 15度
+
     // 轻度吸附（准星靠近敌人时轻微吸附）
     SNAP_STRENGTH: 0.15,
-    
+
     // 弹道修正（子弹略微向最近敌人弯曲）
     BULLET_CURVE_STRENGTH: 0.15,
-    
+
     // 自动瞄准选项
     AUTO_AIM: false,
-    
+
     // 各武器独立瞄准参数配置
     WEAPON_SETTINGS: {
         PISTOL: {
@@ -1383,58 +1838,58 @@ const AIM_ASSIST = {
 const INPUT_BUFFER = {
     // 输入缓冲是否启用
     ENABLED: true,
-    
+
     // 各操作缓冲时间（毫秒）
-    DASH: 100,           // 冲刺/技能
-    SHOOT: 80,           // 射击
-    SKILL: 100,          // 技能
-    WEAPON_SWITCH: 50,   // 武器切换
-    INTERACT: 100        // 互动
+    DASH: 100, // 冲刺/技能
+    SHOOT: 80, // 射击
+    SKILL: 100, // 技能
+    WEAPON_SWITCH: 50, // 武器切换
+    INTERACT: 100 // 互动
 };
 
 // ==================== 手柄控制器配置 ====================
 const GAMEPAD = {
     // 是否启用手柄支持
     ENABLED: true,
-    
+
     // 摇杆死区（0-1）
     DEAD_ZONE_LEFT: 0.15,
     DEAD_ZONE_RIGHT: 0.15,
-    
+
     // 摇杆灵敏度
     SENSITIVITY_LEFT: 1.0,
     SENSITIVITY_RIGHT: 1.0,
-    
+
     // 扳机阈值（0-1）
     TRIGGER_THRESHOLD: 0.5,
-    
+
     // 震动强度
     VIBRATION_INTENSITY: 0.5,
-    
+
     // 按键映射（标准游戏手柄）
     BUTTONS: {
-        A: 0,           // A键 - 冲刺技能
-        B: 1,           // B键 - 技能2
-        X: 2,           // X键 - 技能3
-        Y: 3,           // Y键 - 互动/拾取
-        LB: 4,          // LB键 - 切换武器（上一个）
-        RB: 5,          // RB键 - 切换武器（下一个）
-        LT: 6,          // LT键 - 瞄准（辅助瞄准加强）
-        RT: 7,          // RT键 - 射击
-        BACK: 8,        // 选择键 - 地图/背包
-        START: 9,       // 开始键 - 暂停
+        A: 0, // A键 - 冲刺技能
+        B: 1, // B键 - 技能2
+        X: 2, // X键 - 技能3
+        Y: 3, // Y键 - 互动/拾取
+        LB: 4, // LB键 - 切换武器（上一个）
+        RB: 5, // RB键 - 切换武器（下一个）
+        LT: 6, // LT键 - 瞄准（辅助瞄准加强）
+        RT: 7, // RT键 - 射击
+        BACK: 8, // 选择键 - 地图/背包
+        START: 9, // 开始键 - 暂停
         LEFT_STICK: 10, // 左摇杆按下
         RIGHT_STICK: 11 // 右摇杆按下
     },
-    
+
     // 轴映射
     AXES: {
-        LEFT_X: 0,      // 左摇杆X轴
-        LEFT_Y: 1,      // 左摇杆Y轴
-        RIGHT_X: 2,     // 右摇杆X轴
-        RIGHT_Y: 3      // 右摇杆Y轴
+        LEFT_X: 0, // 左摇杆X轴
+        LEFT_Y: 1, // 左摇杆Y轴
+        RIGHT_X: 2, // 右摇杆X轴
+        RIGHT_Y: 3 // 右摇杆Y轴
     },
-    
+
     // 震动类型
     VIBRATION: {
         SHOOT: { duration: 50, intensity: 0.2 },
@@ -1448,17 +1903,17 @@ const GAMEPAD = {
 const MOUSE = {
     // 鼠标灵敏度（百分比）
     SENSITIVITY: 1.0,
-    
+
     // 鼠标平滑
     SMOOTHING: false,
     SMOOTHING_FACTOR: 0.5,
-    
+
     // 准星样式
-    CROSSHAIR_STYLE: 'default',  // default, dot, cross, circle
-    
+    CROSSHAIR_STYLE: 'default', // default, dot, cross, circle
+
     // 准星大小
     CROSSHAIR_SIZE: 16,
-    
+
     // 准星颜色
     CROSSHAIR_COLOR: '#ffffff'
 };
@@ -1468,30 +1923,30 @@ const DEFAULT_SETTINGS = {
     // 画面设置
     graphics: {
         fullscreen: false,
-        quality: 'high',           // high, medium, low
+        quality: 'high', // high, medium, low
         screenShake: true,
-        particleCount: 'high'      // high, medium, low
+        particleCount: 'high' // high, medium, low
     },
-    
+
     // 音效设置
     audio: {
         masterVolume: 0.8,
         sfxVolume: 1.0,
         musicVolume: 0.7
     },
-    
+
     // 操作设置
     controls: {
-        aimAssist: 'medium',       // off, low, medium, high
+        aimAssist: 'medium', // off, low, medium, high
         mouseSensitivity: 1.0,
         gamepadSensitivity: 1.0,
         gamepadDeadZone: 0.15,
         keyBindings: 'default'
     },
-    
+
     // 游戏设置
     gameplay: {
-        difficulty: 'normal',      // easy, normal, hard
+        difficulty: 'normal', // easy, normal, hard
         autoPickup: true,
         damageFlash: true
     }
@@ -1510,7 +1965,7 @@ const SHOOT_FEEDBACK = {
         SHOTGUN: { intensity: 2.5, duration: 120 },
         HOMING: { intensity: 2, duration: 100 }
     },
-    
+
     // 子弹发射延迟（与后坐力匹配，毫秒）
     FIRE_DELAY: {
         PISTOL: 0,
@@ -1522,7 +1977,7 @@ const SHOOT_FEEDBACK = {
         SHOTGUN: 40,
         HOMING: 50
     },
-    
+
     // 连发稳定性（0-1，越高越稳）
     RECOIL_STABILITY: 0.7
 };
@@ -2089,16 +2544,86 @@ const ACHIEVEMENTS = {
         SPECIAL: 'special'
     },
     LIST: [
-        { id: 'first_blood', name: '初次击杀', description: '击杀第一个敌人', icon: '⚔️', category: 'combat', condition: { kills: 1 } },
-        { id: 'kill_10', name: '小试牛刀', description: '累计击杀10个敌人', icon: '🗡️', category: 'combat', condition: { kills: 10 } },
-        { id: 'kill_50', name: '杀戮者', description: '累计击杀50个敌人', icon: '💀', category: 'combat', condition: { kills: 50 } },
-        { id: 'kill_100', name: '百人斩', description: '累计击杀100个敌人', icon: '☠️', category: 'combat', condition: { kills: 100 } },
-        { id: 'first_victory', name: '初战告捷', description: '首次通关游戏', icon: '🏆', category: 'combat', condition: { victories: 1 } },
-        { id: 'collect_weapon', name: '武器收藏家', description: '收集所有武器', icon: '🔫', category: 'collection', condition: { weaponsCollected: 8 } },
-        { id: 'full_health', name: '满血通关', description: '满血状态下通关', icon: '❤️', category: 'special', condition: { fullHealthVictory: true } },
-        { id: 'speed_run', name: '速通达人', description: '5分钟内通关', icon: '⚡', category: 'special', condition: { speedRun: 300 } },
-        { id: 'all_characters', name: '角色大师', description: '使用所有角色通关', icon: '👥', category: 'collection', condition: { allCharactersVictory: true } },
-        { id: 'no_damage', name: '无伤通关', description: '不受任何伤害通关', icon: '🛡️', category: 'special', condition: { noDamageVictory: true } }
+        {
+            id: 'first_blood',
+            name: '初次击杀',
+            description: '击杀第一个敌人',
+            icon: '⚔️',
+            category: 'combat',
+            condition: { kills: 1 }
+        },
+        {
+            id: 'kill_10',
+            name: '小试牛刀',
+            description: '累计击杀10个敌人',
+            icon: '🗡️',
+            category: 'combat',
+            condition: { kills: 10 }
+        },
+        {
+            id: 'kill_50',
+            name: '杀戮者',
+            description: '累计击杀50个敌人',
+            icon: '💀',
+            category: 'combat',
+            condition: { kills: 50 }
+        },
+        {
+            id: 'kill_100',
+            name: '百人斩',
+            description: '累计击杀100个敌人',
+            icon: '☠️',
+            category: 'combat',
+            condition: { kills: 100 }
+        },
+        {
+            id: 'first_victory',
+            name: '初战告捷',
+            description: '首次通关游戏',
+            icon: '🏆',
+            category: 'combat',
+            condition: { victories: 1 }
+        },
+        {
+            id: 'collect_weapon',
+            name: '武器收藏家',
+            description: '收集所有武器',
+            icon: '🔫',
+            category: 'collection',
+            condition: { weaponsCollected: 8 }
+        },
+        {
+            id: 'full_health',
+            name: '满血通关',
+            description: '满血状态下通关',
+            icon: '❤️',
+            category: 'special',
+            condition: { fullHealthVictory: true }
+        },
+        {
+            id: 'speed_run',
+            name: '速通达人',
+            description: '5分钟内通关',
+            icon: '⚡',
+            category: 'special',
+            condition: { speedRun: 300 }
+        },
+        {
+            id: 'all_characters',
+            name: '角色大师',
+            description: '使用所有角色通关',
+            icon: '👥',
+            category: 'collection',
+            condition: { allCharactersVictory: true }
+        },
+        {
+            id: 'no_damage',
+            name: '无伤通关',
+            description: '不受任何伤害通关',
+            icon: '🛡️',
+            category: 'special',
+            condition: { noDamageVictory: true }
+        }
     ]
 };
 

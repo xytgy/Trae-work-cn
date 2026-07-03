@@ -62,8 +62,8 @@ class Minimap {
     }
 
     onPlayerEnterRoom(roomNode) {
-        const isInitialRoom = roomNode.gridX === this.INITIAL_ROOM_GRID_X &&
-                              roomNode.gridY === this.INITIAL_ROOM_GRID_Y;
+        const isInitialRoom =
+            roomNode.gridX === this.INITIAL_ROOM_GRID_X && roomNode.gridY === this.INITIAL_ROOM_GRID_Y;
 
         if (!isInitialRoom) {
             this.hasLeftInitialRoom = true;
@@ -72,7 +72,9 @@ class Minimap {
     }
 
     render(ctx, dungeonLevel, playerRoom) {
-        if (!this.visible || !dungeonLevel || !dungeonLevel.rooms) return;
+        if (!this.visible || !dungeonLevel || !dungeonLevel.rooms) {
+            return;
+        }
 
         const totalWidth = this.gridSize * (this.cellSize + this.gap) + this.borderSize * 2;
         const totalHeight = this.gridSize * (this.cellSize + this.gap) + this.borderSize * 2;
@@ -135,7 +137,9 @@ class Minimap {
     }
 
     isConnectedToVisited(roomNode) {
-        if (!roomNode.connections) return false;
+        if (!roomNode.connections) {
+            return false;
+        }
 
         for (const connection of roomNode.connections) {
             if (connection.entered && connection.cleared) {
@@ -147,17 +151,27 @@ class Minimap {
 
     drawConnections(ctx, rooms, playerRoom) {
         for (const roomNode of rooms) {
-            const screenX = this.left + this.borderSize + roomNode.gridX * (this.cellSize + this.gap) + this.cellSize / 2;
-            const screenY = this.top + this.borderSize + roomNode.gridY * (this.cellSize + this.gap) + this.cellSize / 2;
+            const screenX =
+                this.left + this.borderSize + roomNode.gridX * (this.cellSize + this.gap) + this.cellSize / 2;
+            const screenY =
+                this.top + this.borderSize + roomNode.gridY * (this.cellSize + this.gap) + this.cellSize / 2;
 
-            if (!roomNode.entered && !this.isConnectedToVisited(roomNode)) continue;
+            if (!roomNode.entered && !this.isConnectedToVisited(roomNode)) {
+                continue;
+            }
 
             for (const neighbor of roomNode.connections) {
-                if (neighbor.gridX < roomNode.gridX || 
-                    (neighbor.gridX === roomNode.gridX && neighbor.gridY < roomNode.gridY)) continue;
+                if (
+                    neighbor.gridX < roomNode.gridX ||
+                    (neighbor.gridX === roomNode.gridX && neighbor.gridY < roomNode.gridY)
+                ) {
+                    continue;
+                }
 
-                const neighborX = this.left + this.borderSize + neighbor.gridX * (this.cellSize + this.gap) + this.cellSize / 2;
-                const neighborY = this.top + this.borderSize + neighbor.gridY * (this.cellSize + this.gap) + this.cellSize / 2;
+                const neighborX =
+                    this.left + this.borderSize + neighbor.gridX * (this.cellSize + this.gap) + this.cellSize / 2;
+                const neighborY =
+                    this.top + this.borderSize + neighbor.gridY * (this.cellSize + this.gap) + this.cellSize / 2;
 
                 ctx.strokeStyle = this.colors.border;
                 ctx.lineWidth = 2;
@@ -170,7 +184,9 @@ class Minimap {
     }
 
     drawPlayer(ctx, playerRoom) {
-        if (!playerRoom) return;
+        if (!playerRoom) {
+            return;
+        }
 
         const screenX = this.left + this.borderSize + playerRoom.gridX * (this.cellSize + this.gap) + this.cellSize / 2;
         const screenY = this.top + this.borderSize + playerRoom.gridY * (this.cellSize + this.gap) + this.cellSize / 2;
@@ -197,10 +213,14 @@ class Minimap {
 
     drawMarkers(ctx, rooms) {
         for (const roomNode of rooms) {
-            if (!roomNode.entered && !this.isConnectedToVisited(roomNode)) continue;
+            if (!roomNode.entered && !this.isConnectedToVisited(roomNode)) {
+                continue;
+            }
 
-            const screenX = this.left + this.borderSize + roomNode.gridX * (this.cellSize + this.gap) + this.cellSize / 2;
-            const screenY = this.top + this.borderSize + roomNode.gridY * (this.cellSize + this.gap) + this.cellSize / 2;
+            const screenX =
+                this.left + this.borderSize + roomNode.gridX * (this.cellSize + this.gap) + this.cellSize / 2;
+            const screenY =
+                this.top + this.borderSize + roomNode.gridY * (this.cellSize + this.gap) + this.cellSize / 2;
 
             if (this.isSpecialRoom(roomNode)) {
                 ctx.fillStyle = this.colors.marker;
@@ -213,11 +233,7 @@ class Minimap {
     }
 
     isSpecialRoom(roomNode) {
-        const specialTypes = [
-            ROOM_TYPES.ELITE,
-            ROOM_TYPES.CHEST,
-            ROOM_TYPES.BOSS
-        ];
+        const specialTypes = [ROOM_TYPES.ELITE, ROOM_TYPES.CHEST, ROOM_TYPES.BOSS];
         return specialTypes.includes(roomNode.roomType);
     }
 
@@ -244,23 +260,29 @@ class Minimap {
     }
 
     findRoomByGrid(rooms, gridX, gridY) {
-        return rooms.find(r => r.gridX === gridX && r.gridY === gridY);
+        return rooms.find((r) => r.gridX === gridX && r.gridY === gridY);
     }
 
     getRoomTypeColor(roomType) {
         switch (roomType) {
-            case ROOM_TYPES.ELITE: return this.colors.elite;
-            case ROOM_TYPES.CHEST: return this.colors.chest;
-            case ROOM_TYPES.BOSS: return this.colors.boss;
-            case ROOM_TYPES.TRAP: return this.colors.trap;
-            case ROOM_TYPES.SHOP: return this.colors.shop;
-            case ROOM_TYPES.REST: return this.colors.rest;
-            default: return this.colors.visited;
+            case ROOM_TYPES.ELITE:
+                return this.colors.elite;
+            case ROOM_TYPES.CHEST:
+                return this.colors.chest;
+            case ROOM_TYPES.BOSS:
+                return this.colors.boss;
+            case ROOM_TYPES.TRAP:
+                return this.colors.trap;
+            case ROOM_TYPES.SHOP:
+                return this.colors.shop;
+            case ROOM_TYPES.REST:
+                return this.colors.rest;
+            default:
+                return this.colors.visited;
         }
     }
 
-    update(deltaTime) {
-    }
+    update(deltaTime) {}
 
     reset() {
         this.visible = false;

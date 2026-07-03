@@ -5,15 +5,42 @@ class SaveSystem {
         this.SLOT_COUNT = 3;
         this.VERSION = '1.0.0';
         this.SAVE_SCHEMAS = {
-            '1.0.0': { version: '1.0.0', fields: ['version', 'timestamp', 'slotIndex', 'characterId', 'characterName', 'difficulty', 'currentLevel', 'playerHealth', 'maxHealth', 'gold', 'killCount', 'survivalTime', 'playTime', 'weapons', 'currentWeaponIndex', 'relics', 'buffs', 'achievements', 'completed'] }
+            '1.0.0': {
+                version: '1.0.0',
+                fields: [
+                    'version',
+                    'timestamp',
+                    'slotIndex',
+                    'characterId',
+                    'characterName',
+                    'difficulty',
+                    'currentLevel',
+                    'playerHealth',
+                    'maxHealth',
+                    'gold',
+                    'killCount',
+                    'survivalTime',
+                    'playTime',
+                    'weapons',
+                    'currentWeaponIndex',
+                    'relics',
+                    'buffs',
+                    'achievements',
+                    'completed'
+                ]
+            }
         };
     }
 
     save(slotIndex) {
-        if (slotIndex < 0 || slotIndex >= this.SLOT_COUNT) return false;
+        if (slotIndex < 0 || slotIndex >= this.SLOT_COUNT) {
+            return false;
+        }
 
-        const gameStateRef = (typeof gameState !== 'undefined') ? gameState : null;
-        if (!gameStateRef) return false;
+        const gameStateRef = typeof gameState !== 'undefined' ? gameState : null;
+        if (!gameStateRef) {
+            return false;
+        }
 
         const data = gameStateRef.getData();
         const selectedChar = gameStateRef.getSelectedCharacter();
@@ -22,8 +49,8 @@ class SaveSystem {
             version: this.VERSION,
             timestamp: Date.now(),
             slotIndex: slotIndex,
-            characterId: selectedChar ? (selectedChar.id || 1) : (data.selectedCharacterId || 1),
-            characterName: selectedChar ? (selectedChar.name || '未知') : '未知',
+            characterId: selectedChar ? selectedChar.id || 1 : data.selectedCharacterId || 1,
+            characterName: selectedChar ? selectedChar.name || '未知' : '未知',
             difficulty: data.difficulty || 'normal',
             currentLevel: data.currentLevel || 1,
             playerHealth: data.playerHealth || PLAYER.MAX_HEALTH,
@@ -32,7 +59,9 @@ class SaveSystem {
             killCount: data.killCount || 0,
             survivalTime: data.survivalTime || 0,
             playTime: data.playTime || 0,
-            weapons: (data.playerWeapons || []).map(function(w) { return w.id || w.ID || 1; }),
+            weapons: (data.playerWeapons || []).map(function (w) {
+                return w.id || w.ID || 1;
+            }),
             currentWeaponIndex: data.currentWeaponIndex || 0,
             relics: data.relics || [],
             buffs: data.buffs || [],
@@ -41,12 +70,16 @@ class SaveSystem {
         };
 
         const encrypted = this.encrypt(saveData);
-        if (!encrypted) return false;
+        if (!encrypted) {
+            return false;
+        }
 
         try {
             var key = this.STORAGE_KEY + '_slot_' + slotIndex;
             localStorage.setItem(key, encrypted);
-            if (this.eventBus) this.eventBus.publish('SAVE_GAME', { slotIndex: slotIndex, saveData: saveData });
+            if (this.eventBus) {
+                this.eventBus.publish('SAVE_GAME', { slotIndex: slotIndex, saveData: saveData });
+            }
             return true;
         } catch (e) {
             console.error('[SaveSystem] 保存失败:', e);
@@ -55,19 +88,25 @@ class SaveSystem {
     }
 
     load(slotIndex) {
-        if (slotIndex < 0 || slotIndex >= this.SLOT_COUNT) return null;
+        if (slotIndex < 0 || slotIndex >= this.SLOT_COUNT) {
+            return null;
+        }
 
         try {
             var key = this.STORAGE_KEY + '_slot_' + slotIndex;
             var raw = localStorage.getItem(key);
-            if (!raw) return null;
+            if (!raw) {
+                return null;
+            }
 
             var saveData = this.decrypt(raw);
-            if (!saveData) return null;
+            if (!saveData) {
+                return null;
+            }
 
             saveData = this.migrateVersion(saveData);
 
-            var gameStateRef = (typeof gameState !== 'undefined') ? gameState : null;
+            var gameStateRef = typeof gameState !== 'undefined' ? gameState : null;
             if (gameStateRef) {
                 var d = gameStateRef.getData();
                 d.currentLevel = saveData.currentLevel || 1;
@@ -87,7 +126,9 @@ class SaveSystem {
                 }
             }
 
-            if (this.eventBus) this.eventBus.publish('LOAD_GAME', { slotIndex: slotIndex, saveData: saveData });
+            if (this.eventBus) {
+                this.eventBus.publish('LOAD_GAME', { slotIndex: slotIndex, saveData: saveData });
+            }
             return saveData;
         } catch (e) {
             console.error('[SaveSystem] 加载失败:', e);
@@ -96,12 +137,16 @@ class SaveSystem {
     }
 
     delete(slotIndex) {
-        if (slotIndex < 0 || slotIndex >= this.SLOT_COUNT) return false;
+        if (slotIndex < 0 || slotIndex >= this.SLOT_COUNT) {
+            return false;
+        }
 
         try {
             var key = this.STORAGE_KEY + '_slot_' + slotIndex;
             localStorage.removeItem(key);
-            if (this.eventBus) this.eventBus.publish('DELETE_SAVE', { slotIndex: slotIndex });
+            if (this.eventBus) {
+                this.eventBus.publish('DELETE_SAVE', { slotIndex: slotIndex });
+            }
             return true;
         } catch (e) {
             console.error('[SaveSystem] 删除失败:', e);
@@ -110,15 +155,21 @@ class SaveSystem {
     }
 
     getSaveInfo(slotIndex) {
-        if (slotIndex < 0 || slotIndex >= this.SLOT_COUNT) return null;
+        if (slotIndex < 0 || slotIndex >= this.SLOT_COUNT) {
+            return null;
+        }
 
         try {
             var key = this.STORAGE_KEY + '_slot_' + slotIndex;
             var raw = localStorage.getItem(key);
-            if (!raw) return null;
+            if (!raw) {
+                return null;
+            }
 
             var saveData = this.decrypt(raw);
-            if (!saveData) return null;
+            if (!saveData) {
+                return null;
+            }
 
             saveData = this.migrateVersion(saveData);
 
@@ -140,12 +191,16 @@ class SaveSystem {
     }
 
     hasSave(slotIndex) {
-        if (slotIndex < 0 || slotIndex >= this.SLOT_COUNT) return false;
+        if (slotIndex < 0 || slotIndex >= this.SLOT_COUNT) {
+            return false;
+        }
 
         try {
             var key = this.STORAGE_KEY + '_slot_' + slotIndex;
             var raw = localStorage.getItem(key);
-            if (!raw) return false;
+            if (!raw) {
+                return false;
+            }
 
             var saveData = this.decrypt(raw);
             return saveData !== null;
@@ -155,8 +210,10 @@ class SaveSystem {
     }
 
     autoSave() {
-        var gameStateRef = (typeof gameState !== 'undefined') ? gameState : null;
-        if (!gameStateRef) return false;
+        var gameStateRef = typeof gameState !== 'undefined' ? gameState : null;
+        if (!gameStateRef) {
+            return false;
+        }
 
         var data = gameStateRef.getData();
         var selectedChar = gameStateRef.getSelectedCharacter();
@@ -165,8 +222,8 @@ class SaveSystem {
             version: this.VERSION,
             timestamp: Date.now(),
             slotIndex: -1,
-            characterId: selectedChar ? (selectedChar.id || 1) : (data.selectedCharacterId || 1),
-            characterName: selectedChar ? (selectedChar.name || '未知') : '未知',
+            characterId: selectedChar ? selectedChar.id || 1 : data.selectedCharacterId || 1,
+            characterName: selectedChar ? selectedChar.name || '未知' : '未知',
             difficulty: data.difficulty || 'normal',
             currentLevel: data.currentLevel || 1,
             playerHealth: data.playerHealth || PLAYER.MAX_HEALTH,
@@ -175,7 +232,9 @@ class SaveSystem {
             killCount: data.killCount || 0,
             survivalTime: data.survivalTime || 0,
             playTime: data.playTime || 0,
-            weapons: (data.playerWeapons || []).map(function(w) { return w.id || w.ID || 1; }),
+            weapons: (data.playerWeapons || []).map(function (w) {
+                return w.id || w.ID || 1;
+            }),
             currentWeaponIndex: data.currentWeaponIndex || 0,
             relics: data.relics || [],
             buffs: data.buffs || [],
@@ -184,12 +243,16 @@ class SaveSystem {
         };
 
         var encrypted = this.encrypt(saveData);
-        if (!encrypted) return false;
+        if (!encrypted) {
+            return false;
+        }
 
         try {
             var key = this.STORAGE_KEY + '_autosave';
             localStorage.setItem(key, encrypted);
-            if (this.eventBus) this.eventBus.publish('AUTO_SAVE', { saveData: saveData });
+            if (this.eventBus) {
+                this.eventBus.publish('AUTO_SAVE', { saveData: saveData });
+            }
             return true;
         } catch (e) {
             console.error('[SaveSystem] 自动保存失败:', e);
@@ -203,7 +266,9 @@ class SaveSystem {
         }
 
         var currentVersion = data.version;
-        if (currentVersion === this.VERSION) return data;
+        if (currentVersion === this.VERSION) {
+            return data;
+        }
 
         var migrated = Object.assign({}, data);
 
@@ -216,27 +281,47 @@ class SaveSystem {
     }
 
     migrateFromLegacy(data) {
-        if (!data) return null;
+        if (!data) {
+            return null;
+        }
 
         var migrated = Object.assign({}, data);
         migrated.version = this.VERSION;
 
         if (migrated.weapons === undefined && migrated.playerWeapons) {
-            migrated.weapons = migrated.playerWeapons.map(function(w) { return w.id || w.ID || 1; });
+            migrated.weapons = migrated.playerWeapons.map(function (w) {
+                return w.id || w.ID || 1;
+            });
         }
-        if (migrated.currentLevel === undefined) migrated.currentLevel = 1;
-        if (migrated.playerHealth === undefined) migrated.playerHealth = PLAYER.MAX_HEALTH;
-        if (migrated.killCount === undefined) migrated.killCount = 0;
-        if (migrated.gold === undefined) migrated.gold = 0;
-        if (migrated.achievements === undefined) migrated.achievements = [];
-        if (migrated.completed === undefined) migrated.completed = false;
+        if (migrated.currentLevel === undefined) {
+            migrated.currentLevel = 1;
+        }
+        if (migrated.playerHealth === undefined) {
+            migrated.playerHealth = PLAYER.MAX_HEALTH;
+        }
+        if (migrated.killCount === undefined) {
+            migrated.killCount = 0;
+        }
+        if (migrated.gold === undefined) {
+            migrated.gold = 0;
+        }
+        if (migrated.achievements === undefined) {
+            migrated.achievements = [];
+        }
+        if (migrated.completed === undefined) {
+            migrated.completed = false;
+        }
 
         return migrated;
     }
 
     migrate100(data) {
-        if (!data) return data;
-        if (data.version && this.compareVersions(data.version, '1.0.0') >= 0) return data;
+        if (!data) {
+            return data;
+        }
+        if (data.version && this.compareVersions(data.version, '1.0.0') >= 0) {
+            return data;
+        }
 
         var migrated = Object.assign({}, data);
         migrated.version = '1.0.0';
@@ -264,8 +349,12 @@ class SaveSystem {
         for (var i = 0; i < Math.max(parts1.length, parts2.length); i++) {
             var p1 = parts1[i] || 0;
             var p2 = parts2[i] || 0;
-            if (p1 > p2) return 1;
-            if (p1 < p2) return -1;
+            if (p1 > p2) {
+                return 1;
+            }
+            if (p1 < p2) {
+                return -1;
+            }
         }
         return 0;
     }
@@ -287,7 +376,9 @@ class SaveSystem {
         try {
             var payload = decodeURIComponent(escape(atob(encoded)));
             var lastPipe = payload.lastIndexOf('|');
-            if (lastPipe === -1) return null;
+            if (lastPipe === -1) {
+                return null;
+            }
 
             var jsonStr = payload.substring(0, lastPipe);
             var checksum = payload.substring(lastPipe + 1);
@@ -308,7 +399,7 @@ class SaveSystem {
         var hash = 0;
         for (var i = 0; i < str.length; i++) {
             var ch = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + ch;
+            hash = (hash << 5) - hash + ch;
             hash = hash & hash;
         }
         return Math.abs(hash).toString(36);
@@ -324,7 +415,9 @@ class SaveSystem {
 
     exportSave(slotIndex) {
         var info = this.getSaveInfo(slotIndex);
-        if (!info) return null;
+        if (!info) {
+            return null;
+        }
 
         try {
             var key = this.STORAGE_KEY + '_slot_' + slotIndex;
@@ -335,19 +428,29 @@ class SaveSystem {
     }
 
     importSave(slotIndex, data) {
-        if (slotIndex < 0 || slotIndex >= this.SLOT_COUNT) return false;
-        if (!data) return false;
+        if (slotIndex < 0 || slotIndex >= this.SLOT_COUNT) {
+            return false;
+        }
+        if (!data) {
+            return false;
+        }
 
         try {
             var saveData = this.decrypt(data);
-            if (!saveData) return false;
+            if (!saveData) {
+                return false;
+            }
 
             saveData = this.migrateVersion(saveData);
-            if (!saveData) return false;
+            if (!saveData) {
+                return false;
+            }
 
             saveData.slotIndex = slotIndex;
             var reEncrypted = this.encrypt(saveData);
-            if (!reEncrypted) return false;
+            if (!reEncrypted) {
+                return false;
+            }
 
             var key = this.STORAGE_KEY + '_slot_' + slotIndex;
             localStorage.setItem(key, reEncrypted);

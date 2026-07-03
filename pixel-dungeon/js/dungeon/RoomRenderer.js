@@ -72,11 +72,12 @@ class RoomRenderer {
                 const x = col * tileSize;
                 const y = row * tileSize;
 
-                if (x >= this.wallThickness &&
+                if (
+                    x >= this.wallThickness &&
                     x < this.width - this.wallThickness &&
                     y >= this.wallThickness &&
-                    y < this.height - this.wallThickness) {
-
+                    y < this.height - this.wallThickness
+                ) {
                     let type = FLOOR_TILE.TYPES.NORMAL;
                     const rand = Math.random();
                     if (rand < FLOOR_TILE.PATTERN_CHANCE) {
@@ -85,7 +86,13 @@ class RoomRenderer {
                         type = FLOOR_TILE.TYPES.WORN;
                     }
 
-                    this.floorTiles.push({ x, y, type, baseColor: this.getRandomFloorColor(), detailColor: FLOOR_TILE.COLORS.DETAIL });
+                    this.floorTiles.push({
+                        x,
+                        y,
+                        type,
+                        baseColor: this.getRandomFloorColor(),
+                        detailColor: FLOOR_TILE.COLORS.DETAIL
+                    });
                 }
             }
         }
@@ -110,7 +117,12 @@ class RoomRenderer {
 
         for (let i = 0; i < DECORATIONS.TORCH_COUNT && i < torchPositions.length; i++) {
             const pos = torchPositions[i];
-            this.decorations.push({ x: pos.x, y: pos.y, type: DECORATIONS.TYPES.TORCH, animTimer: Math.random() * 1000 });
+            this.decorations.push({
+                x: pos.x,
+                y: pos.y,
+                type: DECORATIONS.TYPES.TORCH,
+                animTimer: Math.random() * 1000
+            });
         }
 
         for (let i = 0; i < DECORATIONS.SKULL_COUNT; i++) {
@@ -126,11 +138,7 @@ class RoomRenderer {
                 x = playableArea.x + margin + Math.random() * (playableArea.width - margin * 2);
                 y = playableArea.y + margin + Math.random() * (playableArea.height - margin * 2);
                 attempts++;
-            } while (
-                Math.abs(x - this.width / 2) < 100 &&
-                Math.abs(y - this.height / 2) < 100 &&
-                attempts < 10
-            );
+            } while (Math.abs(x - this.width / 2) < 100 && Math.abs(y - this.height / 2) < 100 && attempts < 10);
             this.decorations.push({ x, y, type: DECORATIONS.TYPES.PILLAR });
         }
 
@@ -153,7 +161,9 @@ class RoomRenderer {
     }
 
     preRenderBackground(roomNode) {
-        if (!roomNode) return;
+        if (!roomNode) {
+            return;
+        }
 
         const colors = this.getThemeColors(roomNode.roomType);
 
@@ -210,30 +220,94 @@ class RoomRenderer {
 
         if (roomNode.hasDoor(DOOR.TOP)) {
             this.drawBrickWall(ctx, 0, 0, centerX - halfDoorWidth, this.wallThickness, 'top', colors);
-            this.drawBrickWall(ctx, centerX + halfDoorWidth, 0, this.width - centerX - halfDoorWidth, this.wallThickness, 'top', colors);
+            this.drawBrickWall(
+                ctx,
+                centerX + halfDoorWidth,
+                0,
+                this.width - centerX - halfDoorWidth,
+                this.wallThickness,
+                'top',
+                colors
+            );
         } else {
             this.drawBrickWall(ctx, 0, 0, this.width, this.wallThickness, 'top', colors);
         }
 
         if (roomNode.hasDoor(DOOR.BOTTOM)) {
-            this.drawBrickWall(ctx, 0, this.height - this.wallThickness, centerX - halfDoorWidth, this.wallThickness, 'bottom', colors);
-            this.drawBrickWall(ctx, centerX + halfDoorWidth, this.height - this.wallThickness, this.width - centerX - halfDoorWidth, this.wallThickness, 'bottom', colors);
+            this.drawBrickWall(
+                ctx,
+                0,
+                this.height - this.wallThickness,
+                centerX - halfDoorWidth,
+                this.wallThickness,
+                'bottom',
+                colors
+            );
+            this.drawBrickWall(
+                ctx,
+                centerX + halfDoorWidth,
+                this.height - this.wallThickness,
+                this.width - centerX - halfDoorWidth,
+                this.wallThickness,
+                'bottom',
+                colors
+            );
         } else {
-            this.drawBrickWall(ctx, 0, this.height - this.wallThickness, this.width, this.wallThickness, 'bottom', colors);
+            this.drawBrickWall(
+                ctx,
+                0,
+                this.height - this.wallThickness,
+                this.width,
+                this.wallThickness,
+                'bottom',
+                colors
+            );
         }
 
         if (roomNode.hasDoor(DOOR.LEFT)) {
             this.drawBrickWall(ctx, 0, 0, this.wallThickness, centerY - halfDoorWidth, 'left', colors);
-            this.drawBrickWall(ctx, 0, centerY + halfDoorWidth, this.wallThickness, this.height - centerY - halfDoorWidth, 'left', colors);
+            this.drawBrickWall(
+                ctx,
+                0,
+                centerY + halfDoorWidth,
+                this.wallThickness,
+                this.height - centerY - halfDoorWidth,
+                'left',
+                colors
+            );
         } else {
             this.drawBrickWall(ctx, 0, 0, this.wallThickness, this.height, 'left', colors);
         }
 
         if (roomNode.hasDoor(DOOR.RIGHT)) {
-            this.drawBrickWall(ctx, this.width - this.wallThickness, 0, this.wallThickness, centerY - halfDoorWidth, 'right', colors);
-            this.drawBrickWall(ctx, this.width - this.wallThickness, centerY + halfDoorWidth, this.wallThickness, this.height - centerY - halfDoorWidth, 'right', colors);
+            this.drawBrickWall(
+                ctx,
+                this.width - this.wallThickness,
+                0,
+                this.wallThickness,
+                centerY - halfDoorWidth,
+                'right',
+                colors
+            );
+            this.drawBrickWall(
+                ctx,
+                this.width - this.wallThickness,
+                centerY + halfDoorWidth,
+                this.wallThickness,
+                this.height - centerY - halfDoorWidth,
+                'right',
+                colors
+            );
         } else {
-            this.drawBrickWall(ctx, this.width - this.wallThickness, 0, this.wallThickness, this.height, 'right', colors);
+            this.drawBrickWall(
+                ctx,
+                this.width - this.wallThickness,
+                0,
+                this.wallThickness,
+                this.height,
+                'right',
+                colors
+            );
         }
     }
 
@@ -250,8 +324,12 @@ class RoomRenderer {
                 const bx = x + col * brickWidth + offset;
                 const by = y + row * brickHeight;
 
-                if (bx > x + width) continue;
-                if (bx + brickWidth - 2 < x) continue;
+                if (bx > x + width) {
+                    continue;
+                }
+                if (bx + brickWidth - 2 < x) {
+                    continue;
+                }
 
                 ctx.fillStyle = colors.wallColor;
                 ctx.fillRect(bx, by, brickWidth - 2, brickHeight - 2);
@@ -510,7 +588,9 @@ class RoomRenderer {
     }
 
     renderEliteRoomEffects(ctx, roomNode) {
-        if (roomNode.roomType !== ROOM_TYPES.ELITE) return;
+        if (roomNode.roomType !== ROOM_TYPES.ELITE) {
+            return;
+        }
 
         const time = Date.now() / 1000;
         const centerX = this.width / 2;
@@ -522,11 +602,8 @@ class RoomRenderer {
             const radius = pulseRadius + i * 50;
             const alpha = pulseAlpha * (1 - i * 0.3);
 
-            const gradient = ctx.createRadialGradient(
-                centerX, centerY, radius * 0.8,
-                centerX, centerY, radius
-            );
-            gradient.addColorStop(0, `rgba(255, 50, 50, 0)`);
+            const gradient = ctx.createRadialGradient(centerX, centerY, radius * 0.8, centerX, centerY, radius);
+            gradient.addColorStop(0, 'rgba(255, 50, 50, 0)');
             gradient.addColorStop(0.8, `rgba(255, 50, 50, ${alpha})`);
             gradient.addColorStop(1, `rgba(255, 20, 20, ${alpha * 0.5})`);
 
@@ -534,10 +611,7 @@ class RoomRenderer {
             ctx.fillRect(0, 0, this.width, this.height);
         }
 
-        const groundGradient = ctx.createLinearGradient(
-            0, this.height * 0.6,
-            0, this.height
-        );
+        const groundGradient = ctx.createLinearGradient(0, this.height * 0.6, 0, this.height);
         groundGradient.addColorStop(0, 'transparent');
         groundGradient.addColorStop(0.5, `rgba(255, 50, 50, ${pulseAlpha * 0.3})`);
         groundGradient.addColorStop(1, `rgba(255, 20, 20, ${pulseAlpha * 0.5})`);
@@ -547,7 +621,9 @@ class RoomRenderer {
     }
 
     renderPortal(ctx, roomNode) {
-        if (!roomNode.hasPortal) return;
+        if (!roomNode.hasPortal) {
+            return;
+        }
 
         const centerX = this.width / 2;
         const centerY = this.height / 2;
@@ -560,7 +636,7 @@ class RoomRenderer {
 
         for (let i = 0; i < 3; i++) {
             const size = PORTAL.SIZE - i * 8;
-            const ringAlpha = 0.3 + (i * 0.2);
+            const ringAlpha = 0.3 + i * 0.2;
             ctx.fillStyle = `rgba(156, 39, 176, ${ringAlpha})`;
             ctx.fillRect(-size / 2, -size / 2, size, size);
         }
@@ -574,7 +650,9 @@ class RoomRenderer {
     }
 
     renderTraps(ctx, traps) {
-        if (!traps || !traps.length) return;
+        if (!traps || !traps.length) {
+            return;
+        }
 
         for (const trap of traps) {
             if (trap.active) {
@@ -584,7 +662,9 @@ class RoomRenderer {
     }
 
     renderChests(ctx, chests) {
-        if (!chests || !chests.length) return;
+        if (!chests || !chests.length) {
+            return;
+        }
 
         for (const chest of chests) {
             chest.render(ctx);
@@ -592,8 +672,8 @@ class RoomRenderer {
     }
 
     getTorchLights() {
-        const torches = this.decorations.filter(d => d.type === DECORATIONS.TYPES.TORCH);
-        return torches.map(torch => ({
+        const torches = this.decorations.filter((d) => d.type === DECORATIONS.TYPES.TORCH);
+        return torches.map((torch) => ({
             x: torch.x,
             y: torch.y - 10,
             radius: LIGHTING.TORCH_LIGHT.RADIUS,

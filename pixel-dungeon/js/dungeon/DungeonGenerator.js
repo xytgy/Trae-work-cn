@@ -44,12 +44,14 @@ class DungeonGenerator {
         let currentRoom = startRoom;
         const mainPath = [currentRoom];
 
-        const battleRoomCount = this.MIN_BATTLE_ROOMS + 
-            Math.floor(Math.random() * (this.MAX_BATTLE_ROOMS - this.MIN_BATTLE_ROOMS + 1));
+        const battleRoomCount =
+            this.MIN_BATTLE_ROOMS + Math.floor(Math.random() * (this.MAX_BATTLE_ROOMS - this.MIN_BATTLE_ROOMS + 1));
 
         for (let i = 0; i < battleRoomCount; i++) {
             const nextRoom = this.findNextMainPathRoom(level, currentRoom, mainPath);
-            if (!nextRoom) break;
+            if (!nextRoom) {
+                break;
+            }
 
             level.connectRooms(currentRoom, nextRoom);
             nextRoom.roomType = ROOM_TYPES.BATTLE;
@@ -69,13 +71,13 @@ class DungeonGenerator {
 
     findNextMainPathRoom(level, currentRoom, mainPath) {
         const neighbors = level.getNeighbors(currentRoom);
-        const available = neighbors.filter(n => 
-            !mainPath.includes(n) && 
-            n.gridY <= currentRoom.gridY &&
-            Math.abs(n.gridX - currentRoom.gridX) <= 1
+        const available = neighbors.filter(
+            (n) => !mainPath.includes(n) && n.gridY <= currentRoom.gridY && Math.abs(n.gridX - currentRoom.gridX) <= 1
         );
 
-        if (available.length === 0) return null;
+        if (available.length === 0) {
+            return null;
+        }
 
         const sorted = available.sort((a, b) => {
             const distA = Math.abs(a.gridX - 2);
@@ -94,7 +96,9 @@ class DungeonGenerator {
 
         for (const { room, weight } of weighted) {
             rand -= weight;
-            if (rand <= 0) return room;
+            if (rand <= 0) {
+                return room;
+            }
         }
 
         return sorted[0];
@@ -115,7 +119,9 @@ class DungeonGenerator {
             const topRooms = [];
             for (let x = 0; x < 5; x++) {
                 const room = level.getRoomAt(x, 0);
-                if (room) topRooms.push(room);
+                if (room) {
+                    topRooms.push(room);
+                }
             }
             return topRooms[Math.floor(Math.random() * topRooms.length)];
         }
@@ -125,9 +131,7 @@ class DungeonGenerator {
 
     generateBranches(level) {
         const mainPathSet = new Set(level.mainPath);
-        const battleRooms = level.mainPath.filter(r => 
-            r !== level.startRoom && r !== level.bossRoom
-        );
+        const battleRooms = level.mainPath.filter((r) => r !== level.startRoom && r !== level.bossRoom);
 
         for (const room of battleRooms) {
             if (Math.random() < this.BRANCH_CHANCE) {
@@ -137,10 +141,9 @@ class DungeonGenerator {
 
         const additionalBranches = Math.floor(Math.random() * 2);
         for (let i = 0; i < additionalBranches; i++) {
-            const availableRooms = level.getActiveRooms().filter(r => 
-                r !== level.startRoom && r !== level.bossRoom &&
-                r.connections.length < 3
-            );
+            const availableRooms = level
+                .getActiveRooms()
+                .filter((r) => r !== level.startRoom && r !== level.bossRoom && r.connections.length < 3);
 
             if (availableRooms.length > 0) {
                 const room = availableRooms[Math.floor(Math.random() * availableRooms.length)];
@@ -151,13 +154,13 @@ class DungeonGenerator {
 
     tryAddBranch(level, sourceRoom, mainPathSet) {
         const neighbors = level.getNeighbors(sourceRoom);
-        const emptyNeighbors = neighbors.filter(n => 
-            n.roomType === null && 
-            n !== level.startRoom && 
-            n !== level.bossRoom
+        const emptyNeighbors = neighbors.filter(
+            (n) => n.roomType === null && n !== level.startRoom && n !== level.bossRoom
         );
 
-        if (emptyNeighbors.length === 0) return;
+        if (emptyNeighbors.length === 0) {
+            return;
+        }
 
         const branchRoom = emptyNeighbors[Math.floor(Math.random() * emptyNeighbors.length)];
         level.connectRooms(sourceRoom, branchRoom);
@@ -165,16 +168,11 @@ class DungeonGenerator {
     }
 
     assignRoomTypes(level) {
-        const battleRooms = level.getActiveRooms().filter(r => 
-            r.roomType === ROOM_TYPES.BATTLE &&
-            r !== level.startRoom &&
-            r !== level.bossRoom
-        );
+        const battleRooms = level
+            .getActiveRooms()
+            .filter((r) => r.roomType === ROOM_TYPES.BATTLE && r !== level.startRoom && r !== level.bossRoom);
 
-        const branchRooms = battleRooms.filter(r => 
-            r.connections.length === 1 &&
-            !level.mainPath.includes(r)
-        );
+        const branchRooms = battleRooms.filter((r) => r.connections.length === 1 && !level.mainPath.includes(r));
 
         for (const room of branchRooms) {
             const rand = Math.random();
@@ -182,7 +180,7 @@ class DungeonGenerator {
                 room.roomType = ROOM_TYPES.CHEST;
             } else if (rand < 0.55) {
                 room.roomType = ROOM_TYPES.REST;
-            } else if (rand < 0.70) {
+            } else if (rand < 0.7) {
                 room.roomType = ROOM_TYPES.SHOP;
             } else if (rand < 0.85) {
                 room.roomType = ROOM_TYPES.TRAP;
@@ -208,17 +206,27 @@ class DungeonGenerator {
     }
 
     isValidLevel(level) {
-        if (!level.startRoom || !level.bossRoom) return false;
-        if (!level.isFullyConnected()) return false;
+        if (!level.startRoom || !level.bossRoom) {
+            return false;
+        }
+        if (!level.isFullyConnected()) {
+            return false;
+        }
 
         const activeRooms = level.getActiveRooms();
-        if (activeRooms.length < 5) return false;
+        if (activeRooms.length < 5) {
+            return false;
+        }
 
-        const battleRooms = activeRooms.filter(r => r.roomType === ROOM_TYPES.BATTLE);
-        if (battleRooms.length < this.MIN_BATTLE_ROOMS) return false;
+        const battleRooms = activeRooms.filter((r) => r.roomType === ROOM_TYPES.BATTLE);
+        if (battleRooms.length < this.MIN_BATTLE_ROOMS) {
+            return false;
+        }
 
         const mainPathLength = level.mainPath?.length || 0;
-        if (mainPathLength < 4) return false;
+        if (mainPathLength < 4) {
+            return false;
+        }
 
         return true;
     }
@@ -230,12 +238,7 @@ class DungeonGenerator {
         const startRoom = level.getRoomAt(2, 4);
         level.setStartRoom(startRoom);
 
-        const path = [
-            level.getRoomAt(2, 3),
-            level.getRoomAt(2, 2),
-            level.getRoomAt(2, 1),
-            level.getRoomAt(2, 0)
-        ];
+        const path = [level.getRoomAt(2, 3), level.getRoomAt(2, 2), level.getRoomAt(2, 1), level.getRoomAt(2, 0)];
 
         let current = startRoom;
         for (const room of path) {
@@ -285,21 +288,52 @@ class DungeonGenerator {
             const room = level.getRoomAt(r.x, r.y);
             if (room) {
                 room.roomType = r.type;
-                if (r.isStart) level.setStartRoom(room);
-                if (r.isBoss) level.setBossRoom(room);
+                if (r.isStart) {
+                    level.setStartRoom(room);
+                }
+                if (r.isBoss) {
+                    level.setBossRoom(room);
+                }
             }
         }
 
         const connections = [
-            [[2, 4], [2, 3]],
-            [[2, 3], [2, 2]],
-            [[2, 2], [2, 1]],
-            [[2, 1], [2, 0]],
-            [[2, 3], [1, 3]],
-            [[2, 2], [3, 2]],
-            [[2, 1], [1, 1]],
-            [[2, 3], [3, 3]],
-            [[2, 2], [0, 2]]
+            [
+                [2, 4],
+                [2, 3]
+            ],
+            [
+                [2, 3],
+                [2, 2]
+            ],
+            [
+                [2, 2],
+                [2, 1]
+            ],
+            [
+                [2, 1],
+                [2, 0]
+            ],
+            [
+                [2, 3],
+                [1, 3]
+            ],
+            [
+                [2, 2],
+                [3, 2]
+            ],
+            [
+                [2, 1],
+                [1, 1]
+            ],
+            [
+                [2, 3],
+                [3, 3]
+            ],
+            [
+                [2, 2],
+                [0, 2]
+            ]
         ];
 
         for (const [[x1, y1], [x2, y2]] of connections) {

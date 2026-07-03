@@ -6,43 +6,43 @@
 // 角色ID常量
 const CHARACTER_ID = {
     // 战士系
-    KNIGHT: 1,           // 骑士
-    BERSERKER: 2,        // 狂战士
-    BLADEMASTER: 3,      // 剑圣
-    
+    KNIGHT: 1, // 骑士
+    BERSERKER: 2, // 狂战士
+    BLADEMASTER: 3, // 剑圣
+
     // 刺客系
-    ASSASSIN: 4,         // 刺客
-    RANGER: 5,           // 游侠
-    NIGHTMARE: 6,        // 夜魔
-    
+    ASSASSIN: 4, // 刺客
+    RANGER: 5, // 游侠
+    NIGHTMARE: 6, // 夜魔
+
     // 法师系
-    MAGE: 7,             // 法师
-    FROST_MAGE: 8,       // 冰法师
-    STORM_MAGE: 9,       // 雷法师
-    
+    MAGE: 7, // 法师
+    FROST_MAGE: 8, // 冰法师
+    STORM_MAGE: 9, // 雷法师
+
     // 辅助系
-    PRIEST: 10,          // 牧师
-    SEER: 11,            // 占卜师
-    ANGEL: 12,           // 天使
-    
+    PRIEST: 10, // 牧师
+    SEER: 11, // 占卜师
+    ANGEL: 12, // 天使
+
     // 猎人系
-    HUNTER: 13,          // 猎人
-    WEREWOLF: 14,        // 狼人
-    EAGLE_EYE: 15,       // 鹰眼
-    
+    HUNTER: 13, // 猎人
+    WEREWOLF: 14, // 狼人
+    EAGLE_EYE: 15, // 鹰眼
+
     // 机械系
-    ENGINEER: 16,         // 工程师
-    ROBOT: 17,           // 机器人
-    DEMOLISHER: 18,      // 爆破专家
-    
+    ENGINEER: 16, // 工程师
+    ROBOT: 17, // 机器人
+    DEMOLISHER: 18, // 爆破专家
+
     // 召唤系
-    NECROMANCER: 19,     // 死灵师
-    DRAGON_TAMER: 20,    // 驯龙师
-    NATURE_CALLER: 21,  // 自然使者
-    
+    NECROMANCER: 19, // 死灵师
+    DRAGON_TAMER: 20, // 驯龙师
+    NATURE_CALLER: 21, // 自然使者
+
     // 特殊系
-    ALCHEMIST: 22,       // 炼金师
-    JOKER: 23,           // 小丑
+    ALCHEMIST: 22, // 炼金师
+    JOKER: 23, // 小丑
     RAINBOW_MESSENGER: 24 // 彩虹使者
 };
 
@@ -64,90 +64,90 @@ const CHARACTER_CATEGORY = {
 function createAllCharacters() {
     return {
         // ==================== 战士系角色 ====================
-        
+
         // 1. 骑士
         [CHARACTER_ID.KNIGHT]: createKnight(),
-        
+
         // 2. 狂战士
         [CHARACTER_ID.BERSERKER]: createBerserker(),
-        
+
         // 3. 剑圣
         [CHARACTER_ID.BLADEMASTER]: createBlademaster(),
-        
+
         // ==================== 刺客系角色 ====================
-        
+
         // 4. 刺客
         [CHARACTER_ID.ASSASSIN]: createAssassin(),
-        
+
         // 5. 游侠
         [CHARACTER_ID.RANGER]: createRanger(),
-        
+
         // 6. 夜魔
         [CHARACTER_ID.NIGHTMARE]: createNightmare(),
-        
+
         // ==================== 法师系角色 ====================
-        
+
         // 7. 法师
         [CHARACTER_ID.MAGE]: createMage(),
-        
+
         // 8. 冰法师
         [CHARACTER_ID.FROST_MAGE]: createFrostMage(),
-        
+
         // 9. 雷法师
         [CHARACTER_ID.STORM_MAGE]: createStormMage(),
-        
+
         // ==================== 辅助系角色 ====================
-        
+
         // 10. 牧师
         [CHARACTER_ID.PRIEST]: createPriest(),
-        
+
         // 11. 占卜师
         [CHARACTER_ID.SEER]: createSeer(),
-        
+
         // 12. 天使
         [CHARACTER_ID.ANGEL]: createAngel(),
-        
+
         // ==================== 猎人系角色 ====================
-        
+
         // 13. 猎人
         [CHARACTER_ID.HUNTER]: createHunter(),
-        
+
         // 14. 狼人
         [CHARACTER_ID.WEREWOLF]: createWerewolf(),
-        
+
         // 15. 鹰眼
         [CHARACTER_ID.EAGLE_EYE]: createEagleEye(),
-        
+
         // ==================== 机械系角色 ====================
-        
+
         // 16. 工程师
         [CHARACTER_ID.ENGINEER]: createEngineer(),
-        
+
         // 17. 机器人
         [CHARACTER_ID.ROBOT]: createRobot(),
-        
+
         // 18. 爆破专家
         [CHARACTER_ID.DEMOLISHER]: createDemolisher(),
-        
+
         // ==================== 召唤系角色 ====================
-        
+
         // 19. 死灵师
         [CHARACTER_ID.NECROMANCER]: createNecromancer(),
-        
+
         // 20. 驯龙师
         [CHARACTER_ID.DRAGON_TAMER]: createDragonTamer(),
-        
+
         // 21. 自然使者
         [CHARACTER_ID.NATURE_CALLER]: createNatureCaller(),
-        
+
         // ==================== 特殊系角色 ====================
-        
+
         // 22. 炼金师
         [CHARACTER_ID.ALCHEMIST]: createAlchemist(),
-        
+
         // 23. 小丑
         [CHARACTER_ID.JOKER]: createJoker(),
-        
+
         // 24. 彩虹使者
         [CHARACTER_ID.RAINBOW_MESSENGER]: createRainbowMessenger()
     };
@@ -166,8 +166,8 @@ function createKnight() {
     character.description = '擅长防御的战士，可以用护盾保护自己';
     character.icon = '🛡️';
     character.category = CHARACTER_CATEGORY.WARRIOR;
-    character.maxHealth = 4;      // 多一点血量
-    character.speed = 3.5;         // 稍慢
+    character.maxHealth = 4; // 多一点血量
+    character.speed = 3.5; // 稍慢
     character.damage = 1;
     character.color = '#607d8b';
     character.accentColor = '#90a4ae';
@@ -188,8 +188,8 @@ function createBerserker() {
     character.icon = '⚔️';
     character.category = CHARACTER_CATEGORY.WARRIOR;
     character.maxHealth = 3;
-    character.speed = 4.5;         // 稍快
-    character.damage = 1.2;         // 基础伤害稍高
+    character.speed = 4.5; // 稍快
+    character.damage = 1.2; // 基础伤害稍高
     character.color = '#d32f2f';
     character.accentColor = '#f44336';
     character.activeSkill = new BerserkSkill();
@@ -231,9 +231,9 @@ function createAssassin() {
     character.description = '擅长背后偷袭，一击致命';
     character.icon = '🗡️';
     character.category = CHARACTER_CATEGORY.ASSASSIN;
-    character.maxHealth = 2;       // 血量较低
-    character.speed = 5;           // 速度很快
-    character.damage = 1.5;        // 背后攻击伤害翻倍
+    character.maxHealth = 2; // 血量较低
+    character.speed = 5; // 速度很快
+    character.damage = 1.5; // 背后攻击伤害翻倍
     character.color = '#37474f';
     character.accentColor = '#546e7a';
     character.activeSkill = new BlinkSkill();
@@ -427,7 +427,7 @@ function createHunter() {
     character.icon = '🎯';
     character.category = CHARACTER_CATEGORY.HUNTER;
     character.maxHealth = 3;
-    character.speed = 4.8;         // 速度很快
+    character.speed = 4.8; // 速度很快
     character.damage = 1;
     character.color = '#795548';
     character.accentColor = '#8d6e63';
@@ -470,7 +470,7 @@ function createEagleEye() {
     character.category = CHARACTER_CATEGORY.HUNTER;
     character.maxHealth = 2;
     character.speed = 4;
-    character.damage = 1.8;         // 高伤害
+    character.damage = 1.8; // 高伤害
     character.color = '#455a64';
     character.accentColor = '#607d8b';
     character.activeSkill = new PrecisionShotSkill();
@@ -512,7 +512,7 @@ function createRobot() {
     character.description = '自我修复能力，持续回复生命';
     character.icon = '🤖';
     character.category = CHARACTER_CATEGORY.MECH;
-    character.maxHealth = 4;         // 血量较高
+    character.maxHealth = 4; // 血量较高
     character.speed = 3;
     character.damage = 1;
     character.color = '#78909c';
@@ -683,12 +683,14 @@ const ALL_CHARACTERS = createAllCharacters();
  */
 function getCharacterById(id) {
     const template = ALL_CHARACTERS[id];
-    if (!template) return null;
-    
+    if (!template) {
+        return null;
+    }
+
     // 返回深拷贝，避免共享技能实例
     const character = new Character();
     Object.assign(character, template);
-    
+
     // 重新创建技能实例
     if (character.activeSkill) {
         character.activeSkill = createActiveSkillInstance(template.activeSkill);
@@ -696,7 +698,7 @@ function getCharacterById(id) {
     if (character.passiveSkill) {
         character.passiveSkill = createPassiveSkillInstance(template.passiveSkill);
     }
-    
+
     return character;
 }
 
@@ -706,31 +708,56 @@ function getCharacterById(id) {
 function createActiveSkillInstance(template) {
     const name = template.constructor.name;
     switch (name) {
-        case 'ShieldSkill': return new ShieldSkill();
-        case 'BerserkSkill': return new BerserkSkill();
-        case 'BladeStormSkill': return new BladeStormSkill();
-        case 'BlinkSkill': return new BlinkSkill();
-        case 'PhantomSkill': return new PhantomSkill();
-        case 'ShadowStrikeSkill': return new ShadowStrikeSkill();
-        case 'MeteorStrikeSkill': return new MeteorStrikeSkill();
-        case 'FreezeSkill': return new FreezeSkill();
-        case 'ThunderStrikeSkill': return new ThunderStrikeSkill();
-        case 'HealSkill': return new HealSkill();
-        case 'ForesightSkill': return new ForesightSkill();
-        case 'ResurrectionSkill': return new ResurrectionSkill();
-        case 'LandmineSkill': return new LandmineSkill();
-        case 'SummonPetSkill': return new SummonPetSkill();
-        case 'PrecisionShotSkill': return new PrecisionShotSkill();
-        case 'TurretSkill': return new TurretSkill();
-        case 'SelfRepairSkill': return new SelfRepairSkill();
-        case 'DemolitionSkill': return new DemolitionSkill();
-        case 'ArmyOfDeadSkill': return new ArmyOfDeadSkill();
-        case 'SummonDragonSkill': return new SummonDragonSkill();
-        case 'ThornTrapSkill': return new ThornTrapSkill();
-        case 'PotionBombSkill': return new PotionBombSkill();
-        case 'SurpriseBoxSkill': return new SurpriseBoxSkill();
-        case 'ElementalFusionSkill': return new ElementalFusionSkill();
-        default: return null;
+        case 'ShieldSkill':
+            return new ShieldSkill();
+        case 'BerserkSkill':
+            return new BerserkSkill();
+        case 'BladeStormSkill':
+            return new BladeStormSkill();
+        case 'BlinkSkill':
+            return new BlinkSkill();
+        case 'PhantomSkill':
+            return new PhantomSkill();
+        case 'ShadowStrikeSkill':
+            return new ShadowStrikeSkill();
+        case 'MeteorStrikeSkill':
+            return new MeteorStrikeSkill();
+        case 'FreezeSkill':
+            return new FreezeSkill();
+        case 'ThunderStrikeSkill':
+            return new ThunderStrikeSkill();
+        case 'HealSkill':
+            return new HealSkill();
+        case 'ForesightSkill':
+            return new ForesightSkill();
+        case 'ResurrectionSkill':
+            return new ResurrectionSkill();
+        case 'LandmineSkill':
+            return new LandmineSkill();
+        case 'SummonPetSkill':
+            return new SummonPetSkill();
+        case 'PrecisionShotSkill':
+            return new PrecisionShotSkill();
+        case 'TurretSkill':
+            return new TurretSkill();
+        case 'SelfRepairSkill':
+            return new SelfRepairSkill();
+        case 'DemolitionSkill':
+            return new DemolitionSkill();
+        case 'ArmyOfDeadSkill':
+            return new ArmyOfDeadSkill();
+        case 'SummonDragonSkill':
+            return new SummonDragonSkill();
+        case 'ThornTrapSkill':
+            return new ThornTrapSkill();
+        case 'PotionBombSkill':
+            return new PotionBombSkill();
+        case 'SurpriseBoxSkill':
+            return new SurpriseBoxSkill();
+        case 'ElementalFusionSkill':
+            return new ElementalFusionSkill();
+        default:
+            return null;
     }
 }
 
@@ -740,31 +767,56 @@ function createActiveSkillInstance(template) {
 function createPassiveSkillInstance(template) {
     const name = template.constructor.name;
     switch (name) {
-        case 'DamageReductionPassive': return new DamageReductionPassive();
-        case 'LowHealthDamagePassive': return new LowHealthDamagePassive();
-        case 'AttackSpeedPassive': return new AttackSpeedPassive();
-        case 'BackstabPassive': return new BackstabPassive();
-        case 'EvasionPassive': return new EvasionPassive();
-        case 'KillCooldownReductionPassive': return new KillCooldownReductionPassive();
-        case 'SkillPowerPassive': return new SkillPowerPassive();
-        case 'SlowEnhancementPassive': return new SlowEnhancementPassive();
-        case 'LightningChainPassive': return new LightningChainPassive();
-        case 'KillHealPassive': return new KillHealPassive();
-        case 'EnemyTrackingPassive': return new EnemyTrackingPassive();
-        case 'ResurrectionPassive': return new ResurrectionPassive();
-        case 'MovementSpeedPassive': return new MovementSpeedPassive();
-        case 'PetCompanionPassive': return new PetCompanionPassive();
-        case 'CriticalHitPassive': return new CriticalHitPassive();
-        case 'AmmoCapacityPassive': return new AmmoCapacityPassive();
-        case 'PassiveHealingPassive': return new PassiveHealingPassive();
-        case 'ExplosionRangePassive': return new ExplosionRangePassive();
-        case 'SummonOnKillPassive': return new SummonOnKillPassive();
-        case 'AirSupportPassive': return new AirSupportPassive();
-        case 'DamageOverTimePassive': return new DamageOverTimePassive();
-        case 'PoisonAttackPassive': return new PoisonAttackPassive();
-        case 'RandomBuffPassive': return new RandomBuffPassive();
-        case 'AllStatsBonusPassive': return new AllStatsBonusPassive();
-        default: return null;
+        case 'DamageReductionPassive':
+            return new DamageReductionPassive();
+        case 'LowHealthDamagePassive':
+            return new LowHealthDamagePassive();
+        case 'AttackSpeedPassive':
+            return new AttackSpeedPassive();
+        case 'BackstabPassive':
+            return new BackstabPassive();
+        case 'EvasionPassive':
+            return new EvasionPassive();
+        case 'KillCooldownReductionPassive':
+            return new KillCooldownReductionPassive();
+        case 'SkillPowerPassive':
+            return new SkillPowerPassive();
+        case 'SlowEnhancementPassive':
+            return new SlowEnhancementPassive();
+        case 'LightningChainPassive':
+            return new LightningChainPassive();
+        case 'KillHealPassive':
+            return new KillHealPassive();
+        case 'EnemyTrackingPassive':
+            return new EnemyTrackingPassive();
+        case 'ResurrectionPassive':
+            return new ResurrectionPassive();
+        case 'MovementSpeedPassive':
+            return new MovementSpeedPassive();
+        case 'PetCompanionPassive':
+            return new PetCompanionPassive();
+        case 'CriticalHitPassive':
+            return new CriticalHitPassive();
+        case 'AmmoCapacityPassive':
+            return new AmmoCapacityPassive();
+        case 'PassiveHealingPassive':
+            return new PassiveHealingPassive();
+        case 'ExplosionRangePassive':
+            return new ExplosionRangePassive();
+        case 'SummonOnKillPassive':
+            return new SummonOnKillPassive();
+        case 'AirSupportPassive':
+            return new AirSupportPassive();
+        case 'DamageOverTimePassive':
+            return new DamageOverTimePassive();
+        case 'PoisonAttackPassive':
+            return new PoisonAttackPassive();
+        case 'RandomBuffPassive':
+            return new RandomBuffPassive();
+        case 'AllStatsBonusPassive':
+            return new AllStatsBonusPassive();
+        default:
+            return null;
     }
 }
 

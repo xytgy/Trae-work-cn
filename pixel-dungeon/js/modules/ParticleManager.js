@@ -59,7 +59,8 @@ class ParticleManager {
             const particleColor = Math.random() < 0.7 ? color : '#ffffff';
 
             const particle = new Particle(
-                x, y,
+                x,
+                y,
                 Math.cos(angle) * speed,
                 Math.sin(angle) * speed,
                 particleColor,
@@ -86,14 +87,9 @@ class ParticleManager {
             const angle = Math.random() * Math.PI * 2;
             const speed = 1 + Math.random() * 2;
 
-            gl.particles.push(new Particle(
-                x, y,
-                Math.cos(angle) * speed,
-                Math.sin(angle) * speed,
-                COLORS.UI.HEALTH_FULL,
-                4,
-                300
-            ));
+            gl.particles.push(
+                new Particle(x, y, Math.cos(angle) * speed, Math.sin(angle) * speed, COLORS.UI.HEALTH_FULL, 4, 300)
+            );
         }
     }
 
@@ -111,7 +107,8 @@ class ParticleManager {
             const speed = 2 + Math.random() * 4;
 
             const particle = new Particle(
-                x, y,
+                x,
+                y,
                 Math.cos(angle) * speed,
                 Math.sin(angle) * speed,
                 color,
@@ -128,7 +125,8 @@ class ParticleManager {
             const speed = 1 + Math.random() * 3;
 
             const particle = new Particle(
-                x, y,
+                x,
+                y,
                 Math.cos(angle) * speed,
                 Math.sin(angle) * speed - 2,
                 '#ffffff',
@@ -143,26 +141,13 @@ class ParticleManager {
 
         for (let i = 0; i < 8; i++) {
             const angle = (i / 8) * Math.PI * 2;
-            const particle = new Particle(
-                x, y,
-                Math.cos(angle) * 6,
-                Math.sin(angle) * 6,
-                color,
-                6,
-                200
-            );
+            const particle = new Particle(x, y, Math.cos(angle) * 6, Math.sin(angle) * 6, color, 6, 200);
             particle.setKind(PARTICLES.KIND.CIRCLE);
             particle.setGravity(0);
             gl.particles.push(particle);
         }
 
-        const flash = new Particle(
-            x, y,
-            0, 0,
-            '#ffffff',
-            20,
-            100
-        );
+        const flash = new Particle(x, y, 0, 0, '#ffffff', 20, 100);
         flash.disableShrink();
         flash.disableFade();
         gl.particles.push(flash);
@@ -182,7 +167,8 @@ class ParticleManager {
             const speed = 3 + Math.random() * 6;
 
             const particle = new Particle(
-                x, y,
+                x,
+                y,
                 Math.cos(angle) * speed,
                 Math.sin(angle) * speed,
                 bossColor,
@@ -200,7 +186,8 @@ class ParticleManager {
             const speed = 4 + Math.random() * 8;
 
             const particle = new Particle(
-                x, y,
+                x,
+                y,
                 Math.cos(angle) * speed,
                 Math.sin(angle) * speed - 3,
                 sparkColors[Math.floor(Math.random() * sparkColors.length)],
@@ -218,7 +205,8 @@ class ParticleManager {
             const speed = 1 + Math.random() * 3;
 
             const particle = new Particle(
-                x, y,
+                x,
+                y,
                 Math.cos(angle) * speed,
                 Math.sin(angle) * speed - 2,
                 '#424242',
@@ -234,13 +222,7 @@ class ParticleManager {
             const delay = i * 100;
             const ringSize = 20 + i * 10;
             setTimeout(() => {
-                const ring = new Particle(
-                    x, y,
-                    0, 0,
-                    i === 0 ? '#ffffff' : bossColor,
-                    ringSize,
-                    400
-                );
+                const ring = new Particle(x, y, 0, 0, i === 0 ? '#ffffff' : bossColor, ringSize, 400);
                 ring.setKind(PARTICLES.KIND.RING);
                 ring.setExpandSpeed(0.8 + i * 0.3);
                 ring.setRingThickness(3 - i);
@@ -249,13 +231,7 @@ class ParticleManager {
             }, delay);
         }
 
-        const flash = new Particle(
-            x, y,
-            0, 0,
-            '#ffffff',
-            60,
-            150
-        );
+        const flash = new Particle(x, y, 0, 0, '#ffffff', 60, 150);
         flash.disableShrink();
         flash.disableFade();
         gl.particles.push(flash);
@@ -277,16 +253,11 @@ class ParticleManager {
             const ringIndex = i;
 
             setTimeout(() => {
-                const expandSpeed = ringConfig.expandSpeedMin + Math.random() * (ringConfig.expandSpeedMax - ringConfig.expandSpeedMin);
+                const expandSpeed =
+                    ringConfig.expandSpeedMin + Math.random() * (ringConfig.expandSpeedMax - ringConfig.expandSpeedMin);
                 const ringColor = ringConfig.colors[ringIndex % ringConfig.colors.length];
 
-                const particle = new Particle(
-                    x, y,
-                    0, 0,
-                    ringColor,
-                    10,
-                    ringConfig.lifetime
-                );
+                const particle = new Particle(x, y, 0, 0, ringColor, 10, ringConfig.lifetime);
 
                 particle.setKind(PARTICLES.KIND.RING);
                 particle.setExpandSpeed(expandSpeed);
@@ -342,7 +313,8 @@ class ParticleManager {
             const color = config.colors[Math.floor(Math.random() * config.colors.length)];
 
             const particle = new Particle(
-                x, y,
+                x,
+                y,
                 Math.cos(angle) * speed,
                 Math.sin(angle) * speed,
                 color,
@@ -357,15 +329,19 @@ class ParticleManager {
             gl.particles.push(particle);
         }
 
-        const smokeCount = Math.floor(smokeConfig.countMin + Math.random() * (smokeConfig.countMax - smokeConfig.countMin));
+        const smokeCount = Math.floor(
+            smokeConfig.countMin + Math.random() * (smokeConfig.countMax - smokeConfig.countMin)
+        );
         for (let i = 0; i < smokeCount; i++) {
             const angle = Math.random() * Math.PI * 2;
             const speed = smokeConfig.speedMin + Math.random() * (smokeConfig.speedMax - smokeConfig.speedMin);
             const size = smokeConfig.sizeMin + Math.random() * (smokeConfig.sizeMax - smokeConfig.sizeMin);
-            const lifetime = smokeConfig.lifetimeMin + Math.random() * (smokeConfig.lifetimeMax - smokeConfig.lifetimeMin);
+            const lifetime =
+                smokeConfig.lifetimeMin + Math.random() * (smokeConfig.lifetimeMax - smokeConfig.lifetimeMin);
 
             const particle = new Particle(
-                x, y,
+                x,
+                y,
                 Math.cos(angle) * speed,
                 Math.sin(angle) * speed,
                 smokeConfig.color,
@@ -392,14 +368,17 @@ class ParticleManager {
             const angle = Math.random() * Math.PI * 2;
             const speed = 2 + Math.random() * 3;
 
-            gl.particles.push(new Particle(
-                x, y,
-                Math.cos(angle) * speed,
-                Math.sin(angle) * speed,
-                COLORS.BULLET.HOMING,
-                3 + Math.random() * 3,
-                300 + Math.random() * 200
-            ));
+            gl.particles.push(
+                new Particle(
+                    x,
+                    y,
+                    Math.cos(angle) * speed,
+                    Math.sin(angle) * speed,
+                    COLORS.BULLET.HOMING,
+                    3 + Math.random() * 3,
+                    300 + Math.random() * 200
+                )
+            );
         }
     }
 }

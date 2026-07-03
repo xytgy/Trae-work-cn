@@ -51,7 +51,9 @@ class EventBus {
      * @param {Function} callback - 回调函数
      */
     unsubscribe(eventName, callback) {
-        if (!this.subscriptions[eventName]) return;
+        if (!this.subscriptions[eventName]) {
+            return;
+        }
 
         const index = this.subscriptions[eventName].indexOf(callback);
         if (index !== -1) {
@@ -111,7 +113,9 @@ class EventBus {
 
         return {
             unsubscribe: () => {
-                if (!this.onceSubscriptions[eventName]) return;
+                if (!this.onceSubscriptions[eventName]) {
+                    return;
+                }
                 const index = this.onceSubscriptions[eventName].indexOf(callback);
                 if (index !== -1) {
                     this.onceSubscriptions[eventName].splice(index, 1);
@@ -158,8 +162,8 @@ class EventBus {
      */
     getRegisteredEvents() {
         const events = new Set();
-        Object.keys(this.subscriptions).forEach(event => events.add(event));
-        Object.keys(this.onceSubscriptions).forEach(event => events.add(event));
+        Object.keys(this.subscriptions).forEach((event) => events.add(event));
+        Object.keys(this.onceSubscriptions).forEach((event) => events.add(event));
         return Array.from(events);
     }
 }

@@ -33,8 +33,7 @@ class DamageSystem {
         const dist = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
         const knockbackDir = { x: dirX / dist, y: dirY / dist };
 
-        const knockbackForce = FEEDBACK.KNOCKBACK.ENEMY_BASE_FORCE +
-            damage * FEEDBACK.KNOCKBACK.ENEMY_DAMAGE_MULT;
+        const knockbackForce = FEEDBACK.KNOCKBACK.ENEMY_BASE_FORCE + damage * FEEDBACK.KNOCKBACK.ENEMY_DAMAGE_MULT;
 
         enemy.takeDamage(damage, knockbackDir, knockbackForce);
     }
@@ -53,8 +52,8 @@ class DamageSystem {
         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
         const knockbackDir = { x: dx / dist, y: dy / dist };
 
-        const knockbackForce = (FEEDBACK.KNOCKBACK.ENEMY_BASE_FORCE +
-            damage * FEEDBACK.KNOCKBACK.ENEMY_DAMAGE_MULT) * forceMultiplier;
+        const knockbackForce =
+            (FEEDBACK.KNOCKBACK.ENEMY_BASE_FORCE + damage * FEEDBACK.KNOCKBACK.ENEMY_DAMAGE_MULT) * forceMultiplier;
 
         enemy.takeDamage(damage, knockbackDir, knockbackForce);
     }
@@ -66,7 +65,9 @@ class DamageSystem {
      */
     damageBoss(damage, bullet) {
         const gl = this.gameLogic;
-        if (!gl.boss || !gl.boss.alive) return;
+        if (!gl.boss || !gl.boss.alive) {
+            return;
+        }
 
         let dirX = 0;
         let dirY = 0;
@@ -84,8 +85,8 @@ class DamageSystem {
         const dist = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
         const knockbackDir = { x: dirX / dist, y: dirY / dist };
 
-        const knockbackForce = (FEEDBACK.KNOCKBACK.ENEMY_BASE_FORCE +
-            damage * FEEDBACK.KNOCKBACK.ENEMY_DAMAGE_MULT) * 0.3;
+        const knockbackForce =
+            (FEEDBACK.KNOCKBACK.ENEMY_BASE_FORCE + damage * FEEDBACK.KNOCKBACK.ENEMY_DAMAGE_MULT) * 0.3;
 
         gl.boss.takeDamage(damage, knockbackDir, knockbackForce);
     }
@@ -98,15 +99,17 @@ class DamageSystem {
      */
     damageBossWithExplosion(damage, explosionX, explosionY) {
         const gl = this.gameLogic;
-        if (!gl.boss || !gl.boss.alive) return;
+        if (!gl.boss || !gl.boss.alive) {
+            return;
+        }
 
         const dx = gl.boss.x - explosionX;
         const dy = gl.boss.y - explosionY;
         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
         const knockbackDir = { x: dx / dist, y: dy / dist };
 
-        const knockbackForce = (FEEDBACK.KNOCKBACK.ENEMY_BASE_FORCE +
-            damage * FEEDBACK.KNOCKBACK.ENEMY_DAMAGE_MULT) * 1.5 * 0.3;
+        const knockbackForce =
+            (FEEDBACK.KNOCKBACK.ENEMY_BASE_FORCE + damage * FEEDBACK.KNOCKBACK.ENEMY_DAMAGE_MULT) * 1.5 * 0.3;
 
         gl.boss.takeDamage(damage, knockbackDir, knockbackForce);
     }
@@ -118,8 +121,10 @@ class DamageSystem {
     handleNormalBulletCollision(bullet) {
         const gl = this.gameLogic;
 
-        gl.enemies.forEach(enemy => {
-            if (!enemy.alive) return;
+        gl.enemies.forEach((enemy) => {
+            if (!enemy.alive) {
+                return;
+            }
 
             if (gl.collisionSystem.checkBulletCollision(bullet, enemy)) {
                 this.damageEnemy(enemy, bullet.damage, bullet);
@@ -154,8 +159,10 @@ class DamageSystem {
     handleLightningBulletCollision(bullet) {
         const gl = this.gameLogic;
 
-        gl.enemies.forEach(enemy => {
-            if (!enemy.alive) return;
+        gl.enemies.forEach((enemy) => {
+            if (!enemy.alive) {
+                return;
+            }
 
             if (gl.collisionSystem.checkBulletCollision(bullet, enemy)) {
                 this.damageEnemy(enemy, bullet.damage, bullet);
@@ -194,13 +201,17 @@ class DamageSystem {
      * @param {GrenadeBullet} bullet - 榴弹
      */
     handleGrenadeBulletCollision(bullet) {
-        if (bullet.hasExploded) return;
+        if (bullet.hasExploded) {
+            return;
+        }
 
         const gl = this.gameLogic;
         let exploded = false;
 
-        gl.enemies.forEach(enemy => {
-            if (!enemy.alive) return;
+        gl.enemies.forEach((enemy) => {
+            if (!enemy.alive) {
+                return;
+            }
 
             if (gl.collisionSystem.checkBulletCollision(bullet, enemy)) {
                 exploded = true;
@@ -227,7 +238,9 @@ class DamageSystem {
      * @param {GrenadeBullet} bullet - 榴弹
      */
     explodeGrenade(bullet) {
-        if (bullet.hasExploded) return;
+        if (bullet.hasExploded) {
+            return;
+        }
         bullet.hasExploded = true;
         bullet.active = false;
 
@@ -236,8 +249,10 @@ class DamageSystem {
 
         camera.shake(FEEDBACK.SCREEN_SHAKE.EXPLOSION.intensity, FEEDBACK.SCREEN_SHAKE.EXPLOSION.duration);
 
-        gl.enemies.forEach(enemy => {
-            if (!enemy.alive) return;
+        gl.enemies.forEach((enemy) => {
+            if (!enemy.alive) {
+                return;
+            }
 
             const dx = enemy.x - bullet.x;
             const dy = enemy.y - bullet.y;
@@ -278,8 +293,10 @@ class DamageSystem {
     handleFreezeBulletCollision(bullet) {
         const gl = this.gameLogic;
 
-        gl.enemies.forEach(enemy => {
-            if (!enemy.alive) return;
+        gl.enemies.forEach((enemy) => {
+            if (!enemy.alive) {
+                return;
+            }
 
             if (gl.collisionSystem.checkBulletCollision(bullet, enemy)) {
                 this.damageEnemy(enemy, bullet.damage, bullet);
@@ -316,13 +333,17 @@ class DamageSystem {
      * @param {HomingBullet} bullet - 追踪导弹
      */
     handleHomingBulletCollision(bullet) {
-        if (bullet.hasExploded) return;
+        if (bullet.hasExploded) {
+            return;
+        }
 
         const gl = this.gameLogic;
         let exploded = false;
 
-        gl.enemies.forEach(enemy => {
-            if (!enemy.alive) return;
+        gl.enemies.forEach((enemy) => {
+            if (!enemy.alive) {
+                return;
+            }
 
             if (gl.collisionSystem.checkBulletCollision(bullet, enemy)) {
                 exploded = true;
@@ -349,7 +370,9 @@ class DamageSystem {
      * @param {HomingBullet} bullet - 追踪导弹
      */
     explodeHoming(bullet) {
-        if (bullet.hasExploded) return;
+        if (bullet.hasExploded) {
+            return;
+        }
         bullet.hasExploded = true;
         bullet.active = false;
 
@@ -358,8 +381,10 @@ class DamageSystem {
 
         camera.shake(FEEDBACK.SCREEN_SHAKE.EXPLOSION.intensity, FEEDBACK.SCREEN_SHAKE.EXPLOSION.duration);
 
-        gl.enemies.forEach(enemy => {
-            if (!enemy.alive) return;
+        gl.enemies.forEach((enemy) => {
+            if (!enemy.alive) {
+                return;
+            }
 
             const dx = enemy.x - bullet.x;
             const dy = enemy.y - bullet.y;
@@ -399,7 +424,9 @@ class DamageSystem {
      */
     playerHitByEnemy(enemy) {
         const gl = this.gameLogic;
-        if (gl.state.getData().isInvincible) return;
+        if (gl.state.getData().isInvincible) {
+            return;
+        }
 
         const damage = enemy.damage || 1;
 
@@ -438,7 +465,9 @@ class DamageSystem {
      */
     playerHitByBoss() {
         const gl = this.gameLogic;
-        if (gl.state.getData().isInvincible) return;
+        if (gl.state.getData().isInvincible) {
+            return;
+        }
 
         let damage = BOSS.DAMAGE;
         if (gl.boss && gl.boss.isCharging) {

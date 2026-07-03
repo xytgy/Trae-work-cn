@@ -29,13 +29,17 @@ class DungeonLevel {
 
     getThemeForAct(act) {
         const actConfig = ACT_THEMES[act];
-        if (!actConfig) return null;
+        if (!actConfig) {
+            return null;
+        }
         return actConfig.themes;
     }
 
     getRandomThemeForAct(act) {
         const themes = this.getThemeForAct(act);
-        if (!themes || themes.length === 0) return null;
+        if (!themes || themes.length === 0) {
+            return null;
+        }
         return themes[Math.floor(Math.random() * themes.length)];
     }
 
@@ -74,12 +78,20 @@ class DungeonLevel {
         const neighbors = [];
         const { gridX, gridY } = roomNode;
 
-        if (gridY > 0) neighbors.push(this.getRoomAt(gridX, gridY - 1));
-        if (gridY < 4) neighbors.push(this.getRoomAt(gridX, gridY + 1));
-        if (gridX > 0) neighbors.push(this.getRoomAt(gridX - 1, gridY));
-        if (gridX < 4) neighbors.push(this.getRoomAt(gridX + 1, gridY));
+        if (gridY > 0) {
+            neighbors.push(this.getRoomAt(gridX, gridY - 1));
+        }
+        if (gridY < 4) {
+            neighbors.push(this.getRoomAt(gridX, gridY + 1));
+        }
+        if (gridX > 0) {
+            neighbors.push(this.getRoomAt(gridX - 1, gridY));
+        }
+        if (gridX < 4) {
+            neighbors.push(this.getRoomAt(gridX + 1, gridY));
+        }
 
-        return neighbors.filter(n => n !== null);
+        return neighbors.filter((n) => n !== null);
     }
 
     connectRooms(roomA, roomB) {
@@ -109,26 +121,28 @@ class DungeonLevel {
             roomB.addDoor(directionB);
             roomA.addConnection(roomB);
             roomB.addConnection(roomA);
-            this.corridors.push(new Corridor(roomA, roomB));
+            const corridor = new Corridor(roomA, roomB);
+            this.corridors.push(corridor);
+            console.log(
+                `走廊创建: [${roomA.gridX},${roomA.gridY}](${roomA.worldX},${roomA.worldY}) -> [${roomB.gridX},${roomB.gridY}](${roomB.worldX},${roomB.worldY}), 方向: ${corridor.direction}, x: ${corridor.x}, y: ${corridor.y}, 长度: ${corridor.length}, 宽度: ${corridor.width}`
+            );
         }
     }
 
     getClearedRooms() {
-        return this.rooms.filter(r => r.cleared);
+        return this.rooms.filter((r) => r.cleared);
     }
 
     getEnteredRooms() {
-        return this.rooms.filter(r => r.entered);
+        return this.rooms.filter((r) => r.entered);
     }
 
     getActiveRooms() {
-        return this.rooms.filter(r => r.roomType !== null);
+        return this.rooms.filter((r) => r.roomType !== null);
     }
 
     getUnclearedBattleRooms() {
-        return this.rooms.filter(r => 
-            r.roomType === ROOM_TYPES.BATTLE && !r.cleared
-        );
+        return this.rooms.filter((r) => r.roomType === ROOM_TYPES.BATTLE && !r.cleared);
     }
 
     getAllReachableRooms(startRoom) {
@@ -137,7 +151,9 @@ class DungeonLevel {
 
         while (queue.length > 0) {
             const current = queue.shift();
-            if (reachable.has(current)) continue;
+            if (reachable.has(current)) {
+                continue;
+            }
 
             reachable.add(current);
 
@@ -152,15 +168,19 @@ class DungeonLevel {
     }
 
     isFullyConnected() {
-        if (!this.startRoom) return false;
+        if (!this.startRoom) {
+            return false;
+        }
 
         const activeRooms = this.getActiveRooms();
-        if (activeRooms.length === 0) return true;
+        if (activeRooms.length === 0) {
+            return true;
+        }
 
         const reachable = this.getAllReachableRooms(this.startRoom);
         const reachableSet = new Set(reachable);
 
-        return activeRooms.every(room => reachableSet.has(room));
+        return activeRooms.every((room) => reachableSet.has(room));
     }
 
     generateEnemyList(roomNode) {
@@ -179,20 +199,18 @@ class DungeonLevel {
     }
 
     findNextRoomByType(roomType) {
-        if (!this.currentRoomNode) return null;
+        if (!this.currentRoomNode) {
+            return null;
+        }
 
         const reachable = this.getAllReachableRooms(this.currentRoomNode);
 
-        const candidates = reachable.filter(room => 
-            room.roomType === roomType && 
-            !room.entered && 
-            room !== this.currentRoomNode
+        const candidates = reachable.filter(
+            (room) => room.roomType === roomType && !room.entered && room !== this.currentRoomNode
         );
 
         if (candidates.length === 0) {
-            const allCandidates = this.rooms.filter(room => 
-                room.roomType === roomType && !room.entered
-            );
+            const allCandidates = this.rooms.filter((room) => room.roomType === roomType && !room.entered);
             return allCandidates[0] || null;
         }
 

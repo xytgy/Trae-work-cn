@@ -69,12 +69,16 @@ class SaveMenu {
     }
 
     render(ctx) {
-        if (!this.isOpen) return;
+        if (!this.isOpen) {
+            return;
+        }
 
         this.animationAlpha += (this.animationTarget - this.animationAlpha) * 0.15;
 
         var alpha = this.animationAlpha;
-        if (alpha < 0.01) return;
+        if (alpha < 0.01) {
+            return;
+        }
 
         ctx.save();
         ctx.globalAlpha = alpha;
@@ -145,7 +149,7 @@ class SaveMenu {
         } else {
             ctx.fillStyle = 'rgba(30, 20, 50, 0.8)';
         }
-        ctx.strokeStyle = isHover ? '#ffcc00' : (isSelected ? '#ff9900' : '#555555');
+        ctx.strokeStyle = isHover ? '#ffcc00' : isSelected ? '#ff9900' : '#555555';
         ctx.lineWidth = isHover ? 2 : 1;
         ctx.beginPath();
         ctx.roundRect(rect.x, rect.y, rect.w, rect.h, 6);
@@ -198,7 +202,9 @@ class SaveMenu {
     renderDeleteButton(ctx, index) {
         var rect = this.deleteBtnRects[index];
         var info = this.slots[index];
-        if (!info) return;
+        if (!info) {
+            return;
+        }
 
         ctx.fillStyle = 'rgba(200, 50, 50, 0.6)';
         ctx.strokeStyle = '#cc3333';
@@ -239,7 +245,9 @@ class SaveMenu {
 
     renderConfirmDialog(ctx) {
         var d = this.confirmDialog;
-        if (!d) return;
+        if (!d) {
+            return;
+        }
 
         ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
         ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
@@ -300,7 +308,9 @@ class SaveMenu {
     }
 
     handleClick(x, y) {
-        if (!this.isOpen) return false;
+        if (!this.isOpen) {
+            return false;
+        }
 
         if (this.confirmDialog) {
             return this.handleConfirmClick(x, y);
@@ -322,13 +332,17 @@ class SaveMenu {
                 if (this.slots[i]) {
                     this.close();
                     if (this.saveSystem.load(i)) {
-                        if (this.eventBus) this.eventBus.publish('SAVE_MENU_LOAD', { slotIndex: i });
+                        if (this.eventBus) {
+                            this.eventBus.publish('SAVE_MENU_LOAD', { slotIndex: i });
+                        }
                     }
                 } else {
                     this.close();
                     if (this.saveSystem.save(i)) {
                         this.refreshSlots();
-                        if (this.eventBus) this.eventBus.publish('SAVE_MENU_SAVE', { slotIndex: i });
+                        if (this.eventBus) {
+                            this.eventBus.publish('SAVE_MENU_SAVE', { slotIndex: i });
+                        }
                     }
                 }
                 return true;
@@ -340,7 +354,9 @@ class SaveMenu {
 
     handleConfirmClick(x, y) {
         var d = this.confirmDialog;
-        if (!d) return false;
+        if (!d) {
+            return false;
+        }
 
         if (d._yesRect && this.hitTest(x, y, d._yesRect)) {
             this.saveSystem.delete(d.slotIndex);
@@ -359,7 +375,7 @@ class SaveMenu {
 
     showConfirmDialog(slotIndex) {
         var info = this.slots[slotIndex];
-        var name = info ? (info.characterName || '未知') : '空存档';
+        var name = info ? info.characterName || '未知' : '空存档';
         this.confirmDialog = {
             slotIndex: slotIndex,
             message: '删除 "' + name + '" 的存档？',
@@ -369,7 +385,9 @@ class SaveMenu {
     }
 
     handleMouseMove(x, y) {
-        if (!this.isOpen) return;
+        if (!this.isOpen) {
+            return;
+        }
 
         this.hoverSlot = -1;
 
@@ -382,29 +400,37 @@ class SaveMenu {
     }
 
     hitTest(x, y, rect) {
-        if (!rect) return false;
+        if (!rect) {
+            return false;
+        }
         return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h;
     }
 
     getDifficultyLabel(difficulty) {
         var labels = {
-            'easy': '简单',
-            'normal': '普通',
-            'hard': '困难',
-            'nightmare': '噩梦'
+            easy: '简单',
+            normal: '普通',
+            hard: '困难',
+            nightmare: '噩梦'
         };
         return labels[difficulty] || '普通';
     }
 
     formatTimestamp(ts) {
-        if (!ts) return '未知时间';
+        if (!ts) {
+            return '未知时间';
+        }
         var d = new Date(ts);
-        var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
-        return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+        var pad = function (n) {
+            return n < 10 ? '0' + n : '' + n;
+        };
+        return d.getMonth() + 1 + '/' + d.getDate() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
     }
 
     update(deltaTime) {
-        if (!this.isOpen) return;
+        if (!this.isOpen) {
+            return;
+        }
 
         if (this.animationTarget === 1 && this.animationAlpha < 0.99) {
             this.animationAlpha = Math.min(1, this.animationAlpha + deltaTime / 200);

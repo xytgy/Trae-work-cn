@@ -6,27 +6,27 @@
 class WeaponGrenade extends Weapon {
     constructor() {
         super(
-            '榴弹发射器',     // 名称
-            WEAPONS.GRENADE.DAMAGE,     // 伤害
-            WEAPONS.GRENADE.FIRE_RATE,  // 射速（毫秒）
-            WEAPONS.GRENADE.AMMO,       // 弹药
-            WEAPONS.GRENADE.MAX_AMMO,   // 最大弹药
-            WEAPONS.GRENADE.ICON,       // 图标
-            WEAPONS.GRENADE.COLOR       // 颜色
+            '榴弹发射器', // 名称
+            WEAPONS.GRENADE.DAMAGE, // 伤害
+            WEAPONS.GRENADE.FIRE_RATE, // 射速（毫秒）
+            WEAPONS.GRENADE.AMMO, // 弹药
+            WEAPONS.GRENADE.MAX_AMMO, // 最大弹药
+            WEAPONS.GRENADE.ICON, // 图标
+            WEAPONS.GRENADE.COLOR // 颜色
         );
-        
+
         this.id = WEAPONS.GRENADE.ID;
         this.bulletSpeed = WEAPONS.GRENADE.BULLET_SPEED;
         this.explosionRadius = WEAPONS.GRENADE.EXPLOSION_RADIUS;
     }
-    
+
     /**
      * 获取子弹速度
      */
     getBulletSpeed() {
         return this.bulletSpeed;
     }
-    
+
     /**
      * 创建榴弹
      */

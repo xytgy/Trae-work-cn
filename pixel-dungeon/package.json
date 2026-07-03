@@ -1,0 +1,31 @@
+{
+  "name": "pixel-dungeon",
+  "version": "1.0.0",
+  "description": "一款像素风格的地牢射击游戏，玩家在随机生成的地牢中闯关，体验紧张刺激的射击战斗，最终击败Boss通关。",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint js/",
+    "lint:fix": "eslint js/ --fix",
+    "format": "prettier --write js/",
+    "format:check": "prettier --check js/",
+    "dev": "vite",
+    "build": "node scripts/build.js",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.6.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.6",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.4",
+    "vite": "^8.1.3"
+  }
+}

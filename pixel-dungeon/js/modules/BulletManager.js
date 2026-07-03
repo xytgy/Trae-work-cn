@@ -16,7 +16,7 @@ class BulletManager {
         const gl = this.gameLogic;
         const flameBulletsToMark = [];
 
-        gl.bullets.forEach(bullet => {
+        gl.bullets.forEach((bullet) => {
             if (bullet.active) {
                 const wasActive = bullet.active;
 
@@ -34,11 +34,11 @@ class BulletManager {
             }
         });
 
-        flameBulletsToMark.forEach(pos => {
+        flameBulletsToMark.forEach((pos) => {
             this.spawnBurnMark(pos.x, pos.y);
         });
 
-        gl.bullets = gl.bullets.filter(bullet => bullet.active);
+        gl.bullets = gl.bullets.filter((bullet) => bullet.active);
     }
 
     /**
@@ -46,7 +46,9 @@ class BulletManager {
      * @param {Bullet} bullet - 子弹
      */
     spawnBulletTrailParticle(bullet) {
-        if (bullet.isEnemyBullet) return;
+        if (bullet.isEnemyBullet) {
+            return;
+        }
 
         const gl = this.gameLogic;
         gl.frameBulletTrails++;
@@ -123,65 +125,38 @@ class BulletManager {
 
         switch (weapon.ID) {
             case WEAPONS.LIGHTNING.ID:
-                const lightningBullet = new LightningBullet(
-                    gl.player.x,
-                    gl.player.y,
-                    direction.x,
-                    direction.y,
-                    weapon
-                );
+                const lightningBullet = new LightningBullet(gl.player.x, gl.player.y, direction.x, direction.y, weapon);
                 gl.bullets.push(lightningBullet);
                 break;
 
             case WEAPONS.GRENADE.ID:
-                const grenadeBullet = new GrenadeBullet(
-                    gl.player.x,
-                    gl.player.y,
-                    direction.x,
-                    direction.y,
-                    weapon
-                );
+                const grenadeBullet = new GrenadeBullet(gl.player.x, gl.player.y, direction.x, direction.y, weapon);
                 gl.bullets.push(grenadeBullet);
                 break;
 
             case WEAPONS.FLAME.ID:
-                const flameBullet = new FlameBullet(
-                    gl.player.x,
-                    gl.player.y,
-                    direction.x,
-                    direction.y,
-                    { ...weapon, gameLogic: gl }
-                );
+                const flameBullet = new FlameBullet(gl.player.x, gl.player.y, direction.x, direction.y, {
+                    ...weapon,
+                    gameLogic: gl
+                });
                 gl.bullets.push(flameBullet);
                 break;
 
             case WEAPONS.BOOMERANG.ID:
-                const boomerangBullet = new BoomerangBullet(
-                    gl.player.x,
-                    gl.player.y,
-                    direction.x,
-                    direction.y,
-                    weapon
-                );
+                const boomerangBullet = new BoomerangBullet(gl.player.x, gl.player.y, direction.x, direction.y, weapon);
                 boomerangBullet.setPlayerPosition(gl.player.getPosition());
                 gl.bullets.push(boomerangBullet);
                 break;
 
             case WEAPONS.FREEZE.ID:
-                const freezeBullet = new FreezeBullet(
-                    gl.player.x,
-                    gl.player.y,
-                    direction.x,
-                    direction.y,
-                    {
-                        damage: weapon.DAMAGE,
-                        speed: weapon.BULLET_SPEED,
-                        color: COLORS.BULLET.FREEZE,
-                        slowFactor: weapon.SLOW_FACTOR,
-                        slowDuration: weapon.SLOW_DURATION,
-                        gameLogic: gl
-                    }
-                );
+                const freezeBullet = new FreezeBullet(gl.player.x, gl.player.y, direction.x, direction.y, {
+                    damage: weapon.DAMAGE,
+                    speed: weapon.BULLET_SPEED,
+                    color: COLORS.BULLET.FREEZE,
+                    slowFactor: weapon.SLOW_FACTOR,
+                    slowDuration: weapon.SLOW_DURATION,
+                    gameLogic: gl
+                });
                 gl.bullets.push(freezeBullet);
                 break;
 
@@ -200,49 +175,31 @@ class BulletManager {
                     const dirX = Math.cos(angle);
                     const dirY = Math.sin(angle);
 
-                    const shotgunBullet = new ShotgunBullet(
-                        gl.player.x,
-                        gl.player.y,
-                        dirX,
-                        dirY,
-                        {
-                            damage: weapon.DAMAGE,
-                            speed: weapon.BULLET_SPEED,
-                            color: COLORS.BULLET.SHOTGUN
-                        }
-                    );
+                    const shotgunBullet = new ShotgunBullet(gl.player.x, gl.player.y, dirX, dirY, {
+                        damage: weapon.DAMAGE,
+                        speed: weapon.BULLET_SPEED,
+                        color: COLORS.BULLET.SHOTGUN
+                    });
                     gl.bullets.push(shotgunBullet);
                 }
                 break;
 
             case WEAPONS.HOMING.ID:
-                const homingBullet = new HomingBullet(
-                    gl.player.x,
-                    gl.player.y,
-                    direction.x,
-                    direction.y,
-                    {
-                        damage: weapon.DAMAGE,
-                        speed: weapon.BULLET_SPEED,
-                        color: COLORS.BULLET.HOMING,
-                        maxSpeed: weapon.MAX_SPEED,
-                        acceleration: weapon.ACCELERATION,
-                        turnSpeed: weapon.TURN_SPEED,
-                        explosionRadius: weapon.EXPLOSION_RADIUS
-                    }
-                );
+                const homingBullet = new HomingBullet(gl.player.x, gl.player.y, direction.x, direction.y, {
+                    damage: weapon.DAMAGE,
+                    speed: weapon.BULLET_SPEED,
+                    color: COLORS.BULLET.HOMING,
+                    maxSpeed: weapon.MAX_SPEED,
+                    acceleration: weapon.ACCELERATION,
+                    turnSpeed: weapon.TURN_SPEED,
+                    explosionRadius: weapon.EXPLOSION_RADIUS
+                });
                 homingBullet.setEnemiesRef(gl.enemies);
                 gl.bullets.push(homingBullet);
                 break;
 
             default:
-                const normalBullet = new Bullet(
-                    gl.player.x,
-                    gl.player.y,
-                    direction.x,
-                    direction.y,
-                    weapon
-                );
+                const normalBullet = new Bullet(gl.player.x, gl.player.y, direction.x, direction.y, weapon);
                 gl.bullets.push(normalBullet);
         }
     }
@@ -257,13 +214,7 @@ class BulletManager {
         const config = PARTICLES.TYPES.BURN_MARK;
         const size = config.sizeMin + Math.random() * (config.sizeMax - config.sizeMin);
 
-        const particle = new Particle(
-            x, y,
-            0, 0,
-            config.color,
-            size,
-            config.lifetime
-        );
+        const particle = new Particle(x, y, 0, 0, config.color, size, config.lifetime);
 
         particle.setKind(PARTICLES.KIND.BURN_MARK);
         particle.enableFlicker(config.flickerSpeed);
